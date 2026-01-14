@@ -2,8 +2,11 @@
 import { Button } from './ui/Button';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export function Hero() {
+  const { t } = useLanguage();
+
   return (
     <section className="pt-32 pb-16 md:pt-48 md:pb-32 bg-slate-900 overflow-hidden relative">
       {/* Background Elements */}
@@ -23,36 +26,35 @@ export function Hero() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
               </span>
-              Now accepting new clients for 2026
+              {t.hero.badge}
             </div>
             
             <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight">
-              Focus on Your Guests. <br/>
-              <span className="text-amber-500">We Handle the Government.</span>
+              {t.hero.headline_start} <br/>
+              <span className="text-amber-500">{t.hero.headline_end}</span>
             </h1>
             
             <p className="text-lg text-slate-300 max-w-xl">
-              Complete legal, financial, and permit support for Dutch hospitality entrepreneurs. 
-              Fixed monthly rates. No hourly surprises.
+              {t.hero.subheadline}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
               <Button size="lg" className="gap-2">
-                Book Free Intake <ArrowRight className="w-4 h-4" />
+                {t.hero.cta_primary} <ArrowRight className="w-4 h-4" />
               </Button>
               <Button variant="outline" size="lg" className="text-white border-slate-700 hover:bg-slate-800 hover:text-white">
-                View Packages
+                {t.hero.cta_secondary}
               </Button>
             </div>
 
             <div className="flex items-center gap-6 text-sm text-slate-400">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-amber-500" />
-                <span>Fixed Rates</span>
+                <span>{t.hero.fixed_rates}</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-amber-500" />
-                <span>24/7 Support</span>
+                <span>{t.hero.support}</span>
               </div>
             </div>
           </motion.div>
