@@ -1,6 +1,10 @@
+'use client';
 import { ShieldCheck, Facebook, Instagram, Linkedin } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export function Footer() {
+  const { t } = useLanguage();
+
   return (
     <footer className="bg-slate-950 text-slate-400 py-16 border-t border-slate-900">
       <div className="container mx-auto px-4">
@@ -11,12 +15,12 @@ export function Footer() {
               <span className="text-lg font-bold">HorecaVergunning</span>
             </div>
             <p className="text-sm">
-              Empowering Dutch hospitality with simplified legal and financial support.
+              {t.footer.tagline}
             </p>
           </div>
           
           <div>
-            <h4 className="text-white font-bold mb-4">Services</h4>
+            <h4 className="text-white font-bold mb-4">{t.footer.services}</h4>
             <ul className="space-y-2 text-sm">
               <li><a href="#" className="hover:text-amber-500 transition-colors">Permits & Bibob</a></li>
               <li><a href="#" className="hover:text-amber-500 transition-colors">Legal Contracts</a></li>
@@ -26,17 +30,17 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-white font-bold mb-4">Company</h4>
+            <h4 className="text-white font-bold mb-4">{t.footer.company}</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-amber-500 transition-colors">About Us</a></li>
+              <li><a href="#" className="hover:text-amber-500 transition-colors">{t.navbar.about}</a></li>
               <li><a href="#" className="hover:text-amber-500 transition-colors">Careers</a></li>
               <li><a href="#" className="hover:text-amber-500 transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-amber-500 transition-colors">Contact</a></li>
+              <li><a href="#" className="hover:text-amber-500 transition-colors">{t.footer.contact}</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-white font-bold mb-4">Contact</h4>
+            <h4 className="text-white font-bold mb-4">{t.footer.contact}</h4>
             <ul className="space-y-2 text-sm">
               <li>Keizersgracht 123</li>
               <li>1015 CJ Amsterdam</li>
@@ -48,7 +52,7 @@ export function Footer() {
         
         <div className="border-t border-slate-900 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-sm">
-            © 2026 HorecaVergunning BV. All rights reserved.
+            {t.footer.rights}
           </div>
           <div className="flex gap-4">
             <a href="#" className="hover:text-white transition-colors"><Facebook size={20} /></a>

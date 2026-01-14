@@ -3,22 +3,24 @@ import { useState } from 'react';
 import { Button } from './ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Check } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export function Quiz() {
+  const { t } = useLanguage();
   const [step, setStep] = useState(0);
   
   const questions = [
     {
-      question: "What is your current situation?",
-      options: ["Starting a new business", "Taking over an existing one", "Already open & operating"]
+      question: t.quiz.q1,
+      options: t.quiz.q1_opt
     },
     {
-      question: "What do you need help with most?",
-      options: ["Permits & Bibob", "Finance & Admin", "Everything (Full Support)"]
+      question: t.quiz.q2,
+      options: t.quiz.q2_opt
     },
     {
-      question: "Where is your venue located?",
-      options: ["Amsterdam", "Rotterdam", "Utrecht", "Other"]
+      question: t.quiz.q3,
+      options: t.quiz.q3_opt
     }
   ];
 
@@ -45,7 +47,7 @@ export function Quiz() {
                 transition={{ duration: 0.3 }}
               >
                 <div className="mb-8">
-                  <span className="text-amber-500 font-medium uppercase tracking-widest text-sm">Permit Check - Step {step + 1}/{questions.length}</span>
+                  <span className="text-amber-500 font-medium uppercase tracking-widest text-sm">{t.quiz.step_label} {step + 1}/{questions.length}</span>
                   <h2 className="text-3xl md:text-4xl font-bold mt-4 mb-12">{questions[step].question}</h2>
                   
                   <div className="grid gap-4 max-w-md mx-auto">
@@ -71,11 +73,11 @@ export function Quiz() {
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Check className="w-8 h-8 text-green-600" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4">Good news! We can help.</h3>
-                <p className="text-slate-600 mb-8">Based on your answers, our <strong>Starter Package</strong> is the perfect fit to get you compliant quickly.</p>
+                <h3 className="text-2xl font-bold mb-4">{t.quiz.result_title}</h3>
+                <p className="text-slate-600 mb-8" dangerouslySetInnerHTML={{ __html: t.quiz.result_desc.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button size="lg">Book Free Consultation</Button>
-                  <Button variant="outline" size="lg">Download Guide</Button>
+                  <Button size="lg">{t.quiz.result_cta}</Button>
+                  <Button variant="outline" size="lg">{t.quiz.result_download}</Button>
                 </div>
               </motion.div>
             )}
