@@ -33,6 +33,7 @@ export function Footer() {
             <h4 className="text-white font-bold mb-4">{t.footer.company}</h4>
             <ul className="space-y-2 text-sm">
               <li><a href="#" className="hover:text-amber-500 transition-colors">{t.navbar.about}</a></li>
+              <li><a href="#faq" className="hover:text-amber-500 transition-colors">{t.navbar.faq}</a></li>
               <li><a href="#" className="hover:text-amber-500 transition-colors">Careers</a></li>
               <li><a href="#" className="hover:text-amber-500 transition-colors">Blog</a></li>
               <li><a href="#" className="hover:text-amber-500 transition-colors">{t.footer.contact}</a></li>

@@ -5,6 +5,7 @@ export const translations = {
     navbar: {
       services: "Services",
       pricing: "Pricing",
+      faq: "FAQ",
       about: "About",
       login: "Client Login",
       book: "Book Intake"
@@ -89,7 +90,9 @@ export const translations = {
       result_title: "Good news! We can help.",
       result_desc: "Based on your answers, our **Starter Package** is the perfect fit to get you compliant quickly.",
       result_cta: "Book Free Consultation",
-      result_download: "Download Guide"
+      result_download: "Download Guide",
+      back: "Back",
+      restart: "Start Over"
     },
     footer: {
       tagline: "Empowering Dutch hospitality with simplified legal and financial support.",
@@ -98,12 +101,42 @@ export const translations = {
       contact: "Contact",
       rights: "© 2026 HorecaVergunning BV. All rights reserved."
     },
-    whatsapp: "WhatsApp Us"
+    whatsapp: "WhatsApp Us",
+    faq: {
+      title: "Frequently Asked Questions",
+      items: [
+        {
+          q: "Who is HorecaVergunning suitable for?",
+          a: "From startup entrepreneurs opening their first coffee bar to experienced owners with multiple venues. We support anyone who wants to get rid of administrative hassle."
+        },
+        {
+          q: "Am I required to purchase a fixed subscription?",
+          a: "No, although our subscriptions offer the most peace of mind, we are happy to help on a project basis. For example, for a one-off permit application or a takeover."
+        },
+        {
+          q: "What can I expect within my monthly package?",
+          a: "Complete unburdening. Depending on your package, we handle your permits, contracts, financial administration, and tax filings. You get one point of contact for all these matters."
+        },
+        {
+          q: "Will I receive hourly invoices afterwards?",
+          a: "No. We believe in fixed prices. For additional work outside your package, we always provide a clear quote in advance. Never surprises afterwards."
+        },
+        {
+          q: "Is it possible to purchase extra services outside my bundle?",
+          a: "Absolutely. Do you temporarily need extra legal help or a specialist document? We act fast and expand our service temporarily with clear agreements."
+        },
+        {
+          q: "What is the response time for urgent questions?",
+          a: "We understand that hospitality operates 24/7. We are always reachable for emergencies. For regular questions, we typically respond within one business day."
+        }
+      ]
+    }
   },
   nl: {
     navbar: {
       services: "Diensten",
       pricing: "Tarieven",
+      faq: "Veelgestelde Vragen",
       about: "Over Ons",
       login: "Klant Login",
       book: "Intake Boeken"
@@ -188,7 +221,9 @@ export const translations = {
       result_title: "Goed nieuws! Wij kunnen helpen.",
       result_desc: "Op basis van uw antwoorden is ons **Starter Pakket** de perfecte match om snel compliant te zijn.",
       result_cta: "Gratis Consult Boeken",
-      result_download: "Download Gids"
+      result_download: "Download Gids",
+      back: "Terug",
+      restart: "Opnieuw Beginnen"
     },
     footer: {
       tagline: "De Nederlandse horeca versterken met eenvoudige juridische en financiële support.",
@@ -197,6 +232,35 @@ export const translations = {
       contact: "Contact",
       rights: "© 2026 HorecaVergunning BV. Alle rechten voorbehouden."
     },
-    whatsapp: "App Ons"
+    whatsapp: "App Ons",
+    faq: {
+      title: "Veelgestelde Vragen",
+      items: [
+        {
+          q: "Voor welke ondernemers is HorecaVergunning geschikt?",
+          a: "Van startende ondernemers die hun eerste koffiebar openen tot ervaren eigenaars met meerdere vestigingen. Wij ondersteunen iedereen die af wil van administratieve rompslomp."
+        },
+        {
+          q: "Ben ik verplicht om een vast abonnement af te nemen?",
+          a: "Nee, hoewel onze abonnementen de meeste rust en zekerheid bieden, helpen we u ook graag op projectbasis. Bijvoorbeeld bij een eenmalige vergunningaanvraag of een overname."
+        },
+        {
+          q: "Wat kan ik verwachten binnen mijn maandelijkse pakket?",
+          a: "Volledige ontzorging. Afhankelijk van uw pakket regelen wij uw vergunningen, contracten, financiële administratie en fiscale aangiftes. U krijgt één aanspreekpunt voor al deze zaken."
+        },
+        {
+          q: "Krijg ik achteraf nog facturen per uur?",
+          a: "Nee. Wij geloven in vaste prijzen. Voor extra werkzaamheden buiten uw pakket geven we altijd vooraf een duidelijke prijsopgave. Nooit verrassingen achteraf."
+        },
+        {
+          q: "Is het mogelijk om extra diensten af te nemen buiten mijn bundel?",
+          a: "Absoluut. Heeft u tijdelijk extra juridische hulp nodig of een specialistisch document? Dan schakelen we snel en breiden we onze service tijdelijk uit tegen heldere afspraken."
+        },
+        {
+          q: "Wat is de reactietijd bij dringende vragen?",
+          a: "Wij begrijpen dat de horeca 24/7 doorgaat. Voor spoedgevallen zijn wij altijd bereikbaar. Op reguliere vragen reageren wij doorgaans binnen één werkdag."
+        }
+      ]
+    }
   }
 };
