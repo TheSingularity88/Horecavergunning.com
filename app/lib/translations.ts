@@ -144,8 +144,8 @@ export const translations = {
     hero: {
       badge: "Nu nieuwe klanten acceptatie voor 2026",
       headline_start: "Focus op uw Gasten.",
-      headline_end: "Wij regelen de Overheid.",
-      subheadline: "Volledige juridische, financiële en vergunning ondersteuning voor horecaondernemers. Vaste maandbedragen. Geen verrassingen achteraf.",
+      headline_end: "Wij regelen uw Horecavergunning.",
+      subheadline: "Volledige ondersteuning bij exploitatievergunning aanvragen, Bibob toets en financiën voor horecaondernemers. Vaste maandbedragen.",
       cta_primary: "Gratis Intake Boeken",
       cta_secondary: "Bekijk Pakketten",
       fixed_rates: "Vaste Tarieven",
@@ -170,7 +170,7 @@ export const translations = {
       items: [
         {
           title: "Vergunningen & Bibob",
-          desc: "Versnel uw drank- en terrasvergunningen. Wij managen het complexe Bibob-proces zodat u op tijd open gaat."
+          desc: "Wij regelen uw exploitatievergunning, alcoholvergunning en terrasvergunning. Ook begeleiden wij de complete Bibob toets zodat u snel open kunt."
         },
         {
           title: "Juridisch & Contracten",
@@ -236,6 +236,10 @@ export const translations = {
     faq: {
       title: "Veelgestelde Vragen",
       items: [
+        {
+          q: "Wanneer heb ik een horecavergunning nodig?",
+          a: "U heeft meestal een exploitatievergunning nodig als u een horecabedrijf start, overneemt of wijzigt. Schenkt u alcohol? Dan is ook een alcoholvergunning (Drank- en Horecawet) verplicht."
+        },
         {
           q: "Voor welke ondernemers is HorecaVergunning geschikt?",
           a: "Van startende ondernemers die hun eerste koffiebar openen tot ervaren eigenaars met meerdere vestigingen. Wij ondersteunen iedereen die af wil van administratieve rompslomp."

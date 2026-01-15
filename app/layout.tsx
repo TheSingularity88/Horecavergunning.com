@@ -15,8 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HorecaVergunning | Focus on Guests, We Handle the Government",
-  description: "Complete legal, financial, and permit support for Dutch hospitality entrepreneurs. Fixed monthly rates.",
+  title: "Horecavergunning & Exploitatievergunning Aanvragen | HorecaVergunning.com",
+  description: "Professionele hulp bij uw horecavergunning en exploitatievergunning aanvragen. Wij regelen uw Bibob toets, alcoholvergunning en administratie. Vaste tarieven, geen verrassingen.",
+  keywords: ["horecavergunning", "exploitatievergunning", "horeca vergunning aanvragen", "bibob horeca", "alcoholvergunning", "drank en horecavergunning", "horeca starten"],
 };
 
 export default function RootLayout({
