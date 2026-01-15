@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { BlogPost } from '@/app/lib/blog-data';
 import { Calendar, User, ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/app/context/LanguageContext';
@@ -15,11 +16,14 @@ export default function BlogCard({ post }: BlogCardProps) {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
-      {/* Placeholder Image Area - In a real app, use Next.js Image component */}
       <div className="h-48 bg-slate-100 relative overflow-hidden group">
-        <div className="absolute inset-0 bg-slate-200 animate-pulse" /> 
-        {/* We would render post.image here */}
-        <div className="absolute top-4 left-4 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+        <Image 
+          src={post.image} 
+          alt={content.title}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+        <div className="absolute top-4 left-4 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide z-10">
           {content.category}
         </div>
       </div>
