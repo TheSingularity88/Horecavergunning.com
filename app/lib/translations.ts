@@ -90,7 +90,9 @@ export const translations = {
       result_title: "Good news! We can help.",
       result_desc: "Based on your answers, our **Starter Package** is the perfect fit to get you compliant quickly.",
       result_cta: "Book Free Consultation",
-      result_download: "Download Guide"
+      result_download: "Download Guide",
+      back: "Back",
+      restart: "Start Over"
     },
     footer: {
       tagline: "Empowering Dutch hospitality with simplified legal and financial support.",
@@ -219,7 +221,9 @@ export const translations = {
       result_title: "Goed nieuws! Wij kunnen helpen.",
       result_desc: "Op basis van uw antwoorden is ons **Starter Pakket** de perfecte match om snel compliant te zijn.",
       result_cta: "Gratis Consult Boeken",
-      result_download: "Download Gids"
+      result_download: "Download Gids",
+      back: "Terug",
+      restart: "Opnieuw Beginnen"
     },
     footer: {
       tagline: "De Nederlandse horeca versterken met eenvoudige juridische en financiële support.",

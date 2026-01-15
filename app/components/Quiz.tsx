@@ -30,6 +30,16 @@ export function Quiz() {
     }
   };
 
+  const handleBack = () => {
+    if (step > 0) {
+      setStep(step - 1);
+    }
+  };
+
+  const handleRestart = () => {
+    setStep(0);
+  };
+
   return (
     <section className="py-24 bg-slate-900 text-white overflow-hidden relative">
       <div className="absolute top-0 left-0 w-full h-full bg-[url('https://images.unsplash.com/photo-1514362545857-3bc16549766b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80')] bg-cover bg-center opacity-10" />
@@ -46,7 +56,15 @@ export function Quiz() {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="mb-8">
+                <div className="mb-8 relative">
+                  {step > 0 && (
+                    <button 
+                      onClick={handleBack}
+                      className="absolute left-0 top-1 text-slate-400 hover:text-white text-sm font-medium transition-colors"
+                    >
+                      ← {t.quiz.back}
+                    </button>
+                  )}
                   <span className="text-amber-500 font-medium uppercase tracking-widest text-sm">{t.quiz.step_label} {step + 1}/{questions.length}</span>
                   <h2 className="text-3xl md:text-4xl font-bold mt-4 mb-12">{questions[step].question}</h2>
                   
@@ -79,6 +97,12 @@ export function Quiz() {
                   <Button size="lg">{t.quiz.result_cta}</Button>
                   <Button variant="outline" size="lg">{t.quiz.result_download}</Button>
                 </div>
+                <button 
+                  onClick={handleRestart}
+                  className="mt-8 text-slate-500 hover:text-slate-900 text-sm font-medium underline decoration-slate-300 underline-offset-4 hover:decoration-slate-900 transition-all"
+                >
+                  {t.quiz.restart}
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
