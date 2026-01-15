@@ -5,6 +5,7 @@ import { ProblemSolution } from './components/ProblemSolution';
 import { Services } from './components/Services';
 import { Pricing } from './components/Pricing';
 import { Quiz } from './components/Quiz';
+import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 
@@ -18,6 +19,7 @@ export default function Home() {
       <Services />
       <Pricing />
       <Quiz />
+      <FAQ />
       <Footer />
       <FloatingWhatsApp />
     </main>
