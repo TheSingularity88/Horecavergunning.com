@@ -1,0 +1,18 @@
+<svg width="800" height="400" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="400" fill="#fef2f2"/>
+  
+  <rect x="300" y="80" width="200" height="240" rx="10" fill="#1e293b" />
+  <rect x="320" y="100" width="160" height="40" rx="4" fill="#a5f3fc" />
+  
+  <g fill="#475569">
+    <rect x="320" y="160" width="30" height="30" rx="4" />
+    <rect x="360" y="160" width="30" height="30" rx="4" />
+    <rect x="400" y="160" width="30" height="30" rx="4" />
+    <rect x="440" y="160" width="30" height="30" rx="4" fill="#f59e0b" />
+  </g>
+  
+  <circle cx="250" cy="280" r="25" fill="#f59e0b" stroke="#b45309" stroke-width="2"/>
+  <text x="250" y="288" font-family="serif" font-weight="bold" font-size="20" text-anchor="middle" fill="#78350f">€</text>
+
+  <text x="400" y="360" font-family="sans-serif" font-size="20" fill="#64748b" text-anchor="middle">Horeca Financiën</text>
+</svg>
