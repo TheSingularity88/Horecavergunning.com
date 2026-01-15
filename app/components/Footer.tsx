@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { ShieldCheck, Facebook, Instagram, Linkedin } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -35,7 +36,7 @@ export function Footer() {
               <li><a href="#" className="hover:text-amber-500 transition-colors">{t.navbar.about}</a></li>
               <li><a href="#faq" className="hover:text-amber-500 transition-colors">{t.navbar.faq}</a></li>
               <li><a href="#" className="hover:text-amber-500 transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-amber-500 transition-colors">Blog</a></li>
+              <li><Link href="/blog" className="hover:text-amber-500 transition-colors">Blog</Link></li>
               <li><a href="#" className="hover:text-amber-500 transition-colors">{t.footer.contact}</a></li>
             </ul>
           </div>
