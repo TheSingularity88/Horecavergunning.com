@@ -102,6 +102,34 @@ export const translations = {
       rights: "© 2026 HorecaVergunning BV. All rights reserved."
     },
     whatsapp: "WhatsApp Us",
+    blog: {
+      title: "Hospitality Knowledge & News",
+      subtitle: "Stay up to date with the latest legislation, trends, and tips for the hospitality industry.",
+      search_placeholder: "Search our articles...",
+      search_button: "Search",
+      read_more: "Read more",
+      load_more: "Load more articles",
+      back_to_overview: "Back to overview",
+      related_articles: "We recommend these articles:",
+      share_article: "Share this article:",
+      about_author: "About",
+      published_on: "Published on",
+      read_time: "read",
+      categories: "Topics",
+      recent_posts: "Recent Posts",
+      newsletter: {
+        title: "Stay Updated",
+        desc: "Receive the latest hospitality updates and legislation directly in your mailbox.",
+        placeholder: "Your email address",
+        button: "Subscribe"
+      },
+      cta: {
+        title: "Need a Hospitality Permit?",
+        desc: "Arranging your permit fast and affordable. We handle all the paperwork.",
+        features: ["Fixed low price", "Started within 24 hours", "100% Satisfaction"],
+        button: "Apply Now"
+      }
+    },
     faq: {
       title: "Frequently Asked Questions",
       items: [
@@ -233,6 +261,34 @@ export const translations = {
       rights: "© 2026 HorecaVergunning BV. Alle rechten voorbehouden."
     },
     whatsapp: "App Ons",
+    blog: {
+      title: "HorecaKennis & Nieuws",
+      subtitle: "Blijf op de hoogte van de laatste wetgeving, trends en tips voor de horeca.",
+      search_placeholder: "Zoek door onze artikelen...",
+      search_button: "Zoeken",
+      read_more: "Lees verder",
+      load_more: "Laad meer artikelen",
+      back_to_overview: "Terug naar overzicht",
+      related_articles: "Deze artikelen kunnen we je aanraden:",
+      share_article: "Deel dit artikel:",
+      about_author: "Over",
+      published_on: "Gepubliceerd op",
+      read_time: "lezen",
+      categories: "Onderwerpen",
+      recent_posts: "Meest recente berichten",
+      newsletter: {
+        title: "Blijf op de hoogte",
+        desc: "Ontvang de laatste horeca-updates en wetgeving direct in je mailbox.",
+        placeholder: "Uw e-mailadres",
+        button: "Inschrijven"
+      },
+      cta: {
+        title: "Horecavergunning nodig?",
+        desc: "Regel uw vergunning snel en voordelig. Wij nemen al het papierwerk uit handen.",
+        features: ["Vaste lage prijs", "Binnen 24 uur gestart", "100% Tevredenheid"],
+        button: "Vraag nu aan"
+      }
+    },
     faq: {
       title: "Veelgestelde Vragen",
       items: [
