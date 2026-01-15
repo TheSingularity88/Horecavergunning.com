@@ -16,10 +16,11 @@ export function Navbar() {
           <span className="text-xl font-bold text-slate-900">HorecaVergunning</span>
         </div>
         
-        <div className="hidden md:flex items-center gap-8">
-          <Link href="#services" className="text-sm font-medium text-slate-600 hover:text-slate-900">{t.navbar.services}</Link>
-          <Link href="#pricing" className="text-sm font-medium text-slate-600 hover:text-slate-900">{t.navbar.pricing}</Link>
-          <Link href="#about" className="text-sm font-medium text-slate-600 hover:text-slate-900">{t.navbar.about}</Link>
+        <div className="hidden md:flex items-center gap-2">
+          <Link href="#services" className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">{t.navbar.services}</Link>
+          <Link href="#pricing" className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">{t.navbar.pricing}</Link>
+          <Link href="#faq" className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">{t.navbar.faq}</Link>
+          <Link href="#about" className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">{t.navbar.about}</Link>
         </div>
 
         <div className="flex items-center gap-4">

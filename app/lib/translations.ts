@@ -5,6 +5,7 @@ export const translations = {
     navbar: {
       services: "Services",
       pricing: "Pricing",
+      faq: "FAQ",
       about: "About",
       login: "Client Login",
       book: "Book Intake"
@@ -133,6 +134,7 @@ export const translations = {
     navbar: {
       services: "Diensten",
       pricing: "Tarieven",
+      faq: "Veelgestelde Vragen",
       about: "Over Ons",
       login: "Klant Login",
       book: "Intake Boeken"
