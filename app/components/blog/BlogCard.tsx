@@ -8,9 +8,10 @@ import { useLanguage } from '@/app/context/LanguageContext';
 
 interface BlogCardProps {
   post: BlogPost;
+  priority?: boolean;
 }
 
-export default function BlogCard({ post }: BlogCardProps) {
+export default function BlogCard({ post, priority = false }: BlogCardProps) {
   const { language, t } = useLanguage();
   const content = post.content[language];
 
@@ -21,6 +22,7 @@ export default function BlogCard({ post }: BlogCardProps) {
           src={post.image} 
           alt={content.title}
           fill
+          priority={priority}
           className="object-cover group-hover:scale-105 transition-transform duration-500"
         />
         <div className="absolute top-4 left-4 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide z-10">

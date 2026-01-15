@@ -1,0 +1,12 @@
+<svg width="800" height="400" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="400" fill="#f0fdf4"/>
+  
+  <path d="M350 150 Q350 250 400 250 Q450 250 450 150 L350 150" fill="#dcfce7" stroke="#16a34a" stroke-width="3"/>
+  <line x1="400" y1="250" x2="400" y2="320" stroke="#16a34a" stroke-width="3"/>
+  <line x1="370" y1="320" x2="430" y2="320" stroke="#16a34a" stroke-width="3"/>
+  
+  <circle cx="500" cy="150" r="30" fill="#16a34a"/>
+  <path d="M485 150 L495 160 L515 140" stroke="white" stroke-width="4" fill="none"/>
+
+  <text x="400" y="360" font-family="sans-serif" font-size="20" fill="#64748b" text-anchor="middle">Alcoholwet</text>
+</svg>

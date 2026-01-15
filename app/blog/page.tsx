@@ -61,12 +61,8 @@ export default function BlogIndex() {
       {/* Main Content */}
       <main className="flex-grow py-16 container mx-auto px-4 max-w-6xl">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {blogPosts.map((post) => (
-            <BlogCard key={post.slug} post={post} />
-          ))}
-          {/* Duplicate posts to fill grid for demo */}
-          {blogPosts.map((post) => (
-            <BlogCard key={`${post.slug}-copy`} post={{...post, slug: `${post.slug}-copy`}} />
+          {blogPosts.map((post, index) => (
+            <BlogCard key={post.slug} post={post} priority={index < 3} />
           ))}
         </div>
 
