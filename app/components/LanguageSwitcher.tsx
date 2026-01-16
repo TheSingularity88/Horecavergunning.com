@@ -39,7 +39,9 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   };
   const current = options[language] ?? options.nl;
   const CurrentFlag = current.Flag;
-  const flagClasses = 'h-4 w-6 rounded-[3px] ring-1 ring-black/10';
+  const flagClasses = compact
+    ? 'h-4 w-6 rounded-[3px] ring-1 ring-black/10'
+    : 'h-4 w-6 rounded-[3px] ring-1 ring-black/10';
 
   const handleSelect = (next: keyof typeof options) => {
     setLanguage(next);
@@ -48,11 +50,15 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
 
   return (
     <details ref={detailsRef} className="relative">
-      <summary className={`flex items-center gap-2 rounded-full border border-slate-200 bg-white ${compact ? 'px-2 py-1.5' : 'px-3 py-2'} text-xs font-semibold text-slate-800 shadow-sm hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&::-webkit-details-marker]:hidden`}>
+      <summary
+        className={`flex items-center ${compact ? 'rounded-md p-1.5' : 'rounded-full px-3 py-2 gap-2'} border border-slate-200 bg-white text-xs font-semibold text-slate-800 shadow-sm hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&::-webkit-details-marker]:hidden`}
+      >
         <CurrentFlag className={flagClasses} />
-        <svg viewBox="0 0 20 20" className="h-3 w-3 text-slate-500" aria-hidden="true">
-          <path d="M5 7.5 L10 12.5 L15 7.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        {!compact ? (
+          <svg viewBox="0 0 20 20" className="h-3 w-3 text-slate-500" aria-hidden="true">
+            <path d="M5 7.5 L10 12.5 L15 7.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ) : null}
       </summary>
       <div className="absolute right-0 mt-2 w-44 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
         {(Object.keys(options) as Array<keyof typeof options>).map((code) => {
