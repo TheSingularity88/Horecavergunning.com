@@ -29,7 +29,7 @@ export function Navbar() {
           
           <div className="relative group">
             <button className="flex items-center gap-1 px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">
-              Over ons
+              {t.navbar.about}
               <ChevronDown className="w-4 h-4" />
             </button>
             <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-100 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top translate-y-2 group-hover:translate-y-0">
@@ -70,13 +70,29 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* Right: User/Login Icon */}
-        <button 
-          className="p-2 -mr-2 text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
-          aria-label="Login"
-        >
-          <User className="w-6 h-6" />
-        </button>
+        {/* Right: Language + User/Login Icon */}
+        <div className="flex items-center gap-1 -mr-2">
+          <LanguageSwitcher />
+          
+          <div className="relative group/user">
+            <button 
+              className="p-2 text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+              aria-label="User menu"
+            >
+              <User className="w-6 h-6" />
+            </button>
+            <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-slate-100 rounded-xl shadow-xl opacity-0 invisible group-hover/user:opacity-100 group-hover/user:visible transition-all duration-200 transform origin-top-right translate-y-2 group-hover/user:translate-y-0">
+              <div className="py-2">
+                <Link href="/login" className="block px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-amber-600">
+                  {t.navbar.login}
+                </Link>
+                <Link href="/#book" className="block px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-amber-600">
+                  {t.navbar.book}
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Mobile Menu Drawer */}
@@ -112,24 +128,20 @@ export function Navbar() {
               
               <div className="flex-1 overflow-y-auto py-4">
                 <div className="flex flex-col">
-                  <Link href="/#services" onClick={() => setIsMobileMenuOpen(false)} className="px-6 py-3 text-slate-600 font-medium hover:bg-slate-50 hover:text-amber-600 transition-colors border-b border-slate-50">{t.navbar.services}</Link>
-                  <Link href="/#pricing" onClick={() => setIsMobileMenuOpen(false)} className="px-6 py-3 text-slate-600 font-medium hover:bg-slate-50 hover:text-amber-600 transition-colors border-b border-slate-50">{t.navbar.pricing}</Link>
-                  <Link href="/#faq" onClick={() => setIsMobileMenuOpen(false)} className="px-6 py-3 text-slate-600 font-medium hover:bg-slate-50 hover:text-amber-600 transition-colors border-b border-slate-50">{t.navbar.faq}</Link>
+                  <Link href="/#services" onClick={() => setIsMobileMenuOpen(false)} className="px-6 py-3 text-slate-600 font-semibold hover:bg-slate-50 hover:text-amber-600 transition-colors border-b border-slate-50">{t.navbar.services}</Link>
+                  <Link href="/#pricing" onClick={() => setIsMobileMenuOpen(false)} className="px-6 py-3 text-slate-600 font-semibold hover:bg-slate-50 hover:text-amber-600 transition-colors border-b border-slate-50">{t.navbar.pricing}</Link>
+                  <Link href="/#faq" onClick={() => setIsMobileMenuOpen(false)} className="px-6 py-3 text-slate-600 font-semibold hover:bg-slate-50 hover:text-amber-600 transition-colors border-b border-slate-50">{t.navbar.faq}</Link>
                   
-                  <div className="px-6 py-4">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Over ons</span>
-                      <Link href="/#about" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-slate-600 hover:text-amber-600">Onze Missie</Link>
-                      <Link href="/blog" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-slate-600 hover:text-amber-600">Blog & Nieuws</Link>
-                      <Link href="/#contact" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-slate-600 hover:text-amber-600">Contact</Link>
+                  <div className="px-6 py-4 border-b border-slate-50">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">{t.navbar.about}</span>
+                      <Link href="/#about" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-slate-600 font-medium hover:text-amber-600">Onze Missie</Link>
+                      <Link href="/blog" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-slate-600 font-medium hover:text-amber-600">Blog & Nieuws</Link>
+                      <Link href="/#pricing" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 text-slate-600 font-medium hover:text-amber-600">{t.navbar.pricing}</Link>
                   </div>
                 </div>
               </div>
 
-              <div className="p-6 border-t border-slate-100 bg-slate-50 space-y-4">
-                 <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-slate-600">Taal</span>
-                    <LanguageSwitcher />
-                 </div>
+              <div className="p-6 border-t border-slate-100 bg-slate-50 space-y-3">
                  <Button className="w-full justify-center">{t.navbar.book}</Button>
                  <Button variant="outline" className="w-full justify-center gap-2">
                     <User className="w-4 h-4" />
