@@ -30,7 +30,7 @@ function FlagUK({ className }: FlagProps) {
   );
 }
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   const { language, setLanguage } = useLanguage();
   const detailsRef = useRef<HTMLDetailsElement | null>(null);
   const options = {
@@ -48,7 +48,7 @@ export function LanguageSwitcher() {
 
   return (
     <details ref={detailsRef} className="relative">
-      <summary className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 shadow-sm hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&::-webkit-details-marker]:hidden">
+      <summary className={`flex items-center gap-2 rounded-full border border-slate-200 bg-white ${compact ? 'px-2 py-1.5' : 'px-3 py-2'} text-xs font-semibold text-slate-800 shadow-sm hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 [&::-webkit-details-marker]:hidden`}>
         <CurrentFlag className={flagClasses} />
         <svg viewBox="0 0 20 20" className="h-3 w-3 text-slate-500" aria-hidden="true">
           <path d="M5 7.5 L10 12.5 L15 7.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
