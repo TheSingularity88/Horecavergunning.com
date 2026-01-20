@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Activity, User, FolderOpen, CheckSquare, FileText, Users } from 'lucide-react';
@@ -34,7 +34,7 @@ export default function ActivityPage() {
   const [entityFilter, setEntityFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -47,7 +47,8 @@ export default function ActivityPage() {
       try {
         // Fetch users first
         const { data: usersData } = await supabase.from('profiles').select('*');
-        setUsers(usersData || []);
+        const typedUsers = (usersData as Profile[]) || [];
+        setUsers(typedUsers);
 
         // Fetch activities
         let query = supabase
@@ -72,9 +73,9 @@ export default function ActivityPage() {
         if (error) throw error;
 
         // Merge with user data
-        const activitiesWithUsers = (data || []).map((activity) => ({
+        const activitiesWithUsers = (data as ActivityLog[] || []).map((activity) => ({
           ...activity,
-          user: usersData?.find((u) => u.id === activity.user_id),
+          user: typedUsers.find((u) => u.id === activity.user_id),
         }));
 
         setActivities(activitiesWithUsers);

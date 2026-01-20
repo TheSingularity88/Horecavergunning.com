@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '@/app/context/AuthContext';
 import { LanguageProvider } from '@/app/context/LanguageContext';
@@ -10,14 +10,28 @@ import { Spinner } from '@/app/components/ui/Spinner';
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    // Only redirect when we're sure there's no user and loading is complete
+    if (mounted && !isLoading && !user && !redirecting) {
+      setRedirecting(true);
       router.push('/login');
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, mounted, redirecting]);
 
-  if (isLoading) {
+  // Don't render anything on server
+  if (!mounted) {
+    return null;
+  }
+
+  // Show loading while auth is being checked
+  if (isLoading || redirecting) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -28,8 +42,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // If no user after loading, show nothing (redirect will happen)
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Spinner size="lg" />
+          <p className="text-slate-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

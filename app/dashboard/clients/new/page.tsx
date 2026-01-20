@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
@@ -22,7 +22,7 @@ export default function NewClientPage() {
   const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -63,13 +63,13 @@ export default function NewClientPage() {
         .insert({
           ...formData,
           assigned_employee_id: profile?.id,
-        })
+        } as unknown as never)
         .select()
         .single();
 
       if (error) throw error;
 
-      router.push(`/dashboard/clients/${data.id}`);
+      router.push(`/dashboard/clients/${(data as { id: string }).id}`);
     } catch (err) {
       console.error('Error creating client:', err);
       setError('Failed to create client. Please try again.');

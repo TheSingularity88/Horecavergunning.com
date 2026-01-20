@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Mail, Phone, Save, Key } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
@@ -22,7 +22,7 @@ export default function ProfilePage() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || '',
@@ -50,14 +50,16 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
+    if (!profile?.id) return;
+
     setError(null);
     setIsSaving(true);
 
     try {
       const { error } = await supabase
         .from('profiles')
-        .update(formData)
-        .eq('id', profile?.id);
+        .update(formData as unknown as never)
+        .eq('id', profile.id);
 
       if (error) throw error;
 

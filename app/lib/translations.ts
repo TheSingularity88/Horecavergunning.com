@@ -7,7 +7,7 @@ export const translations = {
       pricing: "Pricing",
       faq: "FAQ",
       about: "About",
-      login: "Client Login",
+      login: "Login",
       book: "Book Intake"
     },
     hero: {
@@ -158,6 +158,119 @@ export const translations = {
           a: "We understand that hospitality operates 24/7. We are always reachable for emergencies. For regular questions, we typically respond within one business day."
         }
       ]
+    },
+    dashboard: {
+      nav: {
+        dashboard: "Dashboard",
+        clients: "Clients",
+        cases: "Cases",
+        tasks: "Tasks",
+        documents: "Documents",
+        users: "Users",
+        settings: "Settings",
+        activity: "Activity",
+        profile: "Profile",
+        logout: "Log out",
+        admin: "Admin",
+        collapse: "Collapse"
+      },
+      auth: {
+        login: "Sign in",
+        logout: "Log out",
+        email: "Email",
+        password: "Password",
+        forgotPassword: "Forgot password?",
+        rememberMe: "Remember me",
+        loginSubtitle: "Sign in to your account",
+        backToHome: "Back to homepage",
+        backToLogin: "Back to login",
+        resetPasswordSubtitle: "Reset your password",
+        checkEmail: "Check your email",
+        resetEmailSent: "We've sent a password reset link to your email address.",
+        sendResetLink: "Send reset link",
+        forgotPasswordInstructions: "Enter your email address and we will send you a link to reset your password."
+      },
+      greeting: {
+        morning: "Good morning",
+        afternoon: "Good afternoon",
+        evening: "Good evening"
+      },
+      subtitle: "Here's what's happening with your cases today.",
+      stats: {
+        totalClients: "Total Clients",
+        activeCases: "Active Cases",
+        pendingTasks: "Pending Tasks",
+        upcomingDeadlines: "Upcoming Deadlines"
+      },
+      recentCases: "Recent Cases",
+      upcomingTasks: "Upcoming Tasks",
+      common: {
+        search: "Search...",
+        searchPlaceholder: "Search...",
+        viewAll: "View all",
+        noData: "No data yet",
+        noTasks: "No pending tasks",
+        status: "Status",
+        priority: "Priority",
+        allStatuses: "All Statuses",
+        allTypes: "All Types",
+        back: "Back",
+        cancel: "Cancel",
+        save: "Save",
+        saving: "Saving...",
+        create: "Create",
+        edit: "Edit",
+        delete: "Delete",
+        loading: "Loading...",
+        dangerZone: "Danger Zone"
+      },
+      clients: {
+        companyName: "Company",
+        contactName: "Contact Name",
+        contact: "Contact",
+        location: "Location",
+        email: "Email",
+        phone: "Phone",
+        address: "Address",
+        city: "City",
+        postalCode: "Postal Code",
+        kvkNumber: "KVK Number",
+        notes: "Notes",
+        addClient: "Add Client",
+        newClient: "New Client",
+        clientDetails: "Client Details",
+        noClients: "No clients found",
+        deleteClient: "Delete Client",
+        deleteConfirm: "Are you sure you want to delete this client? This action cannot be undone.",
+        statusActive: "Active",
+        statusInactive: "Inactive",
+        statusPending: "Pending"
+      },
+      cases: {
+        title: "Cases",
+        caseTitle: "Case",
+        client: "Client",
+        description: "Description",
+        caseType: "Case Type",
+        deadline: "Deadline",
+        municipality: "Municipality",
+        referenceNumber: "Reference Number",
+        addCase: "Add Case",
+        newCase: "New Case",
+        caseDetails: "Case Details",
+        noCases: "No cases found"
+      },
+      tasks: {
+        title: "Tasks",
+        addTask: "Add Task",
+        newTask: "New Task",
+        noTasks: "No tasks found"
+      },
+      documents: {
+        title: "Documents",
+        upload: "Upload",
+        noDocuments: "No documents found"
+      }
     }
   },
   nl: {
@@ -166,7 +279,7 @@ export const translations = {
       pricing: "Tarieven",
       faq: "Veelgestelde Vragen",
       about: "Over Ons",
-      login: "Klant Login",
+      login: "Login",
       book: "Intake Boeken"
     },
     hero: {
@@ -321,6 +434,119 @@ export const translations = {
           a: "Wij begrijpen dat de horeca 24/7 doorgaat. Voor spoedgevallen zijn wij altijd bereikbaar. Op reguliere vragen reageren wij doorgaans binnen één werkdag."
         }
       ]
+    },
+    dashboard: {
+      nav: {
+        dashboard: "Dashboard",
+        clients: "Klanten",
+        cases: "Zaken",
+        tasks: "Taken",
+        documents: "Documenten",
+        users: "Gebruikers",
+        settings: "Instellingen",
+        activity: "Activiteit",
+        profile: "Profiel",
+        logout: "Uitloggen",
+        admin: "Beheer",
+        collapse: "Inklappen"
+      },
+      auth: {
+        login: "Inloggen",
+        logout: "Uitloggen",
+        email: "E-mail",
+        password: "Wachtwoord",
+        forgotPassword: "Wachtwoord vergeten?",
+        rememberMe: "Onthoud mij",
+        loginSubtitle: "Log in op uw account",
+        backToHome: "Terug naar homepage",
+        backToLogin: "Terug naar inloggen",
+        resetPasswordSubtitle: "Wachtwoord opnieuw instellen",
+        checkEmail: "Controleer uw e-mail",
+        resetEmailSent: "We hebben een link naar uw e-mailadres gestuurd om uw wachtwoord opnieuw in te stellen.",
+        sendResetLink: "Verstuur reset link",
+        forgotPasswordInstructions: "Voer uw e-mailadres in en wij sturen u een link om uw wachtwoord opnieuw in te stellen."
+      },
+      greeting: {
+        morning: "Goedemorgen",
+        afternoon: "Goedemiddag",
+        evening: "Goedenavond"
+      },
+      subtitle: "Dit is wat er vandaag met uw zaken gebeurt.",
+      stats: {
+        totalClients: "Totaal Klanten",
+        activeCases: "Actieve Zaken",
+        pendingTasks: "Openstaande Taken",
+        upcomingDeadlines: "Aankomende Deadlines"
+      },
+      recentCases: "Recente Zaken",
+      upcomingTasks: "Aankomende Taken",
+      common: {
+        search: "Zoeken...",
+        searchPlaceholder: "Zoeken...",
+        viewAll: "Bekijk alles",
+        noData: "Nog geen gegevens",
+        noTasks: "Geen openstaande taken",
+        status: "Status",
+        priority: "Prioriteit",
+        allStatuses: "Alle Statussen",
+        allTypes: "Alle Types",
+        back: "Terug",
+        cancel: "Annuleren",
+        save: "Opslaan",
+        saving: "Opslaan...",
+        create: "Aanmaken",
+        edit: "Bewerken",
+        delete: "Verwijderen",
+        loading: "Laden...",
+        dangerZone: "Gevarenzone"
+      },
+      clients: {
+        companyName: "Bedrijf",
+        contactName: "Contactpersoon",
+        contact: "Contact",
+        location: "Locatie",
+        email: "E-mail",
+        phone: "Telefoon",
+        address: "Adres",
+        city: "Plaats",
+        postalCode: "Postcode",
+        kvkNumber: "KVK Nummer",
+        notes: "Notities",
+        addClient: "Klant Toevoegen",
+        newClient: "Nieuwe Klant",
+        clientDetails: "Klantgegevens",
+        noClients: "Geen klanten gevonden",
+        deleteClient: "Klant Verwijderen",
+        deleteConfirm: "Weet u zeker dat u deze klant wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+        statusActive: "Actief",
+        statusInactive: "Inactief",
+        statusPending: "In behandeling"
+      },
+      cases: {
+        title: "Zaken",
+        caseTitle: "Zaak",
+        client: "Klant",
+        description: "Beschrijving",
+        caseType: "Zaaktype",
+        deadline: "Deadline",
+        municipality: "Gemeente",
+        referenceNumber: "Referentienummer",
+        addCase: "Zaak Toevoegen",
+        newCase: "Nieuwe Zaak",
+        caseDetails: "Zaakgegevens",
+        noCases: "Geen zaken gevonden"
+      },
+      tasks: {
+        title: "Taken",
+        addTask: "Taak Toevoegen",
+        newTask: "Nieuwe Taak",
+        noTasks: "Geen taken gevonden"
+      },
+      documents: {
+        title: "Documenten",
+        upload: "Uploaden",
+        noDocuments: "Geen documenten gevonden"
+      }
     }
   }
 };

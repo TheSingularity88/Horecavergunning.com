@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
@@ -27,7 +27,7 @@ export default function NewTaskPage() {
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -47,8 +47,8 @@ export default function NewTaskPage() {
           supabase.from('profiles').select('id, full_name, email').eq('is_active', true),
         ]);
 
-        setCases(casesRes.data || []);
-        setEmployees(employeesRes.data || []);
+        setCases((casesRes.data as Case[]) || []);
+        setEmployees((employeesRes.data as Profile[]) || []);
       } catch (err) {
         console.error('Error fetching data:', err);
       }
@@ -80,13 +80,13 @@ export default function NewTaskPage() {
           assigned_to: formData.assigned_to || null,
           due_date: formData.due_date || null,
           created_by: profile?.id,
-        })
+        } as unknown as never)
         .select()
         .single();
 
       if (error) throw error;
 
-      router.push(`/dashboard/tasks/${data.id}`);
+      router.push(`/dashboard/tasks/${(data as { id: string }).id}`);
     } catch (err) {
       console.error('Error creating task:', err);
       setError('Failed to create task. Please try again.');

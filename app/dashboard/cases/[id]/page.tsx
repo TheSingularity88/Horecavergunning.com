@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -44,7 +44,7 @@ export default function CaseDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -68,26 +68,27 @@ export default function CaseDetailPage() {
 
         if (caseError) throw caseError;
 
-        setCaseData(caseResult);
+        const typedCase = caseResult as Case;
+        setCaseData(typedCase);
         setFormData({
-          title: caseResult.title || '',
-          description: caseResult.description || '',
-          case_type: caseResult.case_type || 'exploitatievergunning',
-          status: caseResult.status || 'intake',
-          priority: caseResult.priority || 'normal',
-          deadline: caseResult.deadline || '',
-          municipality: caseResult.municipality || '',
-          reference_number: caseResult.reference_number || '',
+          title: typedCase.title || '',
+          description: typedCase.description || '',
+          case_type: typedCase.case_type || 'exploitatievergunning',
+          status: typedCase.status || 'intake',
+          priority: typedCase.priority || 'normal',
+          deadline: typedCase.deadline || '',
+          municipality: typedCase.municipality || '',
+          reference_number: typedCase.reference_number || '',
         });
 
         // Fetch client
-        if (caseResult.client_id) {
+        if (typedCase.client_id) {
           const { data: clientData } = await supabase
             .from('clients')
             .select('*')
-            .eq('id', caseResult.client_id)
+            .eq('id', typedCase.client_id)
             .single();
-          setClient(clientData);
+          if (clientData) setClient(clientData as Client);
         }
 
         // Fetch tasks
@@ -96,7 +97,7 @@ export default function CaseDetailPage() {
           .select('*')
           .eq('case_id', caseId)
           .order('created_at', { ascending: false });
-        setTasks(tasksData || []);
+        setTasks((tasksData as Task[]) || []);
 
         // Fetch documents
         const { data: docsData } = await supabase
@@ -104,7 +105,7 @@ export default function CaseDetailPage() {
           .select('*')
           .eq('case_id', caseId)
           .order('created_at', { ascending: false });
-        setDocuments(docsData || []);
+        setDocuments((docsData as Document[]) || []);
       } catch (err) {
         console.error('Error fetching case:', err);
         setError('Failed to load case');
@@ -135,12 +136,12 @@ export default function CaseDetailPage() {
         .update({
           ...formData,
           deadline: formData.deadline || null,
-        })
+        } as unknown as never)
         .eq('id', caseId);
 
       if (error) throw error;
 
-      setCaseData((prev) => (prev ? { ...prev, ...formData } : null));
+      setCaseData((prev) => (prev ? { ...prev, ...formData } as Case : null));
       setIsEditing(false);
     } catch (err) {
       console.error('Error updating case:', err);

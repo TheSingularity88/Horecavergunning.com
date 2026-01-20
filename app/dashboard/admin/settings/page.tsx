@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Settings, Save } from 'lucide-react';
@@ -13,6 +13,7 @@ import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Textarea } from '@/app/components/ui/Textarea';
 import { Spinner } from '@/app/components/ui/Spinner';
+import type { SystemSetting } from '@/app/lib/types/database';
 
 interface Setting {
   key: string;
@@ -33,7 +34,7 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -48,8 +49,9 @@ export default function SettingsPage() {
         if (error) throw error;
 
         if (data && data.length > 0) {
+          const typedData = data as SystemSetting[];
           const loadedSettings = settings.map((s) => {
-            const found = data.find((d) => d.key === s.key);
+            const found = typedData.find((d) => d.key === s.key);
             return found ? { ...s, value: String(found.value) } : s;
           });
           setSettings(loadedSettings);
@@ -80,7 +82,7 @@ export default function SettingsPage() {
             value: setting.value,
             description: setting.description,
             updated_by: profile?.id,
-          }, { onConflict: 'key' });
+          } as unknown as never, { onConflict: 'key' });
 
         if (error) throw error;
       }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Search, Upload, FileText, Download, Trash2, File, Image, FileSpreadsheet } from 'lucide-react';
@@ -33,7 +33,7 @@ export default function DocumentsPage() {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [uploadForm, setUploadForm] = useState({
     file: null as File | null,
@@ -66,9 +66,9 @@ export default function DocumentsPage() {
           supabase.from('clients').select('id, company_name'),
         ]);
 
-        setDocuments(docsRes.data || []);
-        setCases(casesRes.data || []);
-        setClients(clientsRes.data || []);
+        setDocuments((docsRes.data as Document[]) || []);
+        setCases((casesRes.data as Case[]) || []);
+        setClients((clientsRes.data as Client[]) || []);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -116,13 +116,13 @@ export default function DocumentsPage() {
           case_id: uploadForm.case_id || null,
           client_id: uploadForm.client_id || null,
           uploaded_by: profile?.id,
-        })
+        } as unknown as never)
         .select()
         .single();
 
       if (dbError) throw dbError;
 
-      setDocuments((prev) => [data, ...prev]);
+      setDocuments((prev) => [data as Document, ...prev]);
       setShowUploadModal(false);
       setUploadForm({
         file: null,

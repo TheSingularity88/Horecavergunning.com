@@ -46,9 +46,12 @@ export function Navbar() {
 
         <div className="flex items-center gap-4">
           <LanguageSwitcher />
-          <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
+          <Link
+            href="/login"
+            className="hidden sm:inline-flex inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none hover:bg-slate-100 text-slate-700 h-9 px-3 text-sm"
+          >
             {t.navbar.login}
-          </Button>
+          </Link>
           <Button>{t.navbar.book}</Button>
         </div>
         </div>

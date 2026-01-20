@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Building2, Mail, Phone, MapPin, FileText, Trash2 } from 'lucide-react';
@@ -33,7 +33,7 @@ export default function ClientDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -59,18 +59,19 @@ export default function ClientDetailPage() {
 
         if (clientError) throw clientError;
 
-        setClient(clientData);
+        const typedClient = clientData as Client;
+        setClient(typedClient);
         setFormData({
-          company_name: clientData.company_name || '',
-          contact_name: clientData.contact_name || '',
-          email: clientData.email || '',
-          phone: clientData.phone || '',
-          address: clientData.address || '',
-          city: clientData.city || '',
-          postal_code: clientData.postal_code || '',
-          kvk_number: clientData.kvk_number || '',
-          notes: clientData.notes || '',
-          status: clientData.status || 'active',
+          company_name: typedClient.company_name || '',
+          contact_name: typedClient.contact_name || '',
+          email: typedClient.email || '',
+          phone: typedClient.phone || '',
+          address: typedClient.address || '',
+          city: typedClient.city || '',
+          postal_code: typedClient.postal_code || '',
+          kvk_number: typedClient.kvk_number || '',
+          notes: typedClient.notes || '',
+          status: typedClient.status || 'active',
         });
 
         // Fetch associated cases
@@ -80,7 +81,7 @@ export default function ClientDetailPage() {
           .eq('client_id', clientId)
           .order('created_at', { ascending: false });
 
-        setCases(casesData || []);
+        setCases((casesData as Case[]) || []);
       } catch (err) {
         console.error('Error fetching client:', err);
         setError('Failed to load client');
@@ -108,12 +109,12 @@ export default function ClientDetailPage() {
     try {
       const { error } = await supabase
         .from('clients')
-        .update(formData)
+        .update(formData as unknown as never)
         .eq('id', clientId);
 
       if (error) throw error;
 
-      setClient((prev) => (prev ? { ...prev, ...formData } : null));
+      setClient((prev) => (prev ? { ...prev, ...formData } as Client : null));
       setIsEditing(false);
     } catch (err) {
       console.error('Error updating client:', err);

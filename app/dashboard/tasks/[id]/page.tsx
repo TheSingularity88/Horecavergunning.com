@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckSquare, Calendar, User, FolderOpen, Trash2 } from 'lucide-react';
@@ -33,7 +33,7 @@ export default function TaskDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -55,39 +55,40 @@ export default function TaskDetailPage() {
 
         if (taskError) throw taskError;
 
-        setTask(taskData);
+        const typedTask = taskData as Task;
+        setTask(typedTask);
         setFormData({
-          title: taskData.title || '',
-          description: taskData.description || '',
-          status: taskData.status || 'pending',
-          priority: taskData.priority || 'normal',
-          due_date: taskData.due_date || '',
-          assigned_to: taskData.assigned_to || '',
+          title: typedTask.title || '',
+          description: typedTask.description || '',
+          status: typedTask.status || 'pending',
+          priority: typedTask.priority || 'normal',
+          due_date: typedTask.due_date || '',
+          assigned_to: typedTask.assigned_to || '',
         });
 
-        if (taskData.case_id) {
+        if (typedTask.case_id) {
           const { data: caseData } = await supabase
             .from('cases')
             .select('*')
-            .eq('id', taskData.case_id)
+            .eq('id', typedTask.case_id)
             .single();
-          setRelatedCase(caseData);
+          if (caseData) setRelatedCase(caseData as Case);
         }
 
-        if (taskData.assigned_to) {
+        if (typedTask.assigned_to) {
           const { data: assigneeData } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', taskData.assigned_to)
+            .eq('id', typedTask.assigned_to)
             .single();
-          setAssignee(assigneeData);
+          if (assigneeData) setAssignee(assigneeData as Profile);
         }
 
         const { data: employeesData } = await supabase
           .from('profiles')
           .select('id, full_name')
           .eq('is_active', true);
-        setEmployees(employeesData || []);
+        setEmployees((employeesData as Profile[]) || []);
       } catch (err) {
         console.error('Error fetching task:', err);
         setError('Failed to load task');
@@ -120,12 +121,12 @@ export default function TaskDetailPage() {
           due_date: formData.due_date || null,
           assigned_to: formData.assigned_to || null,
           completed_at: formData.status === 'completed' ? new Date().toISOString() : null,
-        })
+        } as unknown as never)
         .eq('id', taskId);
 
       if (error) throw error;
 
-      setTask((prev) => (prev ? { ...prev, ...formData } : null));
+      setTask((prev) => (prev ? { ...prev, ...formData } as Task : null));
       setIsEditing(false);
     } catch (err) {
       console.error('Error updating task:', err);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
@@ -27,7 +27,7 @@ export default function NewCasePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [formData, setFormData] = useState({
     client_id: preselectedClientId || '',
@@ -83,13 +83,13 @@ export default function NewCasePage() {
           ...formData,
           deadline: formData.deadline || null,
           assigned_employee_id: profile?.id,
-        })
+        } as unknown as never)
         .select()
         .single();
 
       if (error) throw error;
 
-      router.push(`/dashboard/cases/${data.id}`);
+      router.push(`/dashboard/cases/${(data as { id: string }).id}`);
     } catch (err) {
       console.error('Error creating case:', err);
       setError('Failed to create case. Please try again.');

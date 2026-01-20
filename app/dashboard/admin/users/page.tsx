@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Plus, Search, UserCog, Mail, Shield, ShieldCheck } from 'lucide-react';
@@ -30,7 +30,7 @@ export default function UsersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [newUser, setNewUser] = useState({
     email: '',
@@ -65,7 +65,7 @@ export default function UsersPage() {
 
         const { data, error } = await query;
         if (error) throw error;
-        setUsers(data || []);
+        setUsers((data as Profile[]) || []);
       } catch (error) {
         console.error('Error fetching users:', error);
       } finally {
@@ -97,7 +97,7 @@ export default function UsersPage() {
 
       // Refresh user list
       const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-      setUsers(data || []);
+      setUsers((data as Profile[]) || []);
 
       setShowCreateModal(false);
       setNewUser({ email: '', full_name: '', role: 'employee', password: '' });
@@ -113,7 +113,7 @@ export default function UsersPage() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ is_active: !isActive })
+        .update({ is_active: !isActive } as unknown as never)
         .eq('id', userId);
 
       if (error) throw error;
@@ -130,7 +130,7 @@ export default function UsersPage() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ role: newRole as 'admin' | 'employee' })
+        .update({ role: newRole } as unknown as never)
         .eq('id', userId);
 
       if (error) throw error;

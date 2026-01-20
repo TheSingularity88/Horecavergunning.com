@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -40,7 +40,7 @@ export default function DashboardPage() {
   const [recentCases, setRecentCases] = useState<Case[]>([]);
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     const fetchDashboardData = async () => {

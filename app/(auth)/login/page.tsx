@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -11,7 +11,7 @@ import { Input } from '@/app/components/ui/Input';
 import { Button } from '@/app/components/ui/Button';
 import { Spinner } from '@/app/components/ui/Spinner';
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -31,12 +31,14 @@ export default function LoginPage() {
       const { error } = await signIn(email, password);
       if (error) {
         setError(error.message);
+        setIsLoading(false);
       } else {
+        // Refresh to update server state, then redirect
+        router.refresh();
         router.push(redirect);
       }
     } catch {
       setError('An unexpected error occurred');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -141,5 +143,24 @@ export default function LoginPage() {
         </p>
       </motion.div>
     </div>
+  );
+}
+
+function LoginFallback() {
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="flex flex-col items-center gap-4">
+        <Spinner size="lg" />
+        <p className="text-slate-600">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFallback />}>
+      <LoginForm />
+    </Suspense>
   );
 }

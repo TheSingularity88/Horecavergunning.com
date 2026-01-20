@@ -8,7 +8,7 @@ import { Search, Bell, User, LogOut, Settings, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { Avatar } from '@/app/components/ui/Avatar';
-import LanguageSwitcher from '@/app/components/LanguageSwitcher';
+import { LanguageSwitcher } from '@/app/components/LanguageSwitcher';
 
 interface HeaderProps {
   title?: string;

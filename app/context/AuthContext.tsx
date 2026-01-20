@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { User } from '@supabase/supabase-js';
 import { createClient } from '@/app/lib/supabase/client';
 import type { Profile } from '@/app/lib/types/database';
@@ -21,21 +21,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+  const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
+      if (error) {
+        // Profile table might not exist or user might not have a profile yet
+        // This is not a critical error - user can still access the app
+        console.warn('Profile fetch warning:', error.message);
+        return null;
+      }
+
+      return data as Profile;
+    } catch (err) {
+      console.warn('Profile fetch error:', err);
       return null;
     }
-
-    return data as Profile;
   }, [supabase]);
 
   const refreshProfile = useCallback(async () => {
@@ -46,19 +53,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchProfile]);
 
   useEffect(() => {
+    let isMounted = true;
+
     // Get initial session
     const initAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
 
-      if (session?.user) {
-        setUser(session.user);
-        const profileData = await fetchProfile(session.user.id);
-        setProfile(profileData);
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+        }
+
+        if (isMounted && session?.user) {
+          setUser(session.user);
+          // Fetch profile but don't block on it
+          fetchProfile(session.user.id).then((profileData) => {
+            if (isMounted) {
+              setProfile(profileData);
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error getting session:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-
-      setIsLoading(false);
     };
 
     initAuth();
@@ -67,10 +91,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+
       if (session?.user) {
         setUser(session.user);
-        const profileData = await fetchProfile(session.user.id);
-        setProfile(profileData);
+        // Fetch profile but don't block on it
+        fetchProfile(session.user.id).then((profileData) => {
+          if (isMounted) {
+            setProfile(profileData);
+          }
+        });
       } else {
         setUser(null);
         setProfile(null);
@@ -79,25 +109,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, [supabase, fetchProfile]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      return { error: new Error(error.message) };
+      if (error) {
+        return { error: new Error(error.message) };
+      }
+
+      return { error: null };
+    } catch (err) {
+      return { error: err instanceof Error ? err : new Error('Sign in failed') };
     }
-
-    return { error: null };
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Sign out error:', err);
+    }
     setUser(null);
     setProfile(null);
   };

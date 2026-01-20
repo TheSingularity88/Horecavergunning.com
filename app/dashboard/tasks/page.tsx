@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Plus, Search, CheckSquare, Calendar, LayoutGrid, List } from 'lucide-react';
@@ -26,7 +26,7 @@ export default function TasksPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -47,7 +47,7 @@ export default function TasksPage() {
 
         const { data, error } = await query;
         if (error) throw error;
-        setTasks(data || []);
+        setTasks((data as Task[]) || []);
       } catch (error) {
         console.error('Error fetching tasks:', error);
       } finally {
@@ -87,7 +87,7 @@ export default function TasksPage() {
         .update({
           status: newStatus,
           completed_at: newStatus === 'completed' ? new Date().toISOString() : null,
-        })
+        } as unknown as never)
         .eq('id', taskId);
 
       if (error) throw error;
