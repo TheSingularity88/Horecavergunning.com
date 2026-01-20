@@ -3,13 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Activity, User, FolderOpen, CheckSquare, FileText, Users } from 'lucide-react';
+import { Activity, FolderOpen, CheckSquare, FileText, Users } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
-import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
-import { Header } from '@/app/components/dashboard/Header';
+import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card } from '@/app/components/ui/Card';
-import { Input } from '@/app/components/ui/Input';
 import { Select } from '@/app/components/ui/Select';
 import { Badge } from '@/app/components/ui/Badge';
 import { Avatar } from '@/app/components/ui/Avatar';
@@ -26,7 +24,6 @@ interface ActivityWithUser extends ActivityLog {
 export default function ActivityPage() {
   const router = useRouter();
   const { isAdmin } = useAuth();
-  const { t } = useLanguage();
   const [activities, setActivities] = useState<ActivityWithUser[]>([]);
   const [users, setUsers] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -140,14 +137,11 @@ export default function ActivityPage() {
   if (!isAdmin) return null;
 
   return (
-    <div className="flex flex-col h-screen">
-      <Header title="Activity Log" />
-
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+    <DashboardPage title="Activity Log">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <Select
@@ -226,8 +220,7 @@ export default function ActivityPage() {
             totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
-        </motion.div>
-      </div>
-    </div>
+      </motion.div>
+    </DashboardPage>
   );
 }

@@ -16,7 +16,7 @@ import {
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
-import { Header } from '@/app/components/dashboard/Header';
+import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
@@ -25,6 +25,11 @@ import { Select } from '@/app/components/ui/Select';
 import { Badge, getStatusBadgeVariant } from '@/app/components/ui/Badge';
 import { Spinner } from '@/app/components/ui/Spinner';
 import { ConfirmModal } from '@/app/components/ui/Modal';
+import {
+  getCaseStatusOptions,
+  getCaseTypeOptions,
+  getPriorityOptions,
+} from '@/app/lib/constants/dashboard';
 import Link from 'next/link';
 import type { Case, Task, Document, Client } from '@/app/lib/types/database';
 
@@ -173,67 +178,33 @@ export default function CaseDetailPage() {
     });
   };
 
-  const caseTypeOptions = [
-    { value: 'exploitatievergunning', label: 'Exploitatievergunning' },
-    { value: 'alcoholvergunning', label: 'Alcoholvergunning' },
-    { value: 'terrasvergunning', label: 'Terrasvergunning' },
-    { value: 'bibob', label: 'Bibob' },
-    { value: 'overname', label: 'Overname' },
-    { value: 'verbouwing', label: 'Verbouwing' },
-    { value: 'other', label: 'Other' },
-  ];
-
-  const statusOptions = [
-    { value: 'intake', label: 'Intake' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'waiting_client', label: 'Waiting for Client' },
-    { value: 'waiting_government', label: 'Waiting for Government' },
-    { value: 'review', label: 'Review' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'rejected', label: 'Rejected' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'cancelled', label: 'Cancelled' },
-  ];
-
-  const priorityOptions = [
-    { value: 'low', label: 'Low' },
-    { value: 'normal', label: 'Normal' },
-    { value: 'high', label: 'High' },
-    { value: 'urgent', label: 'Urgent' },
-  ];
+  const caseTypeOptions = getCaseTypeOptions(t.dashboard);
+  const statusOptions = getCaseStatusOptions(t.dashboard);
+  const priorityOptions = getPriorityOptions();
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-screen">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <Spinner size="lg" />
-        </div>
-      </div>
+      <DashboardPage contentClassName="flex items-center justify-center p-0 lg:p-0">
+        <Spinner size="lg" />
+      </DashboardPage>
     );
   }
 
   if (!caseData) {
     return (
-      <div className="flex flex-col h-screen">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-slate-600">Case not found</p>
-        </div>
-      </div>
+      <DashboardPage contentClassName="flex items-center justify-center p-0 lg:p-0">
+        <p className="text-slate-600">Case not found</p>
+      </DashboardPage>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      <Header title={caseData.title} />
-
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-4xl mx-auto"
-        >
+    <DashboardPage title={caseData.title}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-4xl mx-auto"
+      >
           <Link
             href="/dashboard/cases"
             className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6"
@@ -499,8 +470,7 @@ export default function CaseDetailPage() {
               )}
             </div>
           </div>
-        </motion.div>
-      </div>
+      </motion.div>
 
       <ConfirmModal
         isOpen={showDeleteModal}
@@ -512,6 +482,6 @@ export default function CaseDetailPage() {
         variant="danger"
         isLoading={isDeleting}
       />
-    </div>
+    </DashboardPage>
   );
 }

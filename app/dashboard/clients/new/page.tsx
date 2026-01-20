@@ -7,13 +7,14 @@ import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
-import { Header } from '@/app/components/dashboard/Header';
+import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Textarea } from '@/app/components/ui/Textarea';
 import { Select } from '@/app/components/ui/Select';
 import { Spinner } from '@/app/components/ui/Spinner';
+import { getClientStatusOptions } from '@/app/lib/constants/dashboard';
 import Link from 'next/link';
 
 export default function NewClientPage() {
@@ -78,22 +79,15 @@ export default function NewClientPage() {
     }
   };
 
-  const statusOptions = [
-    { value: 'active', label: t.dashboard?.clients?.statusActive || 'Active' },
-    { value: 'inactive', label: t.dashboard?.clients?.statusInactive || 'Inactive' },
-    { value: 'pending', label: t.dashboard?.clients?.statusPending || 'Pending' },
-  ];
+  const statusOptions = getClientStatusOptions(t.dashboard);
 
   return (
-    <div className="flex flex-col h-screen">
-      <Header title={t.dashboard?.clients?.newClient || 'New Client'} />
-
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-2xl mx-auto"
-        >
+    <DashboardPage title={t.dashboard?.clients?.newClient || 'New Client'}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-2xl mx-auto"
+      >
           {/* Back link */}
           <Link
             href="/dashboard/clients"
@@ -218,8 +212,7 @@ export default function NewClientPage() {
               </form>
             </CardContent>
           </Card>
-        </motion.div>
-      </div>
-    </div>
+      </motion.div>
+    </DashboardPage>
   );
 }

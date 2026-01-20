@@ -7,13 +7,18 @@ import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
-import { Header } from '@/app/components/dashboard/Header';
+import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Textarea } from '@/app/components/ui/Textarea';
 import { Select } from '@/app/components/ui/Select';
 import { Spinner } from '@/app/components/ui/Spinner';
+import {
+  getCaseStatusOptions,
+  getCaseTypeOptions,
+  getPriorityOptions,
+} from '@/app/lib/constants/dashboard';
 import Link from 'next/link';
 type ClientOption = { id: string; company_name: string };
 
@@ -103,41 +108,17 @@ export default function NewCasePage() {
     label: client.company_name,
   }));
 
-  const caseTypeOptions = [
-    { value: 'exploitatievergunning', label: 'Exploitatievergunning' },
-    { value: 'alcoholvergunning', label: 'Alcoholvergunning' },
-    { value: 'terrasvergunning', label: 'Terrasvergunning' },
-    { value: 'bibob', label: 'Bibob' },
-    { value: 'overname', label: 'Overname' },
-    { value: 'verbouwing', label: 'Verbouwing' },
-    { value: 'other', label: 'Other' },
-  ];
-
-  const statusOptions = [
-    { value: 'intake', label: 'Intake' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'waiting_client', label: 'Waiting for Client' },
-    { value: 'waiting_government', label: 'Waiting for Government' },
-    { value: 'review', label: 'Review' },
-  ];
-
-  const priorityOptions = [
-    { value: 'low', label: 'Low' },
-    { value: 'normal', label: 'Normal' },
-    { value: 'high', label: 'High' },
-    { value: 'urgent', label: 'Urgent' },
-  ];
+  const caseTypeOptions = getCaseTypeOptions(t.dashboard);
+  const statusOptions = getCaseStatusOptions(t.dashboard, false, false);
+  const priorityOptions = getPriorityOptions();
 
   return (
-    <div className="flex flex-col h-screen">
-      <Header title={t.dashboard?.cases?.newCase || 'New Case'} />
-
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-2xl mx-auto"
-        >
+    <DashboardPage title={t.dashboard?.cases?.newCase || 'New Case'}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-2xl mx-auto"
+      >
           {/* Back link */}
           <Link
             href="/dashboard/cases"
@@ -261,8 +242,7 @@ export default function NewCasePage() {
               </form>
             </CardContent>
           </Card>
-        </motion.div>
-      </div>
-    </div>
+      </motion.div>
+    </DashboardPage>
   );
 }

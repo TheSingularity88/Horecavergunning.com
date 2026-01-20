@@ -19,6 +19,8 @@ import {
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { cn } from '@/app/lib/utils/cn';
+import { dashboardRoutes } from '@/app/lib/routes/dashboard';
+import type { translations } from '@/app/lib/translations';
 
 interface NavItem {
   name: string;
@@ -26,67 +28,17 @@ interface NavItem {
   icon: React.ElementType;
 }
 
-export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const pathname = usePathname();
-  const { isAdmin } = useAuth();
-  const { t } = useLanguage();
+type Translations = typeof translations['en'];
 
-  const mainNavItems: NavItem[] = [
-    {
-      name: t.dashboard?.nav?.dashboard || 'Dashboard',
-      href: '/dashboard',
-      icon: LayoutDashboard,
-    },
-    {
-      name: t.dashboard?.nav?.clients || 'Clients',
-      href: '/dashboard/clients',
-      icon: Users,
-    },
-    {
-      name: t.dashboard?.nav?.cases || 'Cases',
-      href: '/dashboard/cases',
-      icon: FolderOpen,
-    },
-    {
-      name: t.dashboard?.nav?.tasks || 'Tasks',
-      href: '/dashboard/tasks',
-      icon: CheckSquare,
-    },
-    {
-      name: t.dashboard?.nav?.documents || 'Documents',
-      href: '/dashboard/documents',
-      icon: FileText,
-    },
-  ];
+interface NavLinkProps {
+  item: NavItem;
+  collapsed: boolean;
+  isActive: (href: string) => boolean;
+  onNavigate: () => void;
+}
 
-  const adminNavItems: NavItem[] = [
-    {
-      name: t.dashboard?.nav?.users || 'Users',
-      href: '/dashboard/admin/users',
-      icon: UserCog,
-    },
-    {
-      name: t.dashboard?.nav?.settings || 'Settings',
-      href: '/dashboard/admin/settings',
-      icon: Settings,
-    },
-    {
-      name: t.dashboard?.nav?.activity || 'Activity',
-      href: '/dashboard/admin/activity',
-      icon: Activity,
-    },
-  ];
-
-  const isActive = (href: string) => {
-    if (href === '/dashboard') {
-      return pathname === href;
-    }
-    return pathname.startsWith(href);
-  };
-
-  const NavLink = ({ item }: { item: NavItem }) => (
+function NavLink({ item, collapsed, isActive, onNavigate }: NavLinkProps) {
+  return (
     <Link
       href={item.href}
       className={cn(
@@ -95,18 +47,40 @@ export function Sidebar() {
           ? 'bg-amber-500 text-slate-900 font-medium'
           : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
       )}
-      onClick={() => setMobileOpen(false)}
+      onClick={onNavigate}
     >
       <item.icon className="w-5 h-5 flex-shrink-0" />
       {!collapsed && <span>{item.name}</span>}
     </Link>
   );
+}
 
-  const SidebarContent = () => (
+interface SidebarContentProps {
+  collapsed: boolean;
+  isAdmin: boolean;
+  mainNavItems: NavItem[];
+  adminNavItems: NavItem[];
+  isActive: (href: string) => boolean;
+  onToggleCollapse: () => void;
+  onNavigate: () => void;
+  t: Translations;
+}
+
+function SidebarContent({
+  collapsed,
+  isAdmin,
+  mainNavItems,
+  adminNavItems,
+  isActive,
+  onToggleCollapse,
+  onNavigate,
+  t,
+}: SidebarContentProps) {
+  return (
     <>
       {/* Logo */}
       <div className="p-4 border-b border-slate-200">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href={dashboardRoutes.employee.base} className="flex items-center gap-2">
           {!collapsed ? (
             <h1 className="text-lg font-bold text-slate-900">
               Horeca<span className="text-amber-500">Vergunning</span>
@@ -120,7 +94,13 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {mainNavItems.map((item) => (
-          <NavLink key={item.href} item={item} />
+          <NavLink
+            key={item.href}
+            item={item}
+            collapsed={collapsed}
+            isActive={isActive}
+            onNavigate={onNavigate}
+          />
         ))}
 
         {isAdmin && (
@@ -132,7 +112,13 @@ export function Sidebar() {
                 </p>
               )}
               {adminNavItems.map((item) => (
-                <NavLink key={item.href} item={item} />
+                <NavLink
+                  key={item.href}
+                  item={item}
+                  collapsed={collapsed}
+                  isActive={isActive}
+                  onNavigate={onNavigate}
+                />
               ))}
             </div>
           </>
@@ -142,7 +128,7 @@ export function Sidebar() {
       {/* Collapse button - desktop only */}
       <div className="hidden lg:block p-4 border-t border-slate-200">
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={onToggleCollapse}
           className="flex items-center gap-2 px-3 py-2 w-full text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
         >
           <ChevronLeft
@@ -160,6 +146,69 @@ export function Sidebar() {
       </div>
     </>
   );
+}
+
+export function Sidebar() {
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  const { isAdmin } = useAuth();
+  const { t } = useLanguage();
+
+  const mainNavItems: NavItem[] = [
+    {
+      name: t.dashboard?.nav?.dashboard || 'Dashboard',
+      href: dashboardRoutes.employee.base,
+      icon: LayoutDashboard,
+    },
+    {
+      name: t.dashboard?.nav?.clients || 'Clients',
+      href: dashboardRoutes.employee.clients,
+      icon: Users,
+    },
+    {
+      name: t.dashboard?.nav?.cases || 'Cases',
+      href: dashboardRoutes.employee.cases,
+      icon: FolderOpen,
+    },
+    {
+      name: t.dashboard?.nav?.tasks || 'Tasks',
+      href: dashboardRoutes.employee.tasks,
+      icon: CheckSquare,
+    },
+    {
+      name: t.dashboard?.nav?.documents || 'Documents',
+      href: dashboardRoutes.employee.documents,
+      icon: FileText,
+    },
+  ];
+
+  const adminNavItems: NavItem[] = [
+    {
+      name: t.dashboard?.nav?.users || 'Users',
+      href: dashboardRoutes.employee.admin.users,
+      icon: UserCog,
+    },
+    {
+      name: t.dashboard?.nav?.settings || 'Settings',
+      href: dashboardRoutes.employee.admin.settings,
+      icon: Settings,
+    },
+    {
+      name: t.dashboard?.nav?.activity || 'Activity',
+      href: dashboardRoutes.employee.admin.activity,
+      icon: Activity,
+    },
+  ];
+
+  const isActive = (href: string) => {
+    if (href === dashboardRoutes.employee.base) {
+      return pathname === href;
+    }
+    return pathname.startsWith(href);
+  };
+  const handleToggleCollapse = () => setCollapsed((prev) => !prev);
+  const handleNavigate = () => setMobileOpen(false);
 
   return (
     <>
@@ -189,7 +238,16 @@ export function Sidebar() {
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className="lg:hidden fixed inset-y-0 left-0 w-[280px] bg-white border-r border-slate-200 z-50 flex flex-col"
             >
-              <SidebarContent />
+              <SidebarContent
+                collapsed={collapsed}
+                isAdmin={isAdmin}
+                mainNavItems={mainNavItems}
+                adminNavItems={adminNavItems}
+                isActive={isActive}
+                onToggleCollapse={handleToggleCollapse}
+                onNavigate={handleNavigate}
+                t={t}
+              />
             </motion.aside>
           </>
         )}
@@ -202,7 +260,16 @@ export function Sidebar() {
           collapsed ? 'w-[72px]' : 'w-[280px]'
         )}
       >
-        <SidebarContent />
+        <SidebarContent
+          collapsed={collapsed}
+          isAdmin={isAdmin}
+          mainNavItems={mainNavItems}
+          adminNavItems={adminNavItems}
+          isActive={isActive}
+          onToggleCollapse={handleToggleCollapse}
+          onNavigate={handleNavigate}
+          t={t}
+        />
       </aside>
     </>
   );

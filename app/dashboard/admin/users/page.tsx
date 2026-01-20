@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Plus, Search, UserCog, Mail, Shield, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
-import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
-import { Header } from '@/app/components/dashboard/Header';
+import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
@@ -22,7 +21,6 @@ import type { Profile } from '@/app/lib/types/database';
 export default function UsersPage() {
   const router = useRouter();
   const { isAdmin } = useAuth();
-  const { t } = useLanguage();
   const [users, setUsers] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -211,50 +209,46 @@ export default function UsersPage() {
   if (!isAdmin) return null;
 
   return (
-    <div className="flex flex-col h-screen">
-      <Header title="User Management" />
-
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          {/* Actions Bar */}
-          <div className="flex flex-col lg:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <Input
-                placeholder="Search users..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                icon={<Search className="w-4 h-4" />}
-              />
-            </div>
-            <div className="flex gap-3">
-              <Select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                options={roleOptions}
-                className="w-36"
-              />
-              <Button onClick={() => setShowCreateModal(true)} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Add User
-              </Button>
-            </div>
-          </div>
-
-          {/* Users Table */}
-          <Card padding="none">
-            <Table
-              columns={columns}
-              data={users}
-              loading={isLoading}
-              emptyMessage="No users found"
-              keyExtractor={(user) => user.id}
+    <DashboardPage title="User Management">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        {/* Actions Bar */}
+        <div className="flex flex-col lg:flex-row gap-4 mb-6">
+          <div className="flex-1">
+            <Input
+              placeholder="Search users..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              icon={<Search className="w-4 h-4" />}
             />
-          </Card>
-        </motion.div>
-      </div>
+          </div>
+          <div className="flex gap-3">
+            <Select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              options={roleOptions}
+              className="w-36"
+            />
+            <Button onClick={() => setShowCreateModal(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Add User
+            </Button>
+          </div>
+        </div>
+
+        {/* Users Table */}
+        <Card padding="none">
+          <Table
+            columns={columns}
+            data={users}
+            loading={isLoading}
+            emptyMessage="No users found"
+            keyExtractor={(user) => user.id}
+          />
+        </Card>
+      </motion.div>
 
       {/* Create User Modal */}
       <Modal
@@ -320,6 +314,6 @@ export default function UsersPage() {
           </div>
         </div>
       </Modal>
-    </div>
+    </DashboardPage>
   );
 }
