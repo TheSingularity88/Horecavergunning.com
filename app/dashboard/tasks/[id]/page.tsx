@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, CheckSquare, Calendar, User, FolderOpen, Trash2 } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { createClient } from '@/app/lib/supabase/client';
-import { Header } from '@/app/components/dashboard/Header';
+import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
@@ -15,6 +15,7 @@ import { Select } from '@/app/components/ui/Select';
 import { Badge, getStatusBadgeVariant } from '@/app/components/ui/Badge';
 import { Spinner } from '@/app/components/ui/Spinner';
 import { ConfirmModal } from '@/app/components/ui/Modal';
+import { getPriorityOptions, getTaskStatusOptions } from '@/app/lib/constants/dashboard';
 import Link from 'next/link';
 import type { Task, Case, Profile } from '@/app/lib/types/database';
 
@@ -160,19 +161,8 @@ export default function TaskDetailPage() {
     });
   };
 
-  const statusOptions = [
-    { value: 'pending', label: 'Pending' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'cancelled', label: 'Cancelled' },
-  ];
-
-  const priorityOptions = [
-    { value: 'low', label: 'Low' },
-    { value: 'normal', label: 'Normal' },
-    { value: 'high', label: 'High' },
-    { value: 'urgent', label: 'Urgent' },
-  ];
+  const statusOptions = getTaskStatusOptions();
+  const priorityOptions = getPriorityOptions();
 
   const employeeOptions = [
     { value: '', label: 'Unassigned' },
@@ -184,36 +174,27 @@ export default function TaskDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-screen">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <Spinner size="lg" />
-        </div>
-      </div>
+      <DashboardPage contentClassName="flex items-center justify-center p-0 lg:p-0">
+        <Spinner size="lg" />
+      </DashboardPage>
     );
   }
 
   if (!task) {
     return (
-      <div className="flex flex-col h-screen">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-slate-600">Task not found</p>
-        </div>
-      </div>
+      <DashboardPage contentClassName="flex items-center justify-center p-0 lg:p-0">
+        <p className="text-slate-600">Task not found</p>
+      </DashboardPage>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      <Header title={task.title} />
-
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-2xl mx-auto"
-        >
+    <DashboardPage title={task.title}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-2xl mx-auto"
+      >
           <Link
             href="/dashboard/tasks"
             className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6"
@@ -369,8 +350,7 @@ export default function TaskDetailPage() {
               </CardContent>
             </Card>
           )}
-        </motion.div>
-      </div>
+      </motion.div>
 
       <ConfirmModal
         isOpen={showDeleteModal}
@@ -382,6 +362,6 @@ export default function TaskDetailPage() {
         variant="danger"
         isLoading={isDeleting}
       />
-    </div>
+    </DashboardPage>
   );
 }

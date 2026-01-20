@@ -6,13 +6,14 @@ import { motion } from 'framer-motion';
 import { Plus, Search, FolderOpen, Calendar } from 'lucide-react';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
-import { Header } from '@/app/components/dashboard/Header';
+import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Select } from '@/app/components/ui/Select';
 import { Badge, getStatusBadgeVariant } from '@/app/components/ui/Badge';
 import { Table, Pagination } from '@/app/components/ui/Table';
+import { getCaseStatusOptions, getCaseTypeOptions } from '@/app/lib/constants/dashboard';
 import type { Case } from '@/app/lib/types/database';
 
 const ITEMS_PER_PAGE = 10;
@@ -81,29 +82,8 @@ export default function CasesPage() {
     });
   };
 
-  const statusOptions = [
-    { value: '', label: t.dashboard?.common?.allStatuses || 'All Statuses' },
-    { value: 'intake', label: 'Intake' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'waiting_client', label: 'Waiting for Client' },
-    { value: 'waiting_government', label: 'Waiting for Government' },
-    { value: 'review', label: 'Review' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'rejected', label: 'Rejected' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'cancelled', label: 'Cancelled' },
-  ];
-
-  const typeOptions = [
-    { value: '', label: t.dashboard?.common?.allTypes || 'All Types' },
-    { value: 'exploitatievergunning', label: 'Exploitatievergunning' },
-    { value: 'alcoholvergunning', label: 'Alcoholvergunning' },
-    { value: 'terrasvergunning', label: 'Terrasvergunning' },
-    { value: 'bibob', label: 'Bibob' },
-    { value: 'overname', label: 'Overname' },
-    { value: 'verbouwing', label: 'Verbouwing' },
-    { value: 'other', label: 'Other' },
-  ];
+  const statusOptions = getCaseStatusOptions(t.dashboard, true);
+  const typeOptions = getCaseTypeOptions(t.dashboard, true);
 
   const columns = [
     {
@@ -159,76 +139,72 @@ export default function CasesPage() {
   ];
 
   return (
-    <div className="flex flex-col h-screen">
-      <Header title={t.dashboard?.nav?.cases || 'Cases'} />
-
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          {/* Actions Bar */}
-          <div className="flex flex-col lg:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <Input
-                placeholder={t.dashboard?.common?.searchPlaceholder || 'Search cases...'}
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
-                icon={<Search className="w-4 h-4" />}
-              />
-            </div>
-            <div className="flex gap-3">
-              <Select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                options={statusOptions}
-                className="w-40"
-              />
-              <Select
-                value={typeFilter}
-                onChange={(e) => {
-                  setTypeFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                options={typeOptions}
-                className="w-48"
-              />
-              <Button
-                onClick={() => router.push('/dashboard/cases/new')}
-                className="gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                {t.dashboard?.cases?.addCase || 'Add Case'}
-              </Button>
-            </div>
-          </div>
-
-          {/* Cases Table */}
-          <Card padding="none">
-            <Table
-              columns={columns}
-              data={cases}
-              loading={isLoading}
-              emptyMessage={t.dashboard?.cases?.noCases || 'No cases found'}
-              onRowClick={(caseItem) => router.push(`/dashboard/cases/${caseItem.id}`)}
-              keyExtractor={(caseItem) => caseItem.id}
+    <DashboardPage title={t.dashboard?.nav?.cases || 'Cases'}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        {/* Actions Bar */}
+        <div className="flex flex-col lg:flex-row gap-4 mb-6">
+          <div className="flex-1">
+            <Input
+              placeholder={t.dashboard?.common?.searchPlaceholder || 'Search cases...'}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              icon={<Search className="w-4 h-4" />}
             />
-          </Card>
+          </div>
+          <div className="flex gap-3">
+            <Select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              options={statusOptions}
+              className="w-40"
+            />
+            <Select
+              value={typeFilter}
+              onChange={(e) => {
+                setTypeFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              options={typeOptions}
+              className="w-48"
+            />
+            <Button
+              onClick={() => router.push('/dashboard/cases/new')}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              {t.dashboard?.cases?.addCase || 'Add Case'}
+            </Button>
+          </div>
+        </div>
 
-          {/* Pagination */}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
+        {/* Cases Table */}
+        <Card padding="none">
+          <Table
+            columns={columns}
+            data={cases}
+            loading={isLoading}
+            emptyMessage={t.dashboard?.cases?.noCases || 'No cases found'}
+            onRowClick={(caseItem) => router.push(`/dashboard/cases/${caseItem.id}`)}
+            keyExtractor={(caseItem) => caseItem.id}
           />
-        </motion.div>
-      </div>
-    </div>
+        </Card>
+
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      </motion.div>
+    </DashboardPage>
   );
 }

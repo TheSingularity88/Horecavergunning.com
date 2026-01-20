@@ -9,6 +9,7 @@ import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { Avatar } from '@/app/components/ui/Avatar';
 import { LanguageSwitcher } from '@/app/components/LanguageSwitcher';
+import { dashboardRoutes } from '@/app/lib/routes/dashboard';
 
 interface HeaderProps {
   title?: string;
@@ -127,7 +128,7 @@ export function Header({ title }: HeaderProps) {
 
                 <div className="py-1">
                   <Link
-                    href="/dashboard/profile"
+                    href={dashboardRoutes.employee.profile}
                     className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                     onClick={() => setShowUserMenu(false)}
                   >
@@ -135,7 +136,7 @@ export function Header({ title }: HeaderProps) {
                     {t.dashboard?.nav?.profile || 'Profile'}
                   </Link>
                   <Link
-                    href="/dashboard/admin/settings"
+                    href={dashboardRoutes.employee.admin.settings}
                     className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                     onClick={() => setShowUserMenu(false)}
                   >

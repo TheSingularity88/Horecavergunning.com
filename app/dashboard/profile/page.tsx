@@ -6,7 +6,7 @@ import { User, Mail, Phone, Save, Key } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
-import { Header } from '@/app/components/dashboard/Header';
+import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
@@ -109,15 +109,12 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      <Header title={t.dashboard?.nav?.profile || 'Profile'} />
-
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-2xl mx-auto space-y-6"
-        >
+    <DashboardPage title={t.dashboard?.nav?.profile || 'Profile'}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-2xl mx-auto space-y-6"
+      >
           {error && (
             <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm">
               {error}
@@ -257,8 +254,7 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
-      </div>
-    </div>
+      </motion.div>
+    </DashboardPage>
   );
 }

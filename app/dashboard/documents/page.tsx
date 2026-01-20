@@ -7,7 +7,7 @@ import { Search, Upload, FileText, Download, Trash2, File, Image, FileSpreadshee
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
-import { Header } from '@/app/components/dashboard/Header';
+import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
@@ -220,94 +220,90 @@ export default function DocumentsPage() {
   ];
 
   return (
-    <div className="flex flex-col h-screen">
-      <Header title={t.dashboard?.nav?.documents || 'Documents'} />
-
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          {/* Actions Bar */}
-          <div className="flex flex-col lg:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <Input
-                placeholder="Search documents..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                icon={<Search className="w-4 h-4" />}
-              />
-            </div>
-            <div className="flex gap-3">
-              <Select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                options={categoryOptions}
-                className="w-40"
-              />
-              <Button onClick={() => setShowUploadModal(true)} className="gap-2">
-                <Upload className="w-4 h-4" />
-                Upload
-              </Button>
-            </div>
+    <DashboardPage title={t.dashboard?.nav?.documents || 'Documents'}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        {/* Actions Bar */}
+        <div className="flex flex-col lg:flex-row gap-4 mb-6">
+          <div className="flex-1">
+            <Input
+              placeholder="Search documents..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              icon={<Search className="w-4 h-4" />}
+            />
           </div>
+          <div className="flex gap-3">
+            <Select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              options={categoryOptions}
+              className="w-40"
+            />
+            <Button onClick={() => setShowUploadModal(true)} className="gap-2">
+              <Upload className="w-4 h-4" />
+              Upload
+            </Button>
+          </div>
+        </div>
 
-          {/* Documents Grid */}
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Spinner size="lg" />
-            </div>
-          ) : documents.length === 0 ? (
-            <Card className="text-center py-12">
-              <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500">No documents found</p>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {documents.map((doc) => (
-                <Card key={doc.id} hover className="relative">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
-                      {getFileIcon(doc.file_type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900 truncate">{doc.name}</p>
-                      <p className="text-sm text-slate-500">
-                        {formatFileSize(doc.file_size)}
-                      </p>
-                      <Badge className="mt-2">{doc.category}</Badge>
-                    </div>
+        {/* Documents Grid */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Spinner size="lg" />
+          </div>
+        ) : documents.length === 0 ? (
+          <Card className="text-center py-12">
+            <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500">No documents found</p>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {documents.map((doc) => (
+              <Card key={doc.id} hover className="relative">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
+                    {getFileIcon(doc.file_type)}
                   </div>
-                  <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-slate-900 truncate">{doc.name}</p>
+                    <p className="text-sm text-slate-500">
+                      {formatFileSize(doc.file_size)}
+                    </p>
+                    <Badge className="mt-2">{doc.category}</Badge>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(doc)}
+                    className="flex-1"
+                  >
+                    <Download className="w-4 h-4 mr-1" />
+                    Download
+                  </Button>
+                  {(isAdmin || doc.uploaded_by === profile?.id) && (
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      onClick={() => handleDownload(doc)}
-                      className="flex-1"
+                      onClick={() => {
+                        setSelectedDocument(doc);
+                        setShowDeleteModal(true);
+                      }}
+                      className="text-red-600 hover:bg-red-50"
                     >
-                      <Download className="w-4 h-4 mr-1" />
-                      Download
+                      <Trash2 className="w-4 h-4" />
                     </Button>
-                    {(isAdmin || doc.uploaded_by === profile?.id) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedDocument(doc);
-                          setShowDeleteModal(true);
-                        }}
-                        className="text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </motion.div>
-      </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </motion.div>
 
       {/* Upload Modal */}
       <Modal
@@ -385,6 +381,6 @@ export default function DocumentsPage() {
         variant="danger"
         isLoading={isDeleting}
       />
-    </div>
+    </DashboardPage>
   );
 }

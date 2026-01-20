@@ -7,13 +7,12 @@ import { Plus, Search, Building2, Mail, Phone } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
-import { Header } from '@/app/components/dashboard/Header';
+import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Badge, getStatusBadgeVariant } from '@/app/components/ui/Badge';
 import { Table, Pagination } from '@/app/components/ui/Table';
-import { Spinner } from '@/app/components/ui/Spinner';
 import type { Client } from '@/app/lib/types/database';
 
 const ITEMS_PER_PAGE = 10;
@@ -121,58 +120,54 @@ export default function ClientsPage() {
   ];
 
   return (
-    <div className="flex flex-col h-screen">
-      <Header title={t.dashboard?.nav?.clients || 'Clients'} />
-
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          {/* Actions Bar */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <Input
-                placeholder={t.dashboard?.common?.searchPlaceholder || 'Search clients...'}
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
-                icon={<Search className="w-4 h-4" />}
-              />
-            </div>
-            {isAdmin && (
-              <Button
-                onClick={() => router.push('/dashboard/clients/new')}
-                className="gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                {t.dashboard?.clients?.addClient || 'Add Client'}
-              </Button>
-            )}
-          </div>
-
-          {/* Clients Table */}
-          <Card padding="none">
-            <Table
-              columns={columns}
-              data={clients}
-              loading={isLoading}
-              emptyMessage={t.dashboard?.clients?.noClients || 'No clients found'}
-              onRowClick={(client) => router.push(`/dashboard/clients/${client.id}`)}
-              keyExtractor={(client) => client.id}
+    <DashboardPage title={t.dashboard?.nav?.clients || 'Clients'}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        {/* Actions Bar */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex-1">
+            <Input
+              placeholder={t.dashboard?.common?.searchPlaceholder || 'Search clients...'}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              icon={<Search className="w-4 h-4" />}
             />
-          </Card>
+          </div>
+          {isAdmin && (
+            <Button
+              onClick={() => router.push('/dashboard/clients/new')}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              {t.dashboard?.clients?.addClient || 'Add Client'}
+            </Button>
+          )}
+        </div>
 
-          {/* Pagination */}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
+        {/* Clients Table */}
+        <Card padding="none">
+          <Table
+            columns={columns}
+            data={clients}
+            loading={isLoading}
+            emptyMessage={t.dashboard?.clients?.noClients || 'No clients found'}
+            onRowClick={(client) => router.push(`/dashboard/clients/${client.id}`)}
+            keyExtractor={(client) => client.id}
           />
-        </motion.div>
-      </div>
-    </div>
+        </Card>
+
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      </motion.div>
+    </DashboardPage>
   );
 }

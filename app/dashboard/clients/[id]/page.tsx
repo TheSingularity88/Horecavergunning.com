@@ -7,7 +7,7 @@ import { ArrowLeft, Building2, Mail, Phone, MapPin, FileText, Trash2 } from 'luc
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
-import { Header } from '@/app/components/dashboard/Header';
+import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
@@ -16,6 +16,7 @@ import { Select } from '@/app/components/ui/Select';
 import { Badge, getStatusBadgeVariant } from '@/app/components/ui/Badge';
 import { Spinner } from '@/app/components/ui/Spinner';
 import { ConfirmModal } from '@/app/components/ui/Modal';
+import { getClientStatusOptions } from '@/app/lib/constants/dashboard';
 import Link from 'next/link';
 import type { Client, Case } from '@/app/lib/types/database';
 
@@ -139,44 +140,31 @@ export default function ClientDetailPage() {
     }
   };
 
-  const statusOptions = [
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
-    { value: 'pending', label: 'Pending' },
-  ];
+  const statusOptions = getClientStatusOptions(t.dashboard);
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-screen">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <Spinner size="lg" />
-        </div>
-      </div>
+      <DashboardPage contentClassName="flex items-center justify-center p-0 lg:p-0">
+        <Spinner size="lg" />
+      </DashboardPage>
     );
   }
 
   if (!client) {
     return (
-      <div className="flex flex-col h-screen">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-slate-600">Client not found</p>
-        </div>
-      </div>
+      <DashboardPage contentClassName="flex items-center justify-center p-0 lg:p-0">
+        <p className="text-slate-600">Client not found</p>
+      </DashboardPage>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      <Header title={client.company_name} />
-
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-4xl mx-auto"
-        >
+    <DashboardPage title={client.company_name}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-4xl mx-auto"
+      >
           {/* Back link */}
           <Link
             href="/dashboard/clients"
@@ -435,8 +423,7 @@ export default function ClientDetailPage() {
               )}
             </div>
           </div>
-        </motion.div>
-      </div>
+      </motion.div>
 
       <ConfirmModal
         isOpen={showDeleteModal}
@@ -451,6 +438,6 @@ export default function ClientDetailPage() {
         variant="danger"
         isLoading={isDeleting}
       />
-    </div>
+    </DashboardPage>
   );
 }
