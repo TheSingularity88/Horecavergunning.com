@@ -15,7 +15,10 @@ import { Select } from '@/app/components/ui/Select';
 import { Badge } from '@/app/components/ui/Badge';
 import { Modal, ConfirmModal } from '@/app/components/ui/Modal';
 import { Spinner } from '@/app/components/ui/Spinner';
-import type { Document, Case, Client } from '@/app/lib/types/database';
+import type { Document } from '@/app/lib/types/database';
+
+type CaseOption = { id: string; title: string };
+type ClientOption = { id: string; company_name: string };
 
 export default function DocumentsPage() {
   const searchParams = useSearchParams();
@@ -23,8 +26,8 @@ export default function DocumentsPage() {
   const { isAdmin, profile } = useAuth();
   const { t } = useLanguage();
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [cases, setCases] = useState<Case[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [cases, setCases] = useState<CaseOption[]>([]);
+  const [clients, setClients] = useState<ClientOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -67,8 +70,8 @@ export default function DocumentsPage() {
         ]);
 
         setDocuments((docsRes.data as Document[]) || []);
-        setCases((casesRes.data as Case[]) || []);
-        setClients((clientsRes.data as Client[]) || []);
+        setCases((casesRes.data as CaseOption[]) || []);
+        setClients((clientsRes.data as ClientOption[]) || []);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {

@@ -15,7 +15,7 @@ import { Textarea } from '@/app/components/ui/Textarea';
 import { Select } from '@/app/components/ui/Select';
 import { Spinner } from '@/app/components/ui/Spinner';
 import Link from 'next/link';
-import type { Client } from '@/app/lib/types/database';
+type ClientOption = { id: string; company_name: string };
 
 export default function NewCasePage() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function NewCasePage() {
   const preselectedClientId = searchParams.get('client');
   const { profile } = useAuth();
   const { t } = useLanguage();
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<ClientOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +51,7 @@ export default function NewCasePage() {
           .order('company_name');
 
         if (error) throw error;
-        setClients(data || []);
+        setClients((data as ClientOption[]) || []);
       } catch (err) {
         console.error('Error fetching clients:', err);
       } finally {

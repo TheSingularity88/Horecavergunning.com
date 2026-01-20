@@ -18,6 +18,8 @@ import { ConfirmModal } from '@/app/components/ui/Modal';
 import Link from 'next/link';
 import type { Task, Case, Profile } from '@/app/lib/types/database';
 
+type EmployeeOption = { id: string; full_name: string };
+
 export default function TaskDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -26,7 +28,7 @@ export default function TaskDetailPage() {
   const [task, setTask] = useState<Task | null>(null);
   const [relatedCase, setRelatedCase] = useState<Case | null>(null);
   const [assignee, setAssignee] = useState<Profile | null>(null);
-  const [employees, setEmployees] = useState<Profile[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -88,7 +90,7 @@ export default function TaskDetailPage() {
           .from('profiles')
           .select('id, full_name')
           .eq('is_active', true);
-        setEmployees((employeesData as Profile[]) || []);
+        setEmployees((employeesData as EmployeeOption[]) || []);
       } catch (err) {
         console.error('Error fetching task:', err);
         setError('Failed to load task');

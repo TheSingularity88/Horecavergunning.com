@@ -15,7 +15,8 @@ import { Textarea } from '@/app/components/ui/Textarea';
 import { Select } from '@/app/components/ui/Select';
 import { Spinner } from '@/app/components/ui/Spinner';
 import Link from 'next/link';
-import type { Case, Profile } from '@/app/lib/types/database';
+type CaseOption = { id: string; title: string };
+type EmployeeOption = { id: string; full_name: string; email: string };
 
 export default function NewTaskPage() {
   const router = useRouter();
@@ -23,8 +24,8 @@ export default function NewTaskPage() {
   const preselectedCaseId = searchParams.get('case');
   const { profile } = useAuth();
   const { t } = useLanguage();
-  const [cases, setCases] = useState<Case[]>([]);
-  const [employees, setEmployees] = useState<Profile[]>([]);
+  const [cases, setCases] = useState<CaseOption[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = useMemo(() => createClient(), []);
@@ -47,8 +48,8 @@ export default function NewTaskPage() {
           supabase.from('profiles').select('id, full_name, email').eq('is_active', true),
         ]);
 
-        setCases((casesRes.data as Case[]) || []);
-        setEmployees((employeesRes.data as Profile[]) || []);
+        setCases((casesRes.data as CaseOption[]) || []);
+        setEmployees((employeesRes.data as EmployeeOption[]) || []);
       } catch (err) {
         console.error('Error fetching data:', err);
       }
