@@ -3,13 +3,16 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { User } from '@supabase/supabase-js';
 import { createClient } from '@/app/lib/supabase/client';
-import type { Profile } from '@/app/lib/types/database';
+import type { Profile, Client } from '@/app/lib/types/database';
 
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
+  clientData: Client | null;
   isLoading: boolean;
   isAdmin: boolean;
+  isClient: boolean;
+  clientId: string | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -20,6 +23,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [clientData, setClientData] = useState<Client | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = useMemo(() => createClient(), []);
 
@@ -29,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         // Profile table might not exist or user might not have a profile yet
@@ -45,12 +49,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [supabase]);
 
+  const fetchClientData = useCallback(async (userId: string): Promise<Client | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) {
+        // User might not be a client - this is normal for employees/admins
+        return null;
+      }
+
+      return data as Client;
+    } catch (err) {
+      console.warn('Client data fetch error:', err);
+      return null;
+    }
+  }, [supabase]);
+
   const refreshProfile = useCallback(async () => {
     if (user) {
-      const profileData = await fetchProfile(user.id);
+      const [profileData, clientDataResult] = await Promise.all([
+        fetchProfile(user.id),
+        fetchClientData(user.id),
+      ]);
       setProfile(profileData);
+      setClientData(clientDataResult);
     }
-  }, [user, fetchProfile]);
+  }, [user, fetchProfile, fetchClientData]);
 
   useEffect(() => {
     let isMounted = true;
@@ -69,12 +97,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (isMounted && session?.user) {
           setUser(session.user);
-          // Fetch profile but don't block on it
-          fetchProfile(session.user.id).then((profileData) => {
-            if (isMounted) {
-              setProfile(profileData);
-            }
-          });
+          // IMPORTANT: Wait for profile and client data before setting isLoading to false
+          // This prevents race conditions where isClient is checked before data loads
+          const [profileData, clientDataResult] = await Promise.all([
+            fetchProfile(session.user.id),
+            fetchClientData(session.user.id),
+          ]);
+          if (isMounted) {
+            setProfile(profileData);
+            setClientData(clientDataResult);
+          }
         }
       } catch (error) {
         console.error('Error getting session:', error);
@@ -95,24 +127,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (session?.user) {
         setUser(session.user);
-        // Fetch profile but don't block on it
-        fetchProfile(session.user.id).then((profileData) => {
-          if (isMounted) {
-            setProfile(profileData);
-          }
-        });
+        // IMPORTANT: Wait for profile and client data before setting isLoading to false
+        // This prevents race conditions where isClient is checked before data loads
+        const [profileData, clientDataResult] = await Promise.all([
+          fetchProfile(session.user.id),
+          fetchClientData(session.user.id),
+        ]);
+        if (isMounted) {
+          setProfile(profileData);
+          setClientData(clientDataResult);
+          setIsLoading(false);
+        }
       } else {
         setUser(null);
         setProfile(null);
+        setClientData(null);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     return () => {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase, fetchProfile]);
+  }, [supabase, fetchProfile, fetchClientData]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -139,17 +177,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(null);
     setProfile(null);
+    setClientData(null);
   };
 
   const isAdmin = profile?.role === 'admin';
+  const isClient = clientData !== null;
+  const clientId = clientData?.id || null;
 
   return (
     <AuthContext.Provider
       value={{
         user,
         profile,
+        clientData,
         isLoading,
         isAdmin,
+        isClient,
+        clientId,
         signIn,
         signOut,
         refreshProfile,

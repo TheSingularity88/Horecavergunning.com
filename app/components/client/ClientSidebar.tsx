@@ -6,14 +6,10 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
-  Users,
   FolderOpen,
-  Inbox,
-  CheckSquare,
   FileText,
-  UserCog,
-  Settings,
-  Activity,
+  PlusCircle,
+  User,
   ChevronLeft,
   Menu,
 } from 'lucide-react';
@@ -21,15 +17,12 @@ import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { cn } from '@/app/lib/utils/cn';
 import { dashboardRoutes } from '@/app/lib/routes/dashboard';
-import type { translations } from '@/app/lib/translations';
 
 interface NavItem {
   name: string;
   href: string;
   icon: React.ElementType;
 }
-
-type Translations = typeof translations['en'];
 
 interface NavLinkProps {
   item: NavItem;
@@ -58,30 +51,26 @@ function NavLink({ item, collapsed, isActive, onNavigate }: NavLinkProps) {
 
 interface SidebarContentProps {
   collapsed: boolean;
-  isAdmin: boolean;
-  mainNavItems: NavItem[];
-  adminNavItems: NavItem[];
+  navItems: NavItem[];
   isActive: (href: string) => boolean;
   onToggleCollapse: () => void;
   onNavigate: () => void;
-  t: Translations;
+  companyName?: string;
 }
 
 function SidebarContent({
   collapsed,
-  isAdmin,
-  mainNavItems,
-  adminNavItems,
+  navItems,
   isActive,
   onToggleCollapse,
   onNavigate,
-  t,
+  companyName,
 }: SidebarContentProps) {
   return (
     <>
       {/* Logo */}
       <div className="p-4 border-b border-slate-200">
-        <Link href={dashboardRoutes.employee.base} className="flex items-center gap-2">
+        <Link href={dashboardRoutes.client.base} className="flex items-center gap-2">
           {!collapsed ? (
             <h1 className="text-lg font-bold text-slate-900">
               Horeca<span className="text-amber-500">Vergunning</span>
@@ -90,11 +79,14 @@ function SidebarContent({
             <span className="text-xl font-bold text-amber-500">HV</span>
           )}
         </Link>
+        {!collapsed && companyName && (
+          <p className="text-xs text-slate-500 mt-1 truncate">{companyName}</p>
+        )}
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {mainNavItems.map((item) => (
+        {navItems.map((item) => (
           <NavLink
             key={item.href}
             item={item}
@@ -103,27 +95,6 @@ function SidebarContent({
             onNavigate={onNavigate}
           />
         ))}
-
-        {isAdmin && (
-          <>
-            <div className="pt-4 mt-4 border-t border-slate-200">
-              {!collapsed && (
-                <p className="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  {t.dashboard?.nav?.admin || 'Admin'}
-                </p>
-              )}
-              {adminNavItems.map((item) => (
-                <NavLink
-                  key={item.href}
-                  item={item}
-                  collapsed={collapsed}
-                  isActive={isActive}
-                  onNavigate={onNavigate}
-                />
-              ))}
-            </div>
-          </>
-        )}
       </nav>
 
       {/* Collapse button - desktop only */}
@@ -138,81 +109,55 @@ function SidebarContent({
               collapsed && 'rotate-180'
             )}
           />
-          {!collapsed && (
-            <span className="text-sm">
-              {t.dashboard?.nav?.collapse || 'Collapse'}
-            </span>
-          )}
+          {!collapsed && <span className="text-sm">Collapse</span>}
         </button>
       </div>
     </>
   );
 }
 
-export function Sidebar() {
+export function ClientSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
-  const { isAdmin } = useAuth();
+  const { clientData } = useAuth();
   const { t } = useLanguage();
 
-  const mainNavItems: NavItem[] = [
+  const navItems: NavItem[] = [
     {
-      name: t.dashboard?.nav?.dashboard || 'Dashboard',
-      href: dashboardRoutes.employee.base,
+      name: t.clientPortal?.nav?.dashboard || 'Dashboard',
+      href: dashboardRoutes.client.base,
       icon: LayoutDashboard,
     },
     {
-      name: t.dashboard?.nav?.clients || 'Clients',
-      href: dashboardRoutes.employee.clients,
-      icon: Users,
-    },
-    {
-      name: t.dashboard?.nav?.cases || 'Cases',
-      href: dashboardRoutes.employee.cases,
+      name: t.clientPortal?.nav?.cases || 'My Cases',
+      href: dashboardRoutes.client.cases,
       icon: FolderOpen,
     },
     {
-      name: t.dashboard?.nav?.requests || 'Requests',
-      href: dashboardRoutes.employee.requests,
-      icon: Inbox,
-    },
-    {
-      name: t.dashboard?.nav?.tasks || 'Tasks',
-      href: dashboardRoutes.employee.tasks,
-      icon: CheckSquare,
-    },
-    {
-      name: t.dashboard?.nav?.documents || 'Documents',
-      href: dashboardRoutes.employee.documents,
+      name: t.clientPortal?.nav?.documents || 'Documents',
+      href: dashboardRoutes.client.documents,
       icon: FileText,
     },
-  ];
-
-  const adminNavItems: NavItem[] = [
     {
-      name: t.dashboard?.nav?.users || 'Users',
-      href: dashboardRoutes.employee.admin.users,
-      icon: UserCog,
+      name: t.clientPortal?.nav?.requests || 'New Request',
+      href: dashboardRoutes.client.requests,
+      icon: PlusCircle,
     },
     {
-      name: t.dashboard?.nav?.settings || 'Settings',
-      href: dashboardRoutes.employee.admin.settings,
-      icon: Settings,
-    },
-    {
-      name: t.dashboard?.nav?.activity || 'Activity',
-      href: dashboardRoutes.employee.admin.activity,
-      icon: Activity,
+      name: t.clientPortal?.nav?.profile || 'My Profile',
+      href: dashboardRoutes.client.profile,
+      icon: User,
     },
   ];
 
   const isActive = (href: string) => {
-    if (href === dashboardRoutes.employee.base) {
+    if (href === dashboardRoutes.client.base) {
       return pathname === href;
     }
     return pathname.startsWith(href);
   };
+
   const handleToggleCollapse = () => setCollapsed((prev) => !prev);
   const handleNavigate = () => setMobileOpen(false);
 
@@ -245,14 +190,12 @@ export function Sidebar() {
               className="lg:hidden fixed inset-y-0 left-0 w-[280px] bg-white border-r border-slate-200 z-50 flex flex-col"
             >
               <SidebarContent
-                collapsed={collapsed}
-                isAdmin={isAdmin}
-                mainNavItems={mainNavItems}
-                adminNavItems={adminNavItems}
+                collapsed={false}
+                navItems={navItems}
                 isActive={isActive}
                 onToggleCollapse={handleToggleCollapse}
                 onNavigate={handleNavigate}
-                t={t}
+                companyName={clientData?.company_name}
               />
             </motion.aside>
           </>
@@ -268,13 +211,11 @@ export function Sidebar() {
       >
         <SidebarContent
           collapsed={collapsed}
-          isAdmin={isAdmin}
-          mainNavItems={mainNavItems}
-          adminNavItems={adminNavItems}
+          navItems={navItems}
           isActive={isActive}
           onToggleCollapse={handleToggleCollapse}
           onNavigate={handleNavigate}
-          t={t}
+          companyName={clientData?.company_name}
         />
       </aside>
     </>

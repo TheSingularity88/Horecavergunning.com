@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Plus, Search, UserCog, Mail, Shield, ShieldCheck } from 'lucide-react';
+import { Plus, Search, UserCog, Mail, Phone, Shield, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { createClient } from '@/app/lib/supabase/client';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
@@ -11,20 +11,23 @@ import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Select } from '@/app/components/ui/Select';
-import { Badge } from '@/app/components/ui/Badge';
+import { Badge, getStatusBadgeVariant } from '@/app/components/ui/Badge';
 import { Avatar } from '@/app/components/ui/Avatar';
 import { Table } from '@/app/components/ui/Table';
 import { Modal } from '@/app/components/ui/Modal';
 import { Spinner } from '@/app/components/ui/Spinner';
-import type { Profile } from '@/app/lib/types/database';
+import type { Client, Profile } from '@/app/lib/types/database';
 
 export default function UsersPage() {
   const router = useRouter();
   const { isAdmin } = useAuth();
   const [users, setUsers] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [clientSearch, setClientSearch] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +76,34 @@ export default function UsersPage() {
 
     fetchUsers();
   }, [supabase, search, roleFilter]);
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      setIsLoadingClients(true);
+      try {
+        let query = supabase
+          .from('clients')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (clientSearch) {
+          query = query.or(
+            `company_name.ilike.%${clientSearch}%,contact_name.ilike.%${clientSearch}%,email.ilike.%${clientSearch}%`
+          );
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        setClients((data as Client[]) || []);
+      } catch (error) {
+        console.error('Error fetching clients:', error);
+      } finally {
+        setIsLoadingClients(false);
+      }
+    };
+
+    fetchClients();
+  }, [supabase, clientSearch]);
 
   const handleCreateUser = async () => {
     setError(null);
@@ -206,6 +237,62 @@ export default function UsersPage() {
     },
   ];
 
+  const clientColumns = [
+    {
+      key: 'company_name',
+      header: 'Company',
+      render: (client: Client) => (
+        <div className="flex items-center gap-3">
+          <Avatar name={client.company_name} size="sm" />
+          <div>
+            <p className="font-medium text-slate-900">{client.company_name}</p>
+            <p className="text-sm text-slate-500">{client.contact_name}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      header: 'Contact',
+      render: (client: Client) => (
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-sm text-slate-600">
+            <Mail className="w-3.5 h-3.5" />
+            {client.email}
+          </div>
+          {client.phone && (
+            <div className="flex items-center gap-1.5 text-sm text-slate-500">
+              <Phone className="w-3.5 h-3.5" />
+              {client.phone}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (client: Client) => (
+        <Badge variant={getStatusBadgeVariant(client.status)}>
+          {client.status}
+        </Badge>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (client: Client) => (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => router.push(`/dashboard/clients/${client.id}`)}
+        >
+          View
+        </Button>
+      ),
+    },
+  ];
+
   if (!isAdmin) return null;
 
   return (
@@ -248,6 +335,33 @@ export default function UsersPage() {
             keyExtractor={(user) => user.id}
           />
         </Card>
+
+        {/* Clients Section */}
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">
+            Clients
+          </h2>
+          <div className="flex flex-col lg:flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <Input
+                placeholder="Search clients..."
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+                icon={<Search className="w-4 h-4" />}
+              />
+            </div>
+          </div>
+
+          <Card padding="none">
+            <Table
+              columns={clientColumns}
+              data={clients}
+              loading={isLoadingClients}
+              emptyMessage="No clients found"
+              keyExtractor={(client) => client.id}
+            />
+          </Card>
+        </div>
       </motion.div>
 
       {/* Create User Modal */}

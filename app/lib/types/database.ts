@@ -37,6 +37,10 @@ export type DocumentCategory =
   | 'bibob'
   | 'general';
 
+// Client portal types
+export type ClientRequestStatus = 'pending' | 'reviewing' | 'approved' | 'converted' | 'rejected';
+export type RequestUrgency = 'normal' | 'urgent';
+
 export interface Database {
   public: {
     Tables: {
@@ -88,6 +92,7 @@ export interface Database {
           kvk_number: string | null;
           notes: string | null;
           assigned_employee_id: string | null;
+          user_id: string | null;
           status: ClientStatus;
           created_at: string;
           updated_at: string;
@@ -104,6 +109,7 @@ export interface Database {
           kvk_number?: string | null;
           notes?: string | null;
           assigned_employee_id?: string | null;
+          user_id?: string | null;
           status?: ClientStatus;
           created_at?: string;
           updated_at?: string;
@@ -120,6 +126,7 @@ export interface Database {
           kvk_number?: string | null;
           notes?: string | null;
           assigned_employee_id?: string | null;
+          user_id?: string | null;
           status?: ClientStatus;
           created_at?: string;
           updated_at?: string;
@@ -315,6 +322,53 @@ export interface Database {
           updated_at?: string;
         };
       };
+      client_requests: {
+        Row: {
+          id: string;
+          client_id: string;
+          request_type: CaseType;
+          title: string;
+          description: string | null;
+          status: ClientRequestStatus;
+          municipality: string | null;
+          urgency: RequestUrgency;
+          notes: string | null;
+          reviewed_by: string | null;
+          converted_to_case_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          request_type: CaseType;
+          title: string;
+          description?: string | null;
+          status?: ClientRequestStatus;
+          municipality?: string | null;
+          urgency?: RequestUrgency;
+          notes?: string | null;
+          reviewed_by?: string | null;
+          converted_to_case_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          client_id?: string;
+          request_type?: CaseType;
+          title?: string;
+          description?: string | null;
+          status?: ClientRequestStatus;
+          municipality?: string | null;
+          urgency?: RequestUrgency;
+          notes?: string | null;
+          reviewed_by?: string | null;
+          converted_to_case_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 }
@@ -327,3 +381,4 @@ export type Task = Database['public']['Tables']['tasks']['Row'];
 export type Document = Database['public']['Tables']['documents']['Row'];
 export type ActivityLog = Database['public']['Tables']['activity_log']['Row'];
 export type SystemSetting = Database['public']['Tables']['system_settings']['Row'];
+export type ClientRequest = Database['public']['Tables']['client_requests']['Row'];

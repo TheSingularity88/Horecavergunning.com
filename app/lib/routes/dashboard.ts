@@ -5,6 +5,7 @@ export const dashboardRoutes = {
     base: '/dashboard',
     clients: '/dashboard/clients',
     cases: '/dashboard/cases',
+    requests: '/dashboard/requests',
     tasks: '/dashboard/tasks',
     documents: '/dashboard/documents',
     profile: '/dashboard/profile',
