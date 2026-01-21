@@ -7,9 +7,11 @@ import { motion } from 'framer-motion';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
+import { createClient } from '@/app/lib/supabase/client';
 import { Input } from '@/app/components/ui/Input';
 import { Button } from '@/app/components/ui/Button';
 import { Spinner } from '@/app/components/ui/Spinner';
+import { dashboardRoutes } from '@/app/lib/routes/dashboard';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -20,7 +22,7 @@ function LoginForm() {
   const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/dashboard';
+  const explicitRedirect = searchParams.get('redirect');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,9 +35,36 @@ function LoginForm() {
         setError(error.message);
         setIsLoading(false);
       } else {
-        // Refresh to update server state, then redirect
-        router.refresh();
-        router.push(redirect);
+        // Check if user is a client by looking up in clients table
+        const supabase = createClient();
+        const { data: session } = await supabase.auth.getSession();
+
+        if (session?.session?.user) {
+          const { data: clientData } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('user_id', session.session.user.id)
+            .maybeSingle();
+
+          // Determine redirect path
+          let redirectPath: string;
+          if (explicitRedirect) {
+            // Use explicit redirect if provided
+            redirectPath = explicitRedirect;
+          } else if (clientData) {
+            // User is a client - redirect to client portal
+            redirectPath = dashboardRoutes.client.base;
+          } else {
+            // User is employee/admin - redirect to employee dashboard
+            redirectPath = dashboardRoutes.employee.base;
+          }
+
+          router.refresh();
+          router.push(redirectPath);
+        } else {
+          router.refresh();
+          router.push(dashboardRoutes.employee.base);
+        }
       }
     } catch {
       setError('An unexpected error occurred');
@@ -135,8 +164,16 @@ function LoginForm() {
           </form>
         </div>
 
-        {/* Back to home */}
+        {/* Register link for clients */}
         <p className="mt-6 text-center text-sm text-slate-600">
+          {t.clientPortal?.auth?.noAccount || "Don't have an account?"}{' '}
+          <Link href="/client-register" className="text-amber-600 hover:text-amber-700 font-medium">
+            {t.clientPortal?.auth?.registerHere || 'Register as a client'}
+          </Link>
+        </p>
+
+        {/* Back to home */}
+        <p className="mt-2 text-center text-sm text-slate-600">
           <Link href="/" className="text-amber-600 hover:text-amber-700 font-medium">
             &larr; {t.dashboard?.auth?.backToHome || 'Back to homepage'}
           </Link>

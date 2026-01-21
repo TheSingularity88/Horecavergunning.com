@@ -9,7 +9,13 @@
       "Bash(git remote:*)",
       "Bash(ls:*)",
       "Bash(git -C /h/!!PROJECTs!!/Horecavergunning.com log --oneline -10)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(where:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

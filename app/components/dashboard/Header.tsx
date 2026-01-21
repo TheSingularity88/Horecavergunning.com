@@ -19,7 +19,7 @@ export function Header({ title }: HeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { profile, signOut } = useAuth();
+  const { profile, clientData, isAdmin, signOut } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
 
@@ -39,6 +39,9 @@ export function Header({ title }: HeaderProps) {
     await signOut();
     router.push('/login');
   };
+
+  const displayName = profile?.full_name || clientData?.contact_name || 'User';
+  const displayEmail = profile?.email || clientData?.email || '';
 
   return (
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-6">
@@ -99,11 +102,11 @@ export function Header({ title }: HeaderProps) {
           >
             <Avatar
               src={profile?.avatar_url}
-              name={profile?.full_name}
+              name={displayName}
               size="sm"
             />
             <span className="hidden md:block text-sm font-medium text-slate-700">
-              {profile?.full_name || 'User'}
+              {displayName}
             </span>
             <ChevronDown className="hidden md:block w-4 h-4 text-slate-400" />
           </button>
@@ -119,10 +122,10 @@ export function Header({ title }: HeaderProps) {
               >
                 <div className="px-4 py-3 border-b border-slate-100">
                   <p className="text-sm font-medium text-slate-900">
-                    {profile?.full_name}
+                    {displayName}
                   </p>
                   <p className="text-xs text-slate-500 truncate">
-                    {profile?.email}
+                    {displayEmail}
                   </p>
                 </div>
 
@@ -135,14 +138,16 @@ export function Header({ title }: HeaderProps) {
                     <User className="w-4 h-4" />
                     {t.dashboard?.nav?.profile || 'Profile'}
                   </Link>
-                  <Link
-                    href={dashboardRoutes.employee.admin.settings}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                    onClick={() => setShowUserMenu(false)}
-                  >
-                    <Settings className="w-4 h-4" />
-                    {t.dashboard?.nav?.settings || 'Settings'}
-                  </Link>
+                  {isAdmin && (
+                    <Link
+                      href={dashboardRoutes.employee.admin.settings}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <Settings className="w-4 h-4" />
+                      {t.dashboard?.nav?.settings || 'Settings'}
+                    </Link>
+                  )}
                 </div>
 
                 <div className="border-t border-slate-100 py-1">
