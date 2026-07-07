@@ -10,6 +10,7 @@ import { Footer } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { HomeJsonLd } from './components/seo/HomeJsonLd';
 import { createPublicClient } from './lib/supabase/public';
+import { fetchPublicSettings, hasRealContact } from './lib/public-settings';
 import type { PermitType } from './lib/types/database';
 
 // Revalidate hourly; the admin permit-type editor also purges the
@@ -31,14 +32,25 @@ async function getPermitTypes(): Promise<PermitType[]> {
 }
 
 export default async function Home() {
-  const permitTypes = await getPermitTypes();
+  const [permitTypes, settings] = await Promise.all([
+    getPermitTypes(),
+    fetchPublicSettings(),
+  ]);
+
+  const nap = hasRealContact(settings)
+    ? {
+        email: settings.contactEmail,
+        phone: settings.contactPhone,
+        address: settings.contactAddress,
+      }
+    : undefined;
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-amber-500 selection:text-white">
-      <HomeJsonLd />
+      <HomeJsonLd nap={nap} />
       <Navbar />
       <Hero />
-      <SocialProof />
+      <SocialProof mode={settings.socialProofMode} companies={settings.socialProofCompanies} />
       <ProblemSolution />
       <Services />
       <Pricing permitTypes={permitTypes} />

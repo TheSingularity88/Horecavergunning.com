@@ -1,10 +1,26 @@
 'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ShieldCheck, Facebook, Instagram, Linkedin } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { fetchPublicSettings, DEFAULT_PUBLIC_SETTINGS, type PublicSettings } from '../lib/public-settings';
+
+const PERMIT_LINKS = [
+  { href: '/exploitatievergunning', label: 'Exploitatievergunning' },
+  { href: '/alcoholvergunning', label: 'Alcoholvergunning' },
+  { href: '/terrasvergunning', label: 'Terrasvergunning' },
+  { href: '/bibob', label: 'Bibob-toets' },
+];
 
 export function Footer() {
   const { t } = useLanguage();
+  const [settings, setSettings] = useState<PublicSettings>(DEFAULT_PUBLIC_SETTINGS);
+
+  useEffect(() => {
+    fetchPublicSettings().then(setSettings);
+  }, []);
+
+  const telHref = `tel:${settings.contactPhone.replace(/[^\d+]/g, '')}`;
 
   return (
     <footer className="bg-slate-950 text-slate-400 py-16 border-t border-slate-900">
@@ -15,27 +31,32 @@ export function Footer() {
               <ShieldCheck className="w-6 h-6 text-amber-500" />
               <span className="text-lg font-bold">HorecaVergunning</span>
             </div>
-            <p className="text-sm">
-              {t.footer.tagline}
-            </p>
+            <p className="text-sm">{t.footer.tagline}</p>
           </div>
-          
+
           <div>
             <h4 className="text-white font-bold mb-4">{t.footer.services}</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-amber-500 transition-colors">Permits & Bibob</a></li>
-              <li><a href="#" className="hover:text-amber-500 transition-colors">Legal Contracts</a></li>
-              <li><a href="#" className="hover:text-amber-500 transition-colors">Financial Admin</a></li>
-              <li><a href="#" className="hover:text-amber-500 transition-colors">Renovation Project</a></li>
+              {PERMIT_LINKS.map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} className="hover:text-amber-500 transition-colors">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <Link href="/vergunningen" className="hover:text-amber-500 transition-colors">
+                  {t.services.viewAll || 'Alle vergunningen'}
+                </Link>
+              </li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-white font-bold mb-4">{t.footer.company}</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-amber-500 transition-colors">{t.navbar.about}</a></li>
-              <li><a href="#faq" className="hover:text-amber-500 transition-colors">{t.navbar.faq}</a></li>
-              <li><a href="#" className="hover:text-amber-500 transition-colors">Careers</a></li>
+              <li><Link href="/#services" className="hover:text-amber-500 transition-colors">{t.navbar.services}</Link></li>
+              <li><Link href="/#faq" className="hover:text-amber-500 transition-colors">{t.navbar.faq}</Link></li>
               <li><Link href="/blog" className="hover:text-amber-500 transition-colors">Blog</Link></li>
               <li><Link href="/contact" className="hover:text-amber-500 transition-colors">{t.footer.contact}</Link></li>
             </ul>
@@ -44,23 +65,23 @@ export function Footer() {
           <div>
             <h4 className="text-white font-bold mb-4">{t.footer.contact}</h4>
             <ul className="space-y-2 text-sm">
-              <li>Keizersgracht 123</li>
-              <li>1015 CJ Amsterdam</li>
-              <li className="pt-2">020 - 123 45 67</li>
-              <li>info@horecavergunning.nl</li>
+              <li>{settings.contactAddress}</li>
+              <li className="pt-2">
+                <a href={telHref} className="hover:text-amber-500 transition-colors">
+                  {settings.contactPhone}
+                </a>
+              </li>
+              <li>
+                <a href={`mailto:${settings.contactEmail}`} className="hover:text-amber-500 transition-colors">
+                  {settings.contactEmail}
+                </a>
+              </li>
             </ul>
           </div>
         </div>
-        
+
         <div className="border-t border-slate-900 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-sm">
-            {t.footer.rights}
-          </div>
-          <div className="flex gap-4">
-            <a href="#" className="hover:text-white transition-colors"><Facebook size={20} /></a>
-            <a href="#" className="hover:text-white transition-colors"><Instagram size={20} /></a>
-            <a href="#" className="hover:text-white transition-colors"><Linkedin size={20} /></a>
-          </div>
+          <div className="text-sm">{t.footer.rights}</div>
         </div>
       </div>
     </footer>

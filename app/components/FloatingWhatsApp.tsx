@@ -1,12 +1,20 @@
 'use client';
+import { useEffect, useState } from 'react';
 import { MessageCircle } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { fetchPublicSettings, DEFAULT_PUBLIC_SETTINGS } from '../lib/public-settings';
 
 export function FloatingWhatsApp() {
   const { t } = useLanguage();
+  const [number, setNumber] = useState(DEFAULT_PUBLIC_SETTINGS.whatsappNumber);
+
+  useEffect(() => {
+    fetchPublicSettings().then((s) => setNumber(s.whatsappNumber.replace(/\D/g, '')));
+  }, []);
+
   return (
-    <a 
-      href="https://wa.me/31612345678"
+    <a
+      href={`https://wa.me/${number}`}
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition-transform hover:scale-110 flex items-center gap-2"

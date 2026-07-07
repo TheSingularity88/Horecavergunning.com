@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, Check } from 'lucide-react';
+import { fetchPublicSettings, DEFAULT_PUBLIC_SETTINGS, type PublicSettings } from '../lib/public-settings';
 import { Navbar } from '../components/Navbar';
 import { Footer } from '../components/Footer';
 import { Button } from '../components/ui/Button';
@@ -18,6 +19,11 @@ export default function ContactClient() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [contact, setContact] = useState<PublicSettings>(DEFAULT_PUBLIC_SETTINGS);
+
+  useEffect(() => {
+    fetchPublicSettings().then(setContact);
+  }, []);
 
   const s = {
     title: nl ? 'Neem contact op' : 'Get in touch',
@@ -84,23 +90,23 @@ export default function ContactClient() {
             <p className="text-slate-600 mb-8">{s.subtitle}</p>
 
             <div className="space-y-4 text-slate-700">
-              <a href="mailto:info@horecavergunning.nl" className="flex items-center gap-3 hover:text-amber-600">
+              <a href={`mailto:${contact.contactEmail}`} className="flex items-center gap-3 hover:text-amber-600">
                 <span className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center">
                   <Mail className="w-5 h-5 text-amber-500" />
                 </span>
-                info@horecavergunning.nl
+                {contact.contactEmail}
               </a>
-              <a href="tel:+31201234567" className="flex items-center gap-3 hover:text-amber-600">
+              <a href={`tel:${contact.contactPhone.replace(/[^\d+]/g, '')}`} className="flex items-center gap-3 hover:text-amber-600">
                 <span className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center">
                   <Phone className="w-5 h-5 text-amber-500" />
                 </span>
-                020 - 123 45 67
+                {contact.contactPhone}
               </a>
               <div className="flex items-center gap-3">
                 <span className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center">
                   <MapPin className="w-5 h-5 text-amber-500" />
                 </span>
-                Keizersgracht 123, Amsterdam
+                {contact.contactAddress}
               </div>
             </div>
           </div>
