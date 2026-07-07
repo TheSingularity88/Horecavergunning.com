@@ -3,6 +3,36 @@
 import { createAdminClient } from '@/app/lib/supabase/admin';
 import { requireStaff, toActionError, type ActionResult } from '@/app/lib/auth/guards';
 import { reviewRequestSchema } from '@/app/lib/validation/requests';
+import { createInvoiceForCase } from '@/app/lib/actions/billing';
+
+/**
+ * Snapshot the required-documents template of a permit type into per-case
+ * checklist rows. This is the foundation for the future automated document
+ * checking flow.
+ */
+async function snapshotChecklist(
+  admin: ReturnType<typeof createAdminClient>,
+  caseId: string,
+  permitTypeId: string | null
+) {
+  if (!permitTypeId) return;
+  const { data: required } = await admin
+    .from('required_documents')
+    .select('id, name_nl, sort_order')
+    .eq('permit_type_id', permitTypeId)
+    .order('sort_order');
+  if (!required || required.length === 0) return;
+
+  await admin.from('case_documents').insert(
+    required.map((r) => ({
+      case_id: caseId,
+      required_document_id: r.id,
+      name: r.name_nl,
+      status: 'pending',
+      sort_order: r.sort_order,
+    }))
+  );
+}
 
 /**
  * Approve a client request: creates a case from it and marks the request
@@ -39,12 +69,13 @@ export async function approveClientRequest(input: {
         title: request.title,
         description: request.description,
         case_type: request.request_type,
+        permit_type_id: request.permit_type_id,
         status: 'intake',
         priority: request.urgency === 'urgent' ? 'urgent' : 'normal',
         municipality: request.municipality,
         assigned_employee_id: profile.id,
       })
-      .select('id')
+      .select('id, permit_type_id')
       .single();
     if (caseError || !caseData) {
       return { success: false, error: 'Failed to create case.' };
@@ -61,6 +92,13 @@ export async function approveClientRequest(input: {
     if (updateError) {
       return { success: false, error: 'Case created but request update failed.' };
     }
+
+    // Snapshot the document checklist for this permit type onto the case.
+    await snapshotChecklist(admin, caseData.id, caseData.permit_type_id);
+
+    // Create the invoice + Mollie payment link and email the client.
+    // Non-fatal: approval succeeds even if billing/email is not configured.
+    await createInvoiceForCase(caseData.id);
 
     await admin.from('activity_log').insert({
       user_id: profile.id,

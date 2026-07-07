@@ -288,8 +288,18 @@ export const translations = {
         dashboard: "Dashboard",
         cases: "My Cases",
         documents: "Documents",
+        invoices: "Invoices",
         requests: "Requests",
         profile: "My Profile"
+      },
+      invoices: {
+        title: "Invoices",
+        subtitle: "Your invoices and payment status",
+        empty: "You have no invoices yet.",
+        payNow: "Pay now",
+        paid: "Paid",
+        open: "Awaiting payment",
+        failed: "Payment failed"
       },
       auth: {
         registerSubtitle: "Create your client account",
@@ -718,8 +728,18 @@ export const translations = {
         dashboard: "Dashboard",
         cases: "Mijn Zaken",
         documents: "Documenten",
+        invoices: "Facturen",
         requests: "Aanvragen",
         profile: "Mijn Profiel"
+      },
+      invoices: {
+        title: "Facturen",
+        subtitle: "Uw facturen en betaalstatus",
+        empty: "U heeft nog geen facturen.",
+        payNow: "Nu betalen",
+        paid: "Betaald",
+        open: "Wacht op betaling",
+        failed: "Betaling mislukt"
       },
       auth: {
         registerSubtitle: "Maak uw klantenaccount aan",

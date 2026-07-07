@@ -20,6 +20,7 @@ export const dashboardRoutes = {
     cases: '/client/cases',
     requests: '/client/requests',
     documents: '/client/documents',
+    invoices: '/client/invoices',
     profile: '/client/profile',
   },
 } as const;
