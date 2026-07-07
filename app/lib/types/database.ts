@@ -42,6 +42,13 @@ export type DocumentCategory =
 export type ClientRequestStatus = 'pending' | 'reviewing' | 'approved' | 'converted' | 'rejected';
 export type RequestUrgency = 'normal' | 'urgent';
 
+// Catalog + billing types
+export type CaseDocumentStatus = 'pending' | 'uploaded' | 'in_review' | 'approved' | 'rejected';
+export type LeadSource = 'quiz' | 'contact' | 'newsletter';
+export type LeadStatus = 'new' | 'contacted' | 'converted' | 'closed';
+export type InvoiceStatus = 'draft' | 'open' | 'paid' | 'failed' | 'expired' | 'canceled';
+export type Locale = 'nl' | 'en';
+
 // ----------------------------------------------------------------------------
 // Domain models (narrowed versions of the generated Row types)
 // ----------------------------------------------------------------------------
@@ -153,6 +160,93 @@ export interface ClientRequest {
   notes: string | null;
   reviewed_by: string | null;
   converted_to_case_id: string | null;
+  permit_type_id: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface PermitType {
+  id: string;
+  slug: string;
+  name_nl: string;
+  name_en: string;
+  description_nl: string | null;
+  description_en: string | null;
+  base_fee_cents: number;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RequiredDocument {
+  id: string;
+  permit_type_id: string;
+  name_nl: string;
+  name_en: string;
+  description_nl: string | null;
+  description_en: string | null;
+  is_required: boolean;
+  sort_order: number;
+  auto_check_config: import('./supabase').Json | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CaseDocument {
+  id: string;
+  case_id: string;
+  required_document_id: string | null;
+  name: string;
+  status: CaseDocumentStatus;
+  document_id: string | null;
+  review_note: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Lead {
+  id: string;
+  source: LeadSource;
+  name: string | null;
+  email: string;
+  phone: string | null;
+  company_name: string | null;
+  message: string | null;
+  permit_type_id: string | null;
+  quiz_answers: import('./supabase').Json | null;
+  locale: Locale;
+  status: LeadStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Invoice {
+  id: string;
+  client_id: string;
+  case_id: string | null;
+  invoice_number: string;
+  amount_cents: number;
+  currency: string;
+  status: InvoiceStatus;
+  mollie_payment_id: string | null;
+  description: string | null;
+  issued_at: string;
+  paid_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Payment {
+  id: string;
+  invoice_id: string;
+  mollie_payment_id: string;
+  mollie_status: string;
+  amount_cents: number;
+  method: string | null;
+  raw: import('./supabase').Json | null;
+  created_at: string;
 }

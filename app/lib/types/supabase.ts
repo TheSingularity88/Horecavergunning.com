@@ -14,8 +14,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
@@ -59,6 +57,80 @@ export type Database = {
           },
         ]
       }
+      case_documents: {
+        Row: {
+          case_id: string
+          created_at: string
+          document_id: string | null
+          id: string
+          name: string
+          required_document_id: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sort_order: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          name: string
+          required_document_id?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          name?: string
+          required_document_id?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_documents_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_documents_required_document_id_fkey"
+            columns: ["required_document_id"]
+            isOneToOne: false
+            referencedRelation: "required_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cases: {
         Row: {
           assigned_employee_id: string | null
@@ -69,6 +141,7 @@ export type Database = {
           description: string | null
           id: string
           municipality: string | null
+          permit_type_id: string | null
           priority: string | null
           reference_number: string | null
           status: string | null
@@ -84,6 +157,7 @@ export type Database = {
           description?: string | null
           id?: string
           municipality?: string | null
+          permit_type_id?: string | null
           priority?: string | null
           reference_number?: string | null
           status?: string | null
@@ -99,6 +173,7 @@ export type Database = {
           description?: string | null
           id?: string
           municipality?: string | null
+          permit_type_id?: string | null
           priority?: string | null
           reference_number?: string | null
           status?: string | null
@@ -120,6 +195,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cases_permit_type_id_fkey"
+            columns: ["permit_type_id"]
+            isOneToOne: false
+            referencedRelation: "permit_types"
+            referencedColumns: ["id"]
+          },
         ]
       }
       client_requests: {
@@ -131,6 +213,7 @@ export type Database = {
           id: string
           municipality: string | null
           notes: string | null
+          permit_type_id: string | null
           request_type: string
           reviewed_by: string | null
           status: string | null
@@ -146,6 +229,7 @@ export type Database = {
           id?: string
           municipality?: string | null
           notes?: string | null
+          permit_type_id?: string | null
           request_type: string
           reviewed_by?: string | null
           status?: string | null
@@ -161,6 +245,7 @@ export type Database = {
           id?: string
           municipality?: string | null
           notes?: string | null
+          permit_type_id?: string | null
           request_type?: string
           reviewed_by?: string | null
           status?: string | null
@@ -181,6 +266,13 @@ export type Database = {
             columns: ["converted_to_case_id"]
             isOneToOne: false
             referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_requests_permit_type_id_fkey"
+            columns: ["permit_type_id"]
+            isOneToOne: false
+            referencedRelation: "permit_types"
             referencedColumns: ["id"]
           },
           {
@@ -318,6 +410,208 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          amount_cents: number
+          case_id: string | null
+          client_id: string
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          invoice_number: string
+          issued_at: string
+          mollie_payment_id: string | null
+          paid_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          case_id?: string | null
+          client_id: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          invoice_number: string
+          issued_at?: string
+          mollie_payment_id?: string | null
+          paid_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          case_id?: string | null
+          client_id?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          invoice_number?: string
+          issued_at?: string
+          mollie_payment_id?: string | null
+          paid_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          email: string
+          id: string
+          locale: string
+          message: string | null
+          name: string | null
+          permit_type_id: string | null
+          phone: string | null
+          quiz_answers: Json | null
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          locale?: string
+          message?: string | null
+          name?: string | null
+          permit_type_id?: string | null
+          phone?: string | null
+          quiz_answers?: Json | null
+          source: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          locale?: string
+          message?: string | null
+          name?: string | null
+          permit_type_id?: string | null
+          phone?: string | null
+          quiz_answers?: Json | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_permit_type_id_fkey"
+            columns: ["permit_type_id"]
+            isOneToOne: false
+            referencedRelation: "permit_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          invoice_id: string
+          method: string | null
+          mollie_payment_id: string
+          mollie_status: string
+          raw: Json | null
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          id?: string
+          invoice_id: string
+          method?: string | null
+          mollie_payment_id: string
+          mollie_status: string
+          raw?: Json | null
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          method?: string | null
+          mollie_payment_id?: string
+          mollie_status?: string
+          raw?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permit_types: {
+        Row: {
+          base_fee_cents: number
+          created_at: string
+          description_en: string | null
+          description_nl: string | null
+          id: string
+          is_active: boolean
+          name_en: string
+          name_nl: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          base_fee_cents?: number
+          created_at?: string
+          description_en?: string | null
+          description_nl?: string | null
+          id?: string
+          is_active?: boolean
+          name_en: string
+          name_nl: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          base_fee_cents?: number
+          created_at?: string
+          description_en?: string | null
+          description_nl?: string | null
+          id?: string
+          is_active?: boolean
+          name_en?: string
+          name_nl?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -371,6 +665,56 @@ export type Database = {
           window_start?: string
         }
         Relationships: []
+      }
+      required_documents: {
+        Row: {
+          auto_check_config: Json | null
+          created_at: string
+          description_en: string | null
+          description_nl: string | null
+          id: string
+          is_required: boolean
+          name_en: string
+          name_nl: string
+          permit_type_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          auto_check_config?: Json | null
+          created_at?: string
+          description_en?: string | null
+          description_nl?: string | null
+          id?: string
+          is_required?: boolean
+          name_en: string
+          name_nl: string
+          permit_type_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          auto_check_config?: Json | null
+          created_at?: string
+          description_en?: string | null
+          description_nl?: string | null
+          id?: string
+          is_required?: boolean
+          name_en?: string
+          name_nl?: string
+          permit_type_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "required_documents_permit_type_id_fkey"
+            columns: ["permit_type_id"]
+            isOneToOne: false
+            referencedRelation: "permit_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_settings: {
         Row: {
@@ -497,6 +841,7 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_client: { Args: never; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
+      next_invoice_number: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
