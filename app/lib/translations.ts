@@ -14,9 +14,9 @@ export const translations = {
       badge: "Now accepting new clients for 2026",
       headline_start: "Focus on Your Guests.",
       headline_end: "We Handle the Government.",
-      subheadline: "Complete legal, financial, and permit support for Dutch hospitality entrepreneurs. Fixed monthly rates. No hourly surprises.",
-      cta_primary: "Book Free Intake",
-      cta_secondary: "View Packages",
+      subheadline: "We arrange your exploitatievergunning, alcohol licence, terrace permit and Bibob screening — from application to approval. One fixed fee per permit. No hourly surprises.",
+      cta_primary: "Free intake",
+      cta_secondary: "View permits & prices",
       fixed_rates: "Fixed Rates",
       support: "24/7 Support"
     },
@@ -24,6 +24,7 @@ export const translations = {
       trusted_by: "Trusted by 50+ venues in Amsterdam, Rotterdam, and Utrecht"
     },
     problem_solution: {
+      section_title: "Why hospitality entrepreneurs choose us",
       problem_title: "The Struggle",
       problem_1: "Endless paperwork and unclear government forms",
       problem_2: "Stress about Bibob investigations and inspections",
@@ -31,11 +32,13 @@ export const translations = {
       solution_title: "The Horecavergunning Way",
       solution_1: "We handle all filings, permits, and deadlines",
       solution_2: "Proactive Bibob management and compliance checks",
-      solution_3: "Fixed monthly fee. Unlimited advice. Peace of mind."
+      solution_3: "One fixed fee per permit. Clear from the start. No surprises."
     },
     services: {
       title: "Everything You Need to Run a Compliant Venue",
       subtitle: "From the moment you sign the lease to your daily operations, we've got you covered.",
+      more: "Learn more",
+      viewAll: "View all permits & prices",
       items: [
         {
           title: "Permits & Bibob",
@@ -476,9 +479,9 @@ export const translations = {
       badge: "Nu nieuwe klanten acceptatie voor 2026",
       headline_start: "Focus op uw Gasten.",
       headline_end: "Wij regelen uw Horecavergunning.",
-      subheadline: "Volledige ondersteuning bij exploitatievergunning aanvragen, Bibob toets en financiën voor horecaondernemers. Vaste maandbedragen.",
-      cta_primary: "Gratis Intake Boeken",
-      cta_secondary: "Bekijk Pakketten",
+      subheadline: "Wij verzorgen uw exploitatievergunning, alcoholvergunning, terrasvergunning en Bibob-toets — van aanvraag tot goedkeuring. Eén vaste prijs per vergunning. Geen uurtje-factuurtje.",
+      cta_primary: "Gratis intake",
+      cta_secondary: "Bekijk vergunningen & tarieven",
       fixed_rates: "Vaste Tarieven",
       support: "24/7 Support"
     },
@@ -486,6 +489,7 @@ export const translations = {
       trusted_by: "Vertrouwd door 50+ zaken in Amsterdam, Rotterdam en Utrecht"
     },
     problem_solution: {
+      section_title: "Waarom horecaondernemers voor ons kiezen",
       problem_title: "De Strijd",
       problem_1: "Eindeloos papierwerk en onduidelijke formulieren",
       problem_2: "Stress over Bibob-onderzoeken en controles",
@@ -493,11 +497,13 @@ export const translations = {
       solution_title: "De Horecavergunning Manier",
       solution_1: "Wij regelen alle aanvragen, vergunningen en deadlines",
       solution_2: "Proactief Bibob-beheer en compliance checks",
-      solution_3: "Vast maandbedrag. Onbeperkt advies. Rust.",
+      solution_3: "Eén vaste prijs per vergunning. Vooraf duidelijk. Geen verrassingen.",
     },
     services: {
       title: "Alles wat u nodig heeft voor een compliant zaak",
       subtitle: "Vanaf het moment dat u tekent tot de dagelijkse operatie: wij staan naast u.",
+      more: "Meer informatie",
+      viewAll: "Bekijk alle vergunningen & tarieven",
       items: [
         {
           title: "Vergunningen & Bibob",

@@ -52,7 +52,9 @@ export function Navbar() {
           >
             {t.navbar.login}
           </Link>
-          <Button>{t.navbar.book}</Button>
+          <Link href="/contact">
+            <Button>{t.navbar.book}</Button>
+          </Link>
         </div>
         </div>
 

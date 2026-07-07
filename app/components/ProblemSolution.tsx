@@ -8,6 +8,9 @@ export function ProblemSolution() {
   return (
     <section className="py-20 bg-slate-50">
       <div className="container mx-auto px-4">
+        <h2 className="text-3xl font-bold text-slate-900 text-center mb-12 text-balance">
+          {t.problem_solution.section_title}
+        </h2>
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* Problem */}
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">

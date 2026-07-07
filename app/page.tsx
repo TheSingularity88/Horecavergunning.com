@@ -8,7 +8,7 @@ import { Quiz } from './components/Quiz';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
-import { createClient } from './lib/supabase/server';
+import { createPublicClient } from './lib/supabase/public';
 import type { PermitType } from './lib/types/database';
 
 // Revalidate hourly; the admin permit-type editor also purges the
@@ -17,7 +17,7 @@ export const revalidate = 3600;
 
 async function getPermitTypes(): Promise<PermitType[]> {
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data } = await supabase
       .from('permit_types')
       .select('*')

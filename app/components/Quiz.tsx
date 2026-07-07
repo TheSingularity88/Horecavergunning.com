@@ -97,7 +97,7 @@ export function Quiz({ permitTypes }: QuizProps) {
   const isFormStep = step === questions.length && !submitted;
 
   return (
-    <section className="py-24 bg-slate-900 text-white overflow-hidden relative">
+    <section id="quiz" className="py-24 bg-slate-900 text-white overflow-hidden relative">
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800" />
       <div className="absolute inset-0 opacity-[0.15] bg-[radial-gradient(circle_at_20%_20%,#f59e0b_0,transparent_40%),radial-gradient(circle_at_80%_60%,#f59e0b_0,transparent_35%)]" />
 
