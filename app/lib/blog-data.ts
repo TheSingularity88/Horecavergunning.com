@@ -349,6 +349,62 @@ export const blogPosts: BlogPost[] = [
         readTime: "4 min read"
       }
     }
+  },
+  {
+    slug: "wat-kost-een-horecavergunning-2026",
+    image: "/blog/finance-admin.svg",
+    author: "Team HorecaVergunning",
+    date: "05-07-2026",
+    content: {
+      nl: {
+        title: "Wat kost een horecavergunning in 2026? Kosten per vergunning",
+        excerpt: "Wat kost een exploitatievergunning of alcoholvergunning nu écht? Wij zetten de kosten per horecavergunning voor 2026 overzichtelijk op een rij, inclusief gemeentelijke leges.",
+        body: `
+          <p class="lead text-xl text-slate-600 mb-6">Een van de eerste vragen van elke startende horecaondernemer: wat kost een horecavergunning eigenlijk? Het eerlijke antwoord is dat de kosten uit twee delen bestaan — de gemeentelijke leges en de kosten voor het regelen van de aanvraag. In dit artikel zetten we beide overzichtelijk op een rij voor 2026.</p>
+
+          <h2 class="text-2xl font-bold text-slate-900 mt-8 mb-4">1. Gemeentelijke leges versus servicekosten</h2>
+          <p class="mb-4">De <strong>leges</strong> zijn de kosten die de gemeente (bijvoorbeeld Amsterdam) in rekening brengt voor het in behandeling nemen van uw aanvraag. Deze betaalt u altijd, ongeacht wie de aanvraag indient. Daarnaast zijn er <strong>servicekosten</strong> als u de aanvraag door een specialist laat verzorgen — dan hoeft u zelf niet door het papierwerk en de Bibob-toets.</p>
+          <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6">
+            <p class="font-semibold text-amber-900">Belangrijk:</p>
+            <p class="text-amber-800 text-sm">De leges verschillen per gemeente en per type vergunning. Vraag altijd het actuele legesbedrag op bij uw gemeente; de bedragen worden jaarlijks geïndexeerd.</p>
+          </div>
+
+          <h2 class="text-2xl font-bold text-slate-900 mt-8 mb-4">2. Kosten per vergunning</h2>
+          <p class="mb-4">Wij werken met vaste servicetarieven per vergunning, zodat u vooraf precies weet waar u aan toe bent. Bekijk de actuele tarieven op de pagina van elke vergunning:</p>
+          <ul class="list-disc pl-6 mb-6 space-y-2 marker:text-amber-500">
+            <li><a href="/exploitatievergunning" class="text-amber-600 underline">Exploitatievergunning</a> — de basisvergunning voor vrijwel elke horecazaak.</li>
+            <li><a href="/alcoholvergunning" class="text-amber-600 underline">Alcoholvergunning</a> — verplicht zodra u alcohol schenkt.</li>
+            <li><a href="/terrasvergunning" class="text-amber-600 underline">Terrasvergunning</a> — voor een terras op de stoep of eigen terrein.</li>
+            <li><a href="/bibob" class="text-amber-600 underline">Bibob-begeleiding</a> — professionele hulp bij de integriteitstoets.</li>
+          </ul>
+
+          <h2 class="text-2xl font-bold text-slate-900 mt-8 mb-4">3. Bespaar op verborgen kosten</h2>
+          <p class="mb-4">De grootste verborgen kostenpost is <strong>vertraging</strong>. Een onvolledige aanvraag of een slecht onderbouwde Bibob-vragenlijst leidt tot maanden uitstel — en dus tot maanden huur zonder omzet. Een correcte aanvraag in één keer is daarom vaak goedkoper dan het lijkt.</p>
+
+          <h2 class="text-2xl font-bold text-slate-900 mt-8 mb-4">4. Wat kost een compleet traject?</h2>
+          <p class="mb-4">Veel ondernemers hebben meerdere vergunningen tegelijk nodig, bijvoorbeeld een exploitatie- én alcoholvergunning bij een nieuwe zaak. Voor een compleet traject stellen wij vooraf een heldere totaalprijs op. Zo komt u nooit voor verrassingen te staan.</p>
+          <p class="mb-4">Wilt u een concreet overzicht van de kosten voor úw situatie? <a href="/contact" class="text-amber-600 underline">Vraag een gratis, vrijblijvende offerte aan</a> of bekijk direct <a href="/vergunningen" class="text-amber-600 underline">alle vergunningen en tarieven</a>.</p>
+        `,
+        category: "Financiën",
+        readTime: "6 min lezen"
+      },
+      en: {
+        title: "What does a hospitality permit cost in 2026? Cost per permit",
+        excerpt: "What does an operating or alcohol permit really cost? We break down the cost per hospitality permit for 2026, including municipal fees.",
+        body: `
+          <p class="lead text-xl text-slate-600 mb-6">One of the first questions every new hospitality entrepreneur asks: what does a permit actually cost? The honest answer is that the cost has two parts — the municipal fees and the cost of arranging the application.</p>
+
+          <h2 class="text-2xl font-bold text-slate-900 mt-8 mb-4">Municipal fees versus service costs</h2>
+          <p class="mb-4">The municipal <strong>fees (leges)</strong> are always charged by the municipality to process your application. On top of that, there are <strong>service costs</strong> if you have a specialist arrange the application for you.</p>
+
+          <h2 class="text-2xl font-bold text-slate-900 mt-8 mb-4">Cost per permit</h2>
+          <p class="mb-4">We work with fixed service fees per permit. See the current prices on each permit page: <a href="/exploitatievergunning" class="text-amber-600 underline">operating permit</a>, <a href="/alcoholvergunning" class="text-amber-600 underline">alcohol permit</a>, <a href="/terrasvergunning" class="text-amber-600 underline">terrace permit</a> and <a href="/bibob" class="text-amber-600 underline">Bibob guidance</a>.</p>
+          <p class="mb-4">Want a concrete overview for your situation? <a href="/contact" class="text-amber-600 underline">Request a free quote</a> or view <a href="/vergunningen" class="text-amber-600 underline">all permits and prices</a>.</p>
+        `,
+        category: "Finance",
+        readTime: "6 min read"
+      }
+    }
   }
 ];
 
