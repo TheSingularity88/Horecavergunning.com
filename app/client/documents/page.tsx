@@ -15,6 +15,12 @@ import {
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
+import {
+  validateUploadFile,
+  FILE_INPUT_ACCEPT,
+  ALLOWED_EXTENSIONS_LABEL,
+  MAX_FILE_SIZE_LABEL,
+} from '@/app/lib/validation/upload';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -44,6 +50,7 @@ export default function ClientDocumentsPage() {
   const [cases, setCases] = useState<Case[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadForm, setUploadForm] = useState({
     file: null as File | null,
@@ -100,6 +107,12 @@ export default function ClientDocumentsPage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const check = validateUploadFile(file);
+      if (!check.ok) {
+        setUploadError(check.error);
+        return;
+      }
+      setUploadError(null);
       setUploadForm((prev) => ({ ...prev, file }));
     }
   };
@@ -107,7 +120,15 @@ export default function ClientDocumentsPage() {
   const handleUpload = async () => {
     if (!uploadForm.file || !clientData?.id || !user?.id) return;
 
+    // Validate again right before uploading (bucket enforces the same limits).
+    const check = validateUploadFile(uploadForm.file);
+    if (!check.ok) {
+      setUploadError(check.error);
+      return;
+    }
+
     setIsUploading(true);
+    setUploadError(null);
     try {
       const file = uploadForm.file;
       const fileExt = file.name.split('.').pop();
@@ -121,7 +142,9 @@ export default function ClientDocumentsPage() {
 
       if (uploadError) throw uploadError;
 
-      // Create document record
+      // Create document record. uploaded_by stays NULL for client uploads:
+      // it references profiles (staff only) and RLS marks NULL as
+      // "uploaded by the client".
       const { error: insertError } = await supabase.from('documents').insert({
         name: file.name,
         file_path: filePath,
@@ -131,8 +154,8 @@ export default function ClientDocumentsPage() {
         notes: uploadForm.notes || null,
         case_id: uploadForm.case_id || null,
         client_id: clientData.id,
-        uploaded_by: user.id,
-      } as never);
+        uploaded_by: null,
+      });
 
       if (insertError) throw insertError;
 
@@ -147,7 +170,7 @@ export default function ClientDocumentsPage() {
       });
     } catch (error) {
       console.error('Error uploading document:', error);
-      alert('Failed to upload document. Please try again.');
+      setUploadError('Failed to upload document. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -324,6 +347,12 @@ export default function ClientDocumentsPage() {
         title={t.clientPortal?.documents?.uploadTitle || 'Upload Document'}
       >
         <div className="space-y-4">
+          {uploadError && (
+            <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm">
+              {uploadError}
+            </div>
+          )}
+
           {/* File Drop Zone */}
           <div
             className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
@@ -355,12 +384,13 @@ export default function ClientDocumentsPage() {
                   {t.clientPortal?.documents?.dropzone || 'Drag and drop or click to select'}
                 </p>
                 <p className="text-sm text-slate-400 mt-1">
-                  {t.clientPortal?.documents?.maxSize || 'Maximum file size: 10MB'}
+                  {`${ALLOWED_EXTENSIONS_LABEL} · max ${MAX_FILE_SIZE_LABEL}`}
                 </p>
               </>
             )}
             <input
               type="file"
+              accept={FILE_INPUT_ACCEPT}
               onChange={handleFileSelect}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               style={{ position: 'relative' }}

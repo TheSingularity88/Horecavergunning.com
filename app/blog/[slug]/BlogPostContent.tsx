@@ -69,6 +69,41 @@ export default function BlogPostContent({ post, relatedPosts }: BlogPostContentP
                     <div dangerouslySetInnerHTML={{ __html: content.body }} />
                 </div>
 
+                {/* Internal links to the money pages — on every post */}
+                <div className="mt-10 rounded-2xl bg-slate-900 text-white p-6 md:p-8">
+                    <h3 className="text-xl font-bold mb-1">
+                        {language === 'en' ? 'Need a permit? We arrange it.' : 'Vergunning nodig? Wij regelen het.'}
+                    </h3>
+                    <p className="text-slate-300 text-sm mb-5">
+                        {language === 'en'
+                            ? 'Fixed price per permit, from application to approval.'
+                            : 'Vaste prijs per vergunning, van aanvraag tot goedkeuring.'}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                        {[
+                            { href: '/exploitatievergunning', label: 'Exploitatievergunning' },
+                            { href: '/alcoholvergunning', label: 'Alcoholvergunning' },
+                            { href: '/terrasvergunning', label: 'Terrasvergunning' },
+                            { href: '/bibob', label: 'Bibob-toets' },
+                        ].map((l) => (
+                            <Link
+                                key={l.href}
+                                href={l.href}
+                                className="rounded-full border border-slate-700 bg-slate-800/60 px-3.5 py-1.5 text-sm text-slate-200 hover:border-amber-400 hover:text-white transition-colors"
+                            >
+                                {l.label}
+                            </Link>
+                        ))}
+                    </div>
+                    <Link
+                        href="/contact"
+                        className="mt-5 inline-flex items-center gap-2 rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-400 transition-colors"
+                    >
+                        {language === 'en' ? 'Free intake' : 'Gratis intake'}
+                        <ChevronRight className="w-4 h-4" />
+                    </Link>
+                </div>
+
                 <div className="mt-12 pt-8 border-t border-slate-100">
                     <ShareButtons />
                     

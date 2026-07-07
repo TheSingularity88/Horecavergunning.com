@@ -1,0 +1,134 @@
+-- ============================================================================
+-- 000_baseline.sql — SNAPSHOT OF THE ACTUAL APPLIED DATABASE STATE
+-- Captured: 2026-07-07 from project llpkcmfpijzevbmujfkq via MCP introspection
+--
+-- ⚠️  DO NOT RUN THIS FILE. It documents what is ALREADY live in production
+--     so later migrations (002+) have an authoritative starting point.
+--     The loose SQL files in docs/ (database-schema.sql, client-portal-
+--     migration.sql) were applied manually and partially overlap with
+--     supabase/migrations/001_fix_rls_recursion.sql. The net applied state
+--     is what is recorded below.
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- TABLES (all in schema public, all with RLS ENABLED)
+-- ----------------------------------------------------------------------------
+-- profiles(id uuid PK -> auth.users, email text, full_name text,
+--          avatar_url text?, phone text?,
+--          role text DEFAULT 'employee' CHECK (employee|admin),
+--          is_active bool DEFAULT true, created_at, updated_at)
+-- clients(id uuid PK, company_name, contact_name, email, phone?, address?,
+--         city?, postal_code?, kvk_number?, notes?,
+--         assigned_employee_id uuid? -> profiles,
+--         user_id uuid? -> auth.users,
+--         status text DEFAULT 'active' CHECK (active|inactive|pending),
+--         created_at, updated_at)
+-- cases(id uuid PK, client_id uuid -> clients, title, description?,
+--       case_type CHECK (exploitatievergunning|alcoholvergunning|
+--                        terrasvergunning|bibob|overname|verbouwing|other),
+--       status DEFAULT 'intake' CHECK (intake|in_progress|waiting_client|
+--              waiting_government|review|approved|rejected|completed|cancelled),
+--       priority DEFAULT 'normal' CHECK (low|normal|high|urgent),
+--       assigned_employee_id uuid? -> profiles, deadline date?,
+--       municipality?, reference_number?, created_at, updated_at)
+-- tasks(id uuid PK, case_id? -> cases, client_id? -> clients, title,
+--       description?, status DEFAULT 'pending' CHECK (pending|in_progress|
+--       completed|cancelled), priority DEFAULT 'normal',
+--       assigned_to? -> profiles, created_by? -> profiles, due_date?,
+--       completed_at?, created_at, updated_at)
+-- documents(id uuid PK, case_id? -> cases, client_id? -> clients, name,
+--       file_path, file_type, file_size int?,
+--       category DEFAULT 'general' CHECK (contract|permit|identification|
+--       financial|correspondence|bibob|general),
+--       uploaded_by? -> profiles, notes?, created_at)
+-- activity_log(id uuid PK, user_id? -> profiles, action, entity_type,
+--       entity_id uuid?, details jsonb?, created_at)
+-- system_settings(id uuid PK, key text UNIQUE, value jsonb, description?,
+--       updated_by? -> profiles, updated_at)
+-- client_requests(id uuid PK, client_id -> clients,
+--       request_type CHECK (same 7 values as cases.case_type),
+--       title, description?, status DEFAULT 'pending' CHECK (pending|
+--       reviewing|approved|converted|rejected), municipality?,
+--       urgency DEFAULT 'normal' CHECK (normal|urgent), notes?,
+--       reviewed_by? -> profiles, converted_to_case_id? -> cases,
+--       created_at, updated_at)
+
+-- ----------------------------------------------------------------------------
+-- FUNCTIONS (all SECURITY DEFINER unless noted)
+-- ----------------------------------------------------------------------------
+-- public.is_admin() -> bool          : EXISTS(profiles WHERE id=auth.uid() AND role='admin')
+-- public.get_client_id() -> uuid     : SELECT id FROM clients WHERE user_id=auth.uid() LIMIT 1
+-- public.is_client() -> bool         : EXISTS(clients WHERE user_id=auth.uid())
+-- public.update_updated_at()         : trigger fn (NOT security definer)
+-- public.handle_new_user()           : ⚠️ VULNERABLE — on auth.users INSERT, skips
+--                                      user_type='client'; else inserts profile with
+--                                      role = COALESCE(raw_user_meta_data->>'role','employee')
+--                                      → client-supplied role = privilege escalation.
+--                                      FIXED IN 002.
+-- public.handle_client_signup()      : on auth.users INSERT where user_type='client',
+--                                      inserts clients row from metadata.
+
+-- ----------------------------------------------------------------------------
+-- TRIGGERS
+-- ----------------------------------------------------------------------------
+-- on_auth_user_created  AFTER INSERT ON auth.users  -> handle_new_user()
+-- on_client_signup      AFTER INSERT ON auth.users  -> handle_client_signup()
+-- update_*_updated_at   BEFORE UPDATE on profiles/clients/cases/tasks/client_requests
+
+-- ----------------------------------------------------------------------------
+-- RLS POLICIES ACTUALLY LIVE (old docs-era policies AND 001 policies COEXIST;
+-- permissive policies OR together, so effective access = the union)
+-- ----------------------------------------------------------------------------
+-- profiles:
+--   "Admins can delete profiles"  DELETE  (recursive profiles subquery — errors at runtime)
+--   "Admins can insert profiles"  INSERT  (recursive profiles subquery — errors at runtime)
+--   profiles_select_own           SELECT  auth.uid() = id
+--   profiles_update_own           UPDATE  auth.uid() = id
+--   ⚠️ NO admin SELECT/UPDATE policy → admin user management silently broken. FIXED IN 002.
+--
+-- clients:
+--   "View/Update/Insert clients policy" + "Admins can delete clients"   (docs-era)
+--   clients_select / clients_insert / clients_update / clients_delete   (001)
+--   clients_select_own / clients_update_own (user_id = auth.uid())      (portal)
+--   ⚠️ INSERT = just auth.uid() IS NOT NULL (both eras). TIGHTENED IN 002.
+--
+-- cases:
+--   "View/Update/Insert cases policy" + "Admins can delete cases"       (docs-era)
+--   cases_select / cases_insert / cases_update / cases_delete           (001)
+--   cases_select_client (client_id = get_client_id())                   (portal)
+--   ⚠️ INSERT = just auth.uid() IS NOT NULL. TIGHTENED IN 002.
+--
+-- tasks:
+--   "View/Update/Insert/Delete tasks policy"                            (docs-era)
+--   tasks_select / tasks_insert / tasks_update / tasks_delete           (001)
+--   tasks_select_client (case in own client's cases)                    (portal)
+--   ⚠️ INSERT = just auth.uid() IS NOT NULL. TIGHTENED IN 002.
+--
+-- documents:
+--   "View/Insert/Delete documents policy"                               (docs-era)
+--   documents_select / documents_insert / documents_update / documents_delete (001)
+--   documents_select_client / documents_insert_client (own client/case) (portal)
+--   ⚠️ INSERT = just auth.uid() IS NOT NULL. TIGHTENED IN 002.
+--
+-- activity_log:
+--   "Insert activity policy" (auth.uid() IS NOT NULL) + "View activity policy"
+--   activity_log_insert (auth.uid() IS NOT NULL) + activity_log_select (is_admin())
+--   ⚠️ INSERT unconstrained user_id. TIGHTENED IN 002.
+--
+-- system_settings:
+--   "Admins only settings" ALL (recursive-style subquery) +
+--   system_settings_select/insert/update/delete (is_admin())            (001)
+--
+-- client_requests:
+--   client_requests_insert_own   INSERT  client_id = get_client_id()
+--   client_requests_select_own   SELECT  client_id = get_client_id()
+--   client_requests_select_employee SELECT profiles.role IN (employee,admin)
+--   client_requests_update_employee UPDATE profiles.role IN (employee,admin)
+
+-- ----------------------------------------------------------------------------
+-- STORAGE
+-- ----------------------------------------------------------------------------
+-- bucket 'documents': private (public=false), file_size_limit NULL,
+--                     allowed_mime_types NULL.
+-- ⚠️ storage.objects has ZERO policies → ALL client-side storage access is
+--    currently denied by default (uploads from the app fail). FIXED IN 003.

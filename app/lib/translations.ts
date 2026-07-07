@@ -14,9 +14,9 @@ export const translations = {
       badge: "Now accepting new clients for 2026",
       headline_start: "Focus on Your Guests.",
       headline_end: "We Handle the Government.",
-      subheadline: "Complete legal, financial, and permit support for Dutch hospitality entrepreneurs. Fixed monthly rates. No hourly surprises.",
-      cta_primary: "Book Free Intake",
-      cta_secondary: "View Packages",
+      subheadline: "We arrange your exploitatievergunning, alcohol licence, terrace permit and Bibob screening — from application to approval. One fixed fee per permit. No hourly surprises.",
+      cta_primary: "Free intake",
+      cta_secondary: "View permits & prices",
       fixed_rates: "Fixed Rates",
       support: "24/7 Support"
     },
@@ -24,6 +24,7 @@ export const translations = {
       trusted_by: "Trusted by 50+ venues in Amsterdam, Rotterdam, and Utrecht"
     },
     problem_solution: {
+      section_title: "Why hospitality entrepreneurs choose us",
       problem_title: "The Struggle",
       problem_1: "Endless paperwork and unclear government forms",
       problem_2: "Stress about Bibob investigations and inspections",
@@ -31,11 +32,13 @@ export const translations = {
       solution_title: "The Horecavergunning Way",
       solution_1: "We handle all filings, permits, and deadlines",
       solution_2: "Proactive Bibob management and compliance checks",
-      solution_3: "Fixed monthly fee. Unlimited advice. Peace of mind."
+      solution_3: "One fixed fee per permit. Clear from the start. No surprises."
     },
     services: {
       title: "Everything You Need to Run a Compliant Venue",
       subtitle: "From the moment you sign the lease to your daily operations, we've got you covered.",
+      more: "Learn more",
+      viewAll: "View all permits & prices",
       items: [
         {
           title: "Permits & Bibob",
@@ -56,8 +59,20 @@ export const translations = {
       ]
     },
     pricing: {
-      title: "Transparent, Fixed Monthly Rates",
-      subtitle: "No hourly billing. Choose the package that fits your stage.",
+      eyebrow: "Pricing",
+      title: "Transparent, Fixed Fees Per Permit",
+      subtitle: "One clear price per permit. No hourly billing, no surprises — we handle the full application for you.",
+      oneTime: "one-time",
+      serviceFee: "service fee",
+      onRequest: "On request",
+      popular: "Most chosen",
+      inclLabel: "We handle the complete application",
+      startCta: "Start application",
+      trustFixed: "Fixed price per permit",
+      trustResponse: "Reply within 1 business day",
+      trustApproval: "You pay after approval",
+      reassurance: "Fixed fee per permit — no surprises afterwards.",
+      customQuestion: "Different question? Get in touch →",
       starter: {
         name: "Starter",
         desc: "Essential compliance for new venues.",
@@ -92,7 +107,19 @@ export const translations = {
       result_cta: "Book Free Consultation",
       result_download: "Download Guide",
       back: "Back",
-      restart: "Start Over"
+      restart: "Start Over",
+      formTitle: "Leave your details and we'll advise you — free of charge.",
+      recommendation: "Recommended for you",
+      namePlaceholder: "Your name",
+      emailPlaceholder: "Email address",
+      phonePlaceholder: "Phone (optional)",
+      submit: "Get free advice",
+      submitting: "Sending...",
+      successTitle: "Thank you! We'll be in touch.",
+      successDesc: "We received your details and will contact you within one business day.",
+      errorMsg: "Something went wrong. Please try again.",
+      createAccount: "Create an account",
+      contactUs: "Contact us"
     },
     footer: {
       tagline: "Empowering Dutch hospitality with simplified legal and financial support.",
@@ -138,12 +165,12 @@ export const translations = {
           a: "From startup entrepreneurs opening their first coffee bar to experienced owners with multiple venues. We support anyone who wants to get rid of administrative hassle."
         },
         {
-          q: "Am I required to purchase a fixed subscription?",
-          a: "No, although our subscriptions offer the most peace of mind, we are happy to help on a project basis. For example, for a one-off permit application or a takeover."
+          q: "Do you work with fixed prices?",
+          a: "Yes. You pay one fixed fee per permit we apply for — clear upfront, no hourly billing. For a complete track with several permits we give a clear total price in advance."
         },
         {
-          q: "What can I expect within my monthly package?",
-          a: "Complete unburdening. Depending on your package, we handle your permits, contracts, financial administration, and tax filings. You get one point of contact for all these matters."
+          q: "What exactly do you handle?",
+          a: "Complete unburdening of your permit application: we determine which permits you need, collect and check the documents, submit the application, and guide the Bibob screening. You get one fixed point of contact."
         },
         {
           q: "Will I receive hourly invoices afterwards?",
@@ -167,7 +194,9 @@ export const translations = {
         tasks: "Tasks",
         documents: "Documents",
         requests: "Requests",
+        leads: "Leads",
         users: "Users",
+        permitTypes: "Permit Types",
         settings: "Settings",
         activity: "Activity",
         profile: "Profile",
@@ -189,7 +218,17 @@ export const translations = {
         checkEmail: "Check your email",
         resetEmailSent: "We've sent a password reset link to your email address.",
         sendResetLink: "Send reset link",
-        forgotPasswordInstructions: "Enter your email address and we will send you a link to reset your password."
+        forgotPasswordInstructions: "Enter your email address and we will send you a link to reset your password.",
+        chooseNewPassword: "Choose a new password",
+        newPassword: "New password",
+        confirmPassword: "Confirm password",
+        updatePassword: "Update password",
+        passwordUpdated: "Password updated",
+        redirectingToLogin: "Your password has been changed. Redirecting to login…",
+        passwordTooShort: "Password must be at least 8 characters.",
+        passwordMismatch: "Passwords do not match.",
+        invalidResetLink: "Invalid or expired link",
+        requestNewLink: "This password reset link is invalid or has expired. Please request a new one."
       },
       greeting: {
         morning: "Good morning",
@@ -278,8 +317,18 @@ export const translations = {
         dashboard: "Dashboard",
         cases: "My Cases",
         documents: "Documents",
+        invoices: "Invoices",
         requests: "Requests",
         profile: "My Profile"
+      },
+      invoices: {
+        title: "Invoices",
+        subtitle: "Your invoices and payment status",
+        empty: "You have no invoices yet.",
+        payNow: "Pay now",
+        paid: "Paid",
+        open: "Awaiting payment",
+        failed: "Payment failed"
       },
       auth: {
         registerSubtitle: "Create your client account",
@@ -430,9 +479,9 @@ export const translations = {
       badge: "Nu nieuwe klanten acceptatie voor 2026",
       headline_start: "Focus op uw Gasten.",
       headline_end: "Wij regelen uw Horecavergunning.",
-      subheadline: "Volledige ondersteuning bij exploitatievergunning aanvragen, Bibob toets en financiën voor horecaondernemers. Vaste maandbedragen.",
-      cta_primary: "Gratis Intake Boeken",
-      cta_secondary: "Bekijk Pakketten",
+      subheadline: "Wij verzorgen uw exploitatievergunning, alcoholvergunning, terrasvergunning en Bibob-toets — van aanvraag tot goedkeuring. Eén vaste prijs per vergunning. Geen uurtje-factuurtje.",
+      cta_primary: "Gratis intake",
+      cta_secondary: "Bekijk vergunningen & tarieven",
       fixed_rates: "Vaste Tarieven",
       support: "24/7 Support"
     },
@@ -440,6 +489,7 @@ export const translations = {
       trusted_by: "Vertrouwd door 50+ zaken in Amsterdam, Rotterdam en Utrecht"
     },
     problem_solution: {
+      section_title: "Waarom horecaondernemers voor ons kiezen",
       problem_title: "De Strijd",
       problem_1: "Eindeloos papierwerk en onduidelijke formulieren",
       problem_2: "Stress over Bibob-onderzoeken en controles",
@@ -447,11 +497,13 @@ export const translations = {
       solution_title: "De Horecavergunning Manier",
       solution_1: "Wij regelen alle aanvragen, vergunningen en deadlines",
       solution_2: "Proactief Bibob-beheer en compliance checks",
-      solution_3: "Vast maandbedrag. Onbeperkt advies. Rust.",
+      solution_3: "Eén vaste prijs per vergunning. Vooraf duidelijk. Geen verrassingen.",
     },
     services: {
       title: "Alles wat u nodig heeft voor een compliant zaak",
       subtitle: "Vanaf het moment dat u tekent tot de dagelijkse operatie: wij staan naast u.",
+      more: "Meer informatie",
+      viewAll: "Bekijk alle vergunningen & tarieven",
       items: [
         {
           title: "Vergunningen & Bibob",
@@ -472,8 +524,20 @@ export const translations = {
       ]
     },
     pricing: {
-      title: "Transparante, Vaste Maandtarieven",
-      subtitle: "Geen uurtje-factuurtje. Kies het pakket dat bij uw fase past.",
+      eyebrow: "Tarieven",
+      title: "Transparante, Vaste Tarieven Per Vergunning",
+      subtitle: "Eén duidelijke prijs per vergunning. Geen uurtje-factuurtje, geen verrassingen — wij verzorgen de volledige aanvraag.",
+      oneTime: "eenmalig",
+      serviceFee: "servicetarief",
+      onRequest: "Op aanvraag",
+      popular: "Meest gekozen",
+      inclLabel: "Wij verzorgen de volledige aanvraag",
+      startCta: "Aanvraag starten",
+      trustFixed: "Vaste prijs per vergunning",
+      trustResponse: "Reactie binnen 1 werkdag",
+      trustApproval: "U betaalt na goedkeuring",
+      reassurance: "Vaste tarieven per vergunning — geen verrassingen achteraf.",
+      customQuestion: "Andere vraag? Neem contact op →",
       starter: {
         name: "Starter",
         desc: "Essentiële compliance voor nieuwe zaken.",
@@ -508,7 +572,19 @@ export const translations = {
       result_cta: "Gratis Consult Boeken",
       result_download: "Download Gids",
       back: "Terug",
-      restart: "Opnieuw Beginnen"
+      restart: "Opnieuw Beginnen",
+      formTitle: "Laat uw gegevens achter en wij adviseren u — geheel vrijblijvend.",
+      recommendation: "Aanbevolen voor u",
+      namePlaceholder: "Uw naam",
+      emailPlaceholder: "E-mailadres",
+      phonePlaceholder: "Telefoon (optioneel)",
+      submit: "Gratis advies aanvragen",
+      submitting: "Versturen...",
+      successTitle: "Bedankt! Wij nemen contact op.",
+      successDesc: "We hebben uw gegevens ontvangen en nemen binnen één werkdag contact met u op.",
+      errorMsg: "Er ging iets mis. Probeer het opnieuw.",
+      createAccount: "Account aanmaken",
+      contactUs: "Contact opnemen"
     },
     footer: {
       tagline: "De Nederlandse horeca versterken met eenvoudige juridische en financiële support.",
@@ -558,12 +634,12 @@ export const translations = {
           a: "Van startende ondernemers die hun eerste koffiebar openen tot ervaren eigenaars met meerdere vestigingen. Wij ondersteunen iedereen die af wil van administratieve rompslomp."
         },
         {
-          q: "Ben ik verplicht om een vast abonnement af te nemen?",
-          a: "Nee, hoewel onze abonnementen de meeste rust en zekerheid bieden, helpen we u ook graag op projectbasis. Bijvoorbeeld bij een eenmalige vergunningaanvraag of een overname."
+          q: "Werken jullie met vaste tarieven?",
+          a: "Ja. U betaalt één vaste prijs per vergunning die wij voor u aanvragen — vooraf duidelijk, geen uurtje-factuurtje. Voor een compleet traject met meerdere vergunningen geven we vooraf een heldere totaalprijs."
         },
         {
-          q: "Wat kan ik verwachten binnen mijn maandelijkse pakket?",
-          a: "Volledige ontzorging. Afhankelijk van uw pakket regelen wij uw vergunningen, contracten, financiële administratie en fiscale aangiftes. U krijgt één aanspreekpunt voor al deze zaken."
+          q: "Wat verzorgen jullie precies?",
+          a: "Volledige ontzorging van uw vergunningaanvraag: wij bepalen welke vergunningen u nodig heeft, verzamelen en controleren de documenten, dienen de aanvraag in en begeleiden de Bibob-toets. U heeft één vast aanspreekpunt."
         },
         {
           q: "Krijg ik achteraf nog facturen per uur?",
@@ -587,7 +663,9 @@ export const translations = {
         tasks: "Taken",
         documents: "Documenten",
         requests: "Aanvragen",
+        leads: "Leads",
         users: "Gebruikers",
+        permitTypes: "Vergunningtypes",
         settings: "Instellingen",
         activity: "Activiteit",
         profile: "Profiel",
@@ -609,7 +687,17 @@ export const translations = {
         checkEmail: "Controleer uw e-mail",
         resetEmailSent: "We hebben een link naar uw e-mailadres gestuurd om uw wachtwoord opnieuw in te stellen.",
         sendResetLink: "Verstuur reset link",
-        forgotPasswordInstructions: "Voer uw e-mailadres in en wij sturen u een link om uw wachtwoord opnieuw in te stellen."
+        forgotPasswordInstructions: "Voer uw e-mailadres in en wij sturen u een link om uw wachtwoord opnieuw in te stellen.",
+        chooseNewPassword: "Kies een nieuw wachtwoord",
+        newPassword: "Nieuw wachtwoord",
+        confirmPassword: "Bevestig wachtwoord",
+        updatePassword: "Wachtwoord bijwerken",
+        passwordUpdated: "Wachtwoord bijgewerkt",
+        redirectingToLogin: "Uw wachtwoord is gewijzigd. U wordt doorgestuurd naar de inlogpagina…",
+        passwordTooShort: "Het wachtwoord moet minimaal 8 tekens bevatten.",
+        passwordMismatch: "De wachtwoorden komen niet overeen.",
+        invalidResetLink: "Ongeldige of verlopen link",
+        requestNewLink: "Deze link om uw wachtwoord opnieuw in te stellen is ongeldig of verlopen. Vraag een nieuwe aan."
       },
       greeting: {
         morning: "Goedemorgen",
@@ -698,8 +786,18 @@ export const translations = {
         dashboard: "Dashboard",
         cases: "Mijn Zaken",
         documents: "Documenten",
+        invoices: "Facturen",
         requests: "Aanvragen",
         profile: "Mijn Profiel"
+      },
+      invoices: {
+        title: "Facturen",
+        subtitle: "Uw facturen en betaalstatus",
+        empty: "U heeft nog geen facturen.",
+        payNow: "Nu betalen",
+        paid: "Betaald",
+        open: "Wacht op betaling",
+        failed: "Betaling mislukt"
       },
       auth: {
         registerSubtitle: "Maak uw klantenaccount aan",

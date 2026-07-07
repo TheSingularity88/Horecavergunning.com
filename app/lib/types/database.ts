@@ -1,10 +1,11 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+// ============================================================================
+// Domain types for the app.
+// The `Database` type (used by the Supabase clients) is machine-generated in
+// ./supabase.ts — regenerate it after every migration. The interfaces below
+// are the app-facing domain models with narrowed enum/string types.
+// ============================================================================
+
+export type { Database, Json, Tables, TablesInsert, TablesUpdate } from './supabase';
 
 export type UserRole = 'employee' | 'admin';
 export type ClientStatus = 'active' | 'inactive' | 'pending';
@@ -41,344 +42,211 @@ export type DocumentCategory =
 export type ClientRequestStatus = 'pending' | 'reviewing' | 'approved' | 'converted' | 'rejected';
 export type RequestUrgency = 'normal' | 'urgent';
 
-export interface Database {
-  public: {
-    Tables: {
-      profiles: {
-        Row: {
-          id: string;
-          email: string;
-          full_name: string;
-          role: UserRole;
-          avatar_url: string | null;
-          phone: string | null;
-          is_active: boolean;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id: string;
-          email: string;
-          full_name: string;
-          role?: UserRole;
-          avatar_url?: string | null;
-          phone?: string | null;
-          is_active?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          email?: string;
-          full_name?: string;
-          role?: UserRole;
-          avatar_url?: string | null;
-          phone?: string | null;
-          is_active?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      clients: {
-        Row: {
-          id: string;
-          company_name: string;
-          contact_name: string;
-          email: string;
-          phone: string | null;
-          address: string | null;
-          city: string | null;
-          postal_code: string | null;
-          kvk_number: string | null;
-          notes: string | null;
-          assigned_employee_id: string | null;
-          user_id: string | null;
-          status: ClientStatus;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          company_name: string;
-          contact_name: string;
-          email: string;
-          phone?: string | null;
-          address?: string | null;
-          city?: string | null;
-          postal_code?: string | null;
-          kvk_number?: string | null;
-          notes?: string | null;
-          assigned_employee_id?: string | null;
-          user_id?: string | null;
-          status?: ClientStatus;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          company_name?: string;
-          contact_name?: string;
-          email?: string;
-          phone?: string | null;
-          address?: string | null;
-          city?: string | null;
-          postal_code?: string | null;
-          kvk_number?: string | null;
-          notes?: string | null;
-          assigned_employee_id?: string | null;
-          user_id?: string | null;
-          status?: ClientStatus;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      cases: {
-        Row: {
-          id: string;
-          client_id: string;
-          title: string;
-          description: string | null;
-          case_type: CaseType;
-          status: CaseStatus;
-          priority: Priority;
-          assigned_employee_id: string | null;
-          deadline: string | null;
-          municipality: string | null;
-          reference_number: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          client_id: string;
-          title: string;
-          description?: string | null;
-          case_type: CaseType;
-          status?: CaseStatus;
-          priority?: Priority;
-          assigned_employee_id?: string | null;
-          deadline?: string | null;
-          municipality?: string | null;
-          reference_number?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          client_id?: string;
-          title?: string;
-          description?: string | null;
-          case_type?: CaseType;
-          status?: CaseStatus;
-          priority?: Priority;
-          assigned_employee_id?: string | null;
-          deadline?: string | null;
-          municipality?: string | null;
-          reference_number?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      tasks: {
-        Row: {
-          id: string;
-          case_id: string | null;
-          client_id: string | null;
-          title: string;
-          description: string | null;
-          status: TaskStatus;
-          priority: Priority;
-          assigned_to: string | null;
-          created_by: string | null;
-          due_date: string | null;
-          completed_at: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          case_id?: string | null;
-          client_id?: string | null;
-          title: string;
-          description?: string | null;
-          status?: TaskStatus;
-          priority?: Priority;
-          assigned_to?: string | null;
-          created_by?: string | null;
-          due_date?: string | null;
-          completed_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          case_id?: string | null;
-          client_id?: string | null;
-          title?: string;
-          description?: string | null;
-          status?: TaskStatus;
-          priority?: Priority;
-          assigned_to?: string | null;
-          created_by?: string | null;
-          due_date?: string | null;
-          completed_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      documents: {
-        Row: {
-          id: string;
-          case_id: string | null;
-          client_id: string | null;
-          name: string;
-          file_path: string;
-          file_type: string;
-          file_size: number | null;
-          category: DocumentCategory;
-          uploaded_by: string | null;
-          notes: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          case_id?: string | null;
-          client_id?: string | null;
-          name: string;
-          file_path: string;
-          file_type: string;
-          file_size?: number | null;
-          category?: DocumentCategory;
-          uploaded_by?: string | null;
-          notes?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          case_id?: string | null;
-          client_id?: string | null;
-          name?: string;
-          file_path?: string;
-          file_type?: string;
-          file_size?: number | null;
-          category?: DocumentCategory;
-          uploaded_by?: string | null;
-          notes?: string | null;
-          created_at?: string;
-        };
-      };
-      activity_log: {
-        Row: {
-          id: string;
-          user_id: string | null;
-          action: string;
-          entity_type: string;
-          entity_id: string | null;
-          details: Json | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id?: string | null;
-          action: string;
-          entity_type: string;
-          entity_id?: string | null;
-          details?: Json | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string | null;
-          action?: string;
-          entity_type?: string;
-          entity_id?: string | null;
-          details?: Json | null;
-          created_at?: string;
-        };
-      };
-      system_settings: {
-        Row: {
-          id: string;
-          key: string;
-          value: Json;
-          description: string | null;
-          updated_by: string | null;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          key: string;
-          value: Json;
-          description?: string | null;
-          updated_by?: string | null;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          key?: string;
-          value?: Json;
-          description?: string | null;
-          updated_by?: string | null;
-          updated_at?: string;
-        };
-      };
-      client_requests: {
-        Row: {
-          id: string;
-          client_id: string;
-          request_type: CaseType;
-          title: string;
-          description: string | null;
-          status: ClientRequestStatus;
-          municipality: string | null;
-          urgency: RequestUrgency;
-          notes: string | null;
-          reviewed_by: string | null;
-          converted_to_case_id: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          client_id: string;
-          request_type: CaseType;
-          title: string;
-          description?: string | null;
-          status?: ClientRequestStatus;
-          municipality?: string | null;
-          urgency?: RequestUrgency;
-          notes?: string | null;
-          reviewed_by?: string | null;
-          converted_to_case_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          client_id?: string;
-          request_type?: CaseType;
-          title?: string;
-          description?: string | null;
-          status?: ClientRequestStatus;
-          municipality?: string | null;
-          urgency?: RequestUrgency;
-          notes?: string | null;
-          reviewed_by?: string | null;
-          converted_to_case_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-    };
-  };
+// Catalog + billing types
+export type CaseDocumentStatus = 'pending' | 'uploaded' | 'in_review' | 'approved' | 'rejected';
+export type LeadSource = 'quiz' | 'contact' | 'newsletter';
+export type LeadStatus = 'new' | 'contacted' | 'converted' | 'closed';
+export type InvoiceStatus = 'draft' | 'open' | 'paid' | 'failed' | 'expired' | 'canceled';
+export type Locale = 'nl' | 'en';
+
+// ----------------------------------------------------------------------------
+// Domain models (narrowed versions of the generated Row types)
+// ----------------------------------------------------------------------------
+
+export interface Profile {
+  id: string;
+  email: string;
+  full_name: string;
+  role: UserRole;
+  avatar_url: string | null;
+  phone: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
-// Convenience types
-export type Profile = Database['public']['Tables']['profiles']['Row'];
-export type Client = Database['public']['Tables']['clients']['Row'];
-export type Case = Database['public']['Tables']['cases']['Row'];
-export type Task = Database['public']['Tables']['tasks']['Row'];
-export type Document = Database['public']['Tables']['documents']['Row'];
-export type ActivityLog = Database['public']['Tables']['activity_log']['Row'];
-export type SystemSetting = Database['public']['Tables']['system_settings']['Row'];
-export type ClientRequest = Database['public']['Tables']['client_requests']['Row'];
+export interface Client {
+  id: string;
+  company_name: string;
+  contact_name: string;
+  email: string;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  postal_code: string | null;
+  kvk_number: string | null;
+  notes: string | null;
+  assigned_employee_id: string | null;
+  user_id: string | null;
+  status: ClientStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Case {
+  id: string;
+  client_id: string;
+  title: string;
+  description: string | null;
+  case_type: CaseType;
+  status: CaseStatus;
+  priority: Priority;
+  assigned_employee_id: string | null;
+  deadline: string | null;
+  municipality: string | null;
+  reference_number: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Task {
+  id: string;
+  case_id: string | null;
+  client_id: string | null;
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  priority: Priority;
+  assigned_to: string | null;
+  created_by: string | null;
+  due_date: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Document {
+  id: string;
+  case_id: string | null;
+  client_id: string | null;
+  name: string;
+  file_path: string;
+  file_type: string;
+  file_size: number | null;
+  category: DocumentCategory;
+  uploaded_by: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  user_id: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  details: import('./supabase').Json | null;
+  created_at: string;
+}
+
+export interface SystemSetting {
+  id: string;
+  key: string;
+  value: import('./supabase').Json;
+  description: string | null;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface ClientRequest {
+  id: string;
+  client_id: string;
+  request_type: CaseType;
+  title: string;
+  description: string | null;
+  status: ClientRequestStatus;
+  municipality: string | null;
+  urgency: RequestUrgency;
+  notes: string | null;
+  reviewed_by: string | null;
+  converted_to_case_id: string | null;
+  permit_type_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PermitType {
+  id: string;
+  slug: string;
+  name_nl: string;
+  name_en: string;
+  description_nl: string | null;
+  description_en: string | null;
+  base_fee_cents: number;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RequiredDocument {
+  id: string;
+  permit_type_id: string;
+  name_nl: string;
+  name_en: string;
+  description_nl: string | null;
+  description_en: string | null;
+  is_required: boolean;
+  sort_order: number;
+  auto_check_config: import('./supabase').Json | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CaseDocument {
+  id: string;
+  case_id: string;
+  required_document_id: string | null;
+  name: string;
+  status: CaseDocumentStatus;
+  document_id: string | null;
+  review_note: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Lead {
+  id: string;
+  source: LeadSource;
+  name: string | null;
+  email: string;
+  phone: string | null;
+  company_name: string | null;
+  message: string | null;
+  permit_type_id: string | null;
+  quiz_answers: import('./supabase').Json | null;
+  locale: Locale;
+  status: LeadStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Invoice {
+  id: string;
+  client_id: string;
+  case_id: string | null;
+  invoice_number: string;
+  amount_cents: number;
+  currency: string;
+  status: InvoiceStatus;
+  mollie_payment_id: string | null;
+  description: string | null;
+  issued_at: string;
+  paid_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Payment {
+  id: string;
+  invoice_id: string;
+  mollie_payment_id: string;
+  mollie_status: string;
+  amount_cents: number;
+  method: string | null;
+  raw: import('./supabase').Json | null;
+  created_at: string;
+}

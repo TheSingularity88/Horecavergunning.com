@@ -13,6 +13,16 @@ import { Button } from '@/app/components/ui/Button';
 import { Spinner } from '@/app/components/ui/Spinner';
 import { dashboardRoutes } from '@/app/lib/routes/dashboard';
 
+/**
+ * SECURITY: only accept relative redirect targets into our own portals.
+ * Anything else (external URLs, protocol-relative //evil.com, etc.) is
+ * ignored — prevents open-redirect phishing via /login?redirect=…
+ */
+function sanitizeRedirect(raw: string | null): string | null {
+  if (!raw) return null;
+  return /^\/(dashboard|client)(\/|$)/.test(raw) ? raw : null;
+}
+
 function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +32,7 @@ function LoginForm() {
   const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const explicitRedirect = searchParams.get('redirect');
+  const explicitRedirect = sanitizeRedirect(searchParams.get('redirect'));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

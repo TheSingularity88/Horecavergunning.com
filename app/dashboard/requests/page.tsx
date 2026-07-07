@@ -6,6 +6,7 @@ import { Check, X, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
+import { approveClientRequest, rejectClientRequest } from '@/app/lib/actions/requests';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -18,7 +19,6 @@ import type {
   Client,
   ClientRequest,
   ClientRequestStatus,
-  Priority,
   RequestUrgency,
 } from '@/app/lib/types/database';
 
@@ -109,45 +109,18 @@ export default function RequestsPage() {
     return urgency === 'urgent' ? 'error' : 'info';
   };
 
-  const mapPriority = (urgency: RequestUrgency): Priority => {
-    return urgency === 'urgent' ? 'urgent' : 'normal';
-  };
-
   const setRowLoading = (id: string, loading: boolean) => {
     setActionLoading((prev) => ({ ...prev, [id]: loading }));
   };
 
+  // Approve/reject run as server actions (auth + validation server-side).
   const handleApprove = async (request: RequestWithClient) => {
     setRowLoading(request.id, true);
-    try {
-      const { data: caseData, error: caseError } = await supabase
-        .from('cases')
-        .insert({
-          client_id: request.client_id,
-          title: request.title,
-          description: request.description,
-          case_type: request.request_type,
-          status: 'intake',
-          priority: mapPriority(request.urgency),
-          municipality: request.municipality,
-          assigned_employee_id: profile?.id || null,
-        } as unknown as never)
-        .select('id')
-        .single();
-
-      if (caseError) throw caseError;
-
-      const { error: updateError } = await supabase
-        .from('client_requests')
-        .update({
-          status: 'converted',
-          reviewed_by: profile?.id || null,
-          converted_to_case_id: (caseData as { id: string }).id,
-        } as unknown as never)
-        .eq('id', request.id);
-
-      if (updateError) throw updateError;
-
+    const result = await approveClientRequest({ requestId: request.id });
+    if (!result.success) {
+      alert(result.error);
+    } else {
+      const caseId = result.data?.caseId ?? null;
       setRequests((prev) =>
         prev.map((item) =>
           item.id === request.id
@@ -155,32 +128,21 @@ export default function RequestsPage() {
               ...item,
               status: 'converted',
               reviewed_by: profile?.id || null,
-              converted_to_case_id: (caseData as { id: string }).id,
+              converted_to_case_id: caseId,
             }
             : item
         )
       );
-    } catch (error) {
-      console.error('Error approving request:', error);
-      alert('Failed to approve request. Please try again.');
-    } finally {
-      setRowLoading(request.id, false);
     }
+    setRowLoading(request.id, false);
   };
 
   const handleReject = async (request: RequestWithClient) => {
     setRowLoading(request.id, true);
-    try {
-      const { error } = await supabase
-        .from('client_requests')
-        .update({
-          status: 'rejected',
-          reviewed_by: profile?.id || null,
-        } as unknown as never)
-        .eq('id', request.id);
-
-      if (error) throw error;
-
+    const result = await rejectClientRequest({ requestId: request.id });
+    if (!result.success) {
+      alert(result.error);
+    } else {
       setRequests((prev) =>
         prev.map((item) =>
           item.id === request.id
@@ -188,12 +150,8 @@ export default function RequestsPage() {
             : item
         )
       );
-    } catch (error) {
-      console.error('Error rejecting request:', error);
-      alert('Failed to reject request. Please try again.');
-    } finally {
-      setRowLoading(request.id, false);
     }
+    setRowLoading(request.id, false);
   };
 
   const statusOptions = [

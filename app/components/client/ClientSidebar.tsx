@@ -10,6 +10,7 @@ import {
   FileText,
   PlusCircle,
   User,
+  Receipt,
   ChevronLeft,
   Menu,
 } from 'lucide-react';
@@ -138,6 +139,11 @@ export function ClientSidebar() {
       name: t.clientPortal?.nav?.documents || 'Documents',
       href: dashboardRoutes.client.documents,
       icon: FileText,
+    },
+    {
+      name: t.clientPortal?.nav?.invoices || 'Invoices',
+      href: dashboardRoutes.client.invoices,
+      icon: Receipt,
     },
     {
       name: t.clientPortal?.nav?.requests || 'New Request',

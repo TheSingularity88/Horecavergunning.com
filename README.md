@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HorecaVergunning.com
 
-## Getting Started
+Marketing site + client/employee portal that helps Dutch entrepreneurs apply
+for hospitality permits (horeca-, exploitatie-, alcohol-, terras-, Bibob-
+vergunning). Clients sign up, submit a request for the permit they need, and we
+handle the government paperwork for a one-time fee per permit type.
 
-First, run the development server:
+## Tech stack
+
+- **Next.js 16** (App Router) · **React 19** · **TypeScript** (strict)
+- **Tailwind CSS v4** · **Framer Motion** · **Lucide** icons
+- **Supabase** — Postgres, Auth, Storage (`@supabase/ssr`)
+- **Mollie** — iDEAL / card payments
+- **Resend** — transactional email
+- **Zod** — input validation
+- Custom NL/EN i18n (React context, cookie-persisted)
+
+## Architecture
+
+- **Public site** (`app/page.tsx`, `app/components/*`) — hero, services,
+  DB-driven pricing, lead-capturing quiz, FAQ, blog, contact form.
+- **Client portal** (`app/client/*`) — dashboard, requests, cases + document
+  checklist, documents, invoices, profile.
+- **Employee/admin dashboard** (`app/dashboard/*`) — clients, cases, tasks,
+  documents, requests review, leads inbox; admin-only: users, **permit types &
+  pricing**, settings, activity log.
+- **Security** — all privileged writes go through server actions
+  (`app/lib/actions/*`) using a service-role client (`app/lib/supabase/admin.ts`)
+  behind auth guards (`app/lib/auth/guards.ts`). Everything else is protected by
+  Postgres RLS. `middleware.ts` gates `/dashboard/*` (staff) and `/client/*`
+  (clients).
+- **Payments** — request approval creates a case + document checklist + invoice,
+  starts a Mollie payment, and emails the client a checkout link. The webhook
+  (`app/api/webhooks/mollie/route.ts`) refetches the payment from Mollie and
+  updates the invoice idempotently.
+- **Leads** — `POST /api/leads` (quiz / contact / newsletter) with zod, a
+  honeypot, and IP/email rate limiting; inserts via the service role and
+  notifies the owner via Resend.
+
+## Local development
 
 ```bash
+npm install
+cp .env.example .env.local   # then fill in the values
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+See `.env.example`. Summary:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public Supabase client |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only; bypasses RLS. **Never expose.** |
+| `NEXT_PUBLIC_SITE_URL` | Base URL for Mollie redirect/webhook + email links |
+| `RESEND_API_KEY` / `RESEND_FROM_EMAIL` / `OWNER_NOTIFICATION_EMAIL` | Email |
+| `MOLLIE_API_KEY` | Payments (use a `test_` key first) |
 
-## Learn More
+Email and payments **degrade gracefully** when their keys are absent, so the app
+runs locally without them.
 
-To learn more about Next.js, take a look at the following resources:
+## Database & migrations
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Versioned SQL lives in `supabase/migrations/`. `000_baseline.sql` documents the
+already-applied state; `002`–`007` are the changes made since. Apply new
+migrations via the Supabase SQL editor or the Supabase MCP tools, then
+regenerate types:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npx supabase gen types typescript --project-id <project-id> > app/lib/types/supabase.ts
+```
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Deployed on **Vercel**. Set all environment variables in the Vercel project.
+Configure the Mollie webhook to point at `<site>/api/webhooks/mollie` (needs a
+public URL — use a preview deploy or a tunnel when testing locally).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Roadmap
+
+Planned next: per-case document **auto-checking** — the `permit_types` →
+`required_documents` → `case_documents` model (with `auto_check_config`) is the
+foundation for it. See `docs/DASHBOARD_IMPLEMENTATION.md` for more.

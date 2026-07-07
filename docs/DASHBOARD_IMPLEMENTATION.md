@@ -32,9 +32,10 @@ A modern, professional dashboard was implemented for employees and admins with t
 ## Supabase Configuration
 
 ```env
-# .env.local
-NEXT_PUBLIC_SUPABASE_URL=https://llpkcmfpijzevbmujfkq.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxscGtjbWZwaWp6ZXZibXVqZmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NTA2MTcsImV4cCI6MjA4NDQyNjYxN30.xjNChJ2tCu_i9OPgwrACrXvvfCcyX9ig5iMFwfXCKqM
+# .env.local — see .env.example in the repo root for the full list.
+# Never commit real values.
+NEXT_PUBLIC_SUPABASE_URL=<your-supabase-project-url>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
 ```
 
 ---

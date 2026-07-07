@@ -1,10 +1,19 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+/** Only allow same-site relative redirect targets into the two portals. */
+function safeRedirectPath(pathname: string): string {
+  if (/^\/(dashboard|client)(\/|$)/.test(pathname)) {
+    return pathname;
+  }
+  return '/';
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip middleware for static files and API routes
+  // Skip static files. API routes handle their own auth (webhooks/leads must
+  // stay reachable without a session).
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
@@ -47,25 +56,61 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (pathname.startsWith('/dashboard/admin')) {
-    if (!user) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = '/';
-      redirectUrl.search = '';
-      const redirectResponse = NextResponse.redirect(redirectUrl);
-      response.cookies.getAll().forEach((cookie) => {
-        redirectResponse.cookies.set(cookie);
-      });
-      return redirectResponse;
-    }
+  // Segment-aware so /client-register (an auth page) is NOT treated as the
+  // /client portal.
+  const isDashboard = pathname === '/dashboard' || pathname.startsWith('/dashboard/');
+  const isClientPortal = pathname === '/client' || pathname.startsWith('/client/');
 
+  if (!isDashboard && !isClientPortal) {
+    return response;
+  }
+
+  const redirectWithCookies = (to: string, search = '') => {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = to;
+    redirectUrl.search = search;
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    response.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie);
+    });
+    return redirectResponse;
+  };
+
+  // Both portals require authentication.
+  if (!user) {
+    const target = safeRedirectPath(pathname);
+    return redirectWithCookies(
+      '/login',
+      target === '/' ? '' : `?redirect=${encodeURIComponent(target)}`
+    );
+  }
+
+  // /dashboard/* requires an ACTIVE staff profile.
+  if (isDashboard) {
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, is_active')
       .eq('id', user.id)
       .maybeSingle();
 
-    if (error || !profile || profile.role !== 'admin') {
+    const isActiveStaff =
+      !error &&
+      !!profile &&
+      (profile.role === 'employee' || profile.role === 'admin') &&
+      profile.is_active !== false;
+
+    if (!isActiveStaff) {
+      // Client users get sent to their own portal; others to the homepage.
+      const { data: client } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      return redirectWithCookies(client ? '/client' : '/');
+    }
+
+    // /dashboard/admin/* additionally requires the admin role.
+    if (pathname.startsWith('/dashboard/admin') && profile!.role !== 'admin') {
       await supabase.from('activity_log').insert({
         user_id: user.id,
         action: 'unauthorized_admin_access',
@@ -77,16 +122,26 @@ export async function middleware(request: NextRequest) {
           user_agent: request.headers.get('user-agent'),
         },
       });
-      await supabase.auth.signOut();
+      return redirectWithCookies('/dashboard');
+    }
+  }
 
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = '/';
-      redirectUrl.search = '';
-      const redirectResponse = NextResponse.redirect(redirectUrl);
-      response.cookies.getAll().forEach((cookie) => {
-        redirectResponse.cookies.set(cookie);
-      });
-      return redirectResponse;
+  // /client/* requires a linked client record.
+  if (isClientPortal) {
+    const { data: client } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!client) {
+      // Staff members visiting /client go to the dashboard; others home.
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+      return redirectWithCookies(profile ? '/dashboard' : '/');
     }
   }
 

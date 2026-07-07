@@ -7,6 +7,12 @@ import { Search, Upload, FileText, Download, Trash2, File, Image, FileSpreadshee
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
+import {
+  validateUploadFile,
+  FILE_INPUT_ACCEPT,
+  ALLOWED_EXTENSIONS_LABEL,
+  MAX_FILE_SIZE_LABEL,
+} from '@/app/lib/validation/upload';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -35,6 +41,7 @@ export default function DocumentsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const supabase = useMemo(() => createClient(), []);
 
@@ -85,6 +92,12 @@ export default function DocumentsPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const check = validateUploadFile(file);
+      if (!check.ok) {
+        setUploadError(check.error);
+        return;
+      }
+      setUploadError(null);
       setUploadForm((prev) => ({ ...prev, file }));
     }
   };
@@ -92,12 +105,23 @@ export default function DocumentsPage() {
   const handleUpload = async () => {
     if (!uploadForm.file) return;
 
+    const check = validateUploadFile(uploadForm.file);
+    if (!check.ok) {
+      setUploadError(check.error);
+      return;
+    }
+
     setIsUploading(true);
+    setUploadError(null);
     try {
       const file = uploadForm.file;
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `${profile?.id}/${fileName}`;
+      // Documents attached to a client live under clients/{id}/ so the
+      // client's storage policy lets them download their own files.
+      const filePath = uploadForm.client_id
+        ? `clients/${uploadForm.client_id}/${fileName}`
+        : `staff/${profile?.id}/${fileName}`;
 
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
@@ -119,13 +143,13 @@ export default function DocumentsPage() {
           case_id: uploadForm.case_id || null,
           client_id: uploadForm.client_id || null,
           uploaded_by: profile?.id,
-        } as unknown as never)
+        })
         .select()
         .single();
 
       if (dbError) throw dbError;
 
-      setDocuments((prev) => [data as Document, ...prev]);
+      setDocuments((prev) => [data as unknown as Document, ...prev]);
       setShowUploadModal(false);
       setUploadForm({
         file: null,
@@ -136,6 +160,7 @@ export default function DocumentsPage() {
       });
     } catch (error) {
       console.error('Error uploading document:', error);
+      setUploadError('Failed to upload document. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -313,11 +338,18 @@ export default function DocumentsPage() {
         size="md"
       >
         <div className="space-y-4">
+          {uploadError && (
+            <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm">
+              {uploadError}
+            </div>
+          )}
+
           <div className="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center">
             <input
               type="file"
               id="file-upload"
               className="hidden"
+              accept={FILE_INPUT_ACCEPT}
               onChange={handleFileChange}
             />
             <label
@@ -327,6 +359,9 @@ export default function DocumentsPage() {
               <Upload className="w-8 h-8 text-slate-400 mb-2" />
               <span className="text-sm text-slate-600">
                 {uploadForm.file ? uploadForm.file.name : 'Click to select a file'}
+              </span>
+              <span className="text-xs text-slate-400 mt-1">
+                {`${ALLOWED_EXTENSIONS_LABEL} · max ${MAX_FILE_SIZE_LABEL}`}
               </span>
             </label>
           </div>

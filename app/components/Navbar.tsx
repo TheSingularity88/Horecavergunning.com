@@ -38,7 +38,7 @@ export function Navbar() {
               <div className="py-2">
                 <Link href="/#about" className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">Onze Missie</Link>
                 <Link href="/blog" className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">Blog & Nieuws</Link>
-                <Link href="/#contact" className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">Contact</Link>
+                <Link href="/contact" className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">Contact</Link>
               </div>
             </div>
           </div>
@@ -52,7 +52,9 @@ export function Navbar() {
           >
             {t.navbar.login}
           </Link>
-          <Button>{t.navbar.book}</Button>
+          <Link href="/contact">
+            <Button>{t.navbar.book}</Button>
+          </Link>
         </div>
         </div>
 
@@ -109,7 +111,7 @@ export function Navbar() {
                           {t.navbar.login}
                         </Link>
                         <Link 
-                          href="/#book" 
+                          href="/contact" 
                           onClick={() => setIsUserMenuOpen(false)}
                           className="flex items-center justify-center rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600"
                         >
