@@ -56,11 +56,18 @@ export const translations = {
       ]
     },
     pricing: {
+      eyebrow: "Pricing",
       title: "Transparent, Fixed Fees Per Permit",
-      subtitle: "One clear price per permit. No hourly billing, no surprises.",
+      subtitle: "One clear price per permit. No hourly billing, no surprises — we handle the full application for you.",
       oneTime: "one-time",
+      serviceFee: "service fee",
       onRequest: "On request",
-      startCta: "Start your application",
+      popular: "Most chosen",
+      inclLabel: "We handle the complete application",
+      startCta: "Start application",
+      trustFixed: "Fixed price per permit",
+      trustResponse: "Reply within 1 business day",
+      trustApproval: "You pay after approval",
       reassurance: "Fixed fee per permit — no surprises afterwards.",
       customQuestion: "Different question? Get in touch →",
       starter: {
@@ -511,11 +518,18 @@ export const translations = {
       ]
     },
     pricing: {
+      eyebrow: "Tarieven",
       title: "Transparante, Vaste Tarieven Per Vergunning",
-      subtitle: "Eén duidelijke prijs per vergunning. Geen uurtje-factuurtje, geen verrassingen.",
+      subtitle: "Eén duidelijke prijs per vergunning. Geen uurtje-factuurtje, geen verrassingen — wij verzorgen de volledige aanvraag.",
       oneTime: "eenmalig",
+      serviceFee: "servicetarief",
       onRequest: "Op aanvraag",
+      popular: "Meest gekozen",
+      inclLabel: "Wij verzorgen de volledige aanvraag",
       startCta: "Aanvraag starten",
+      trustFixed: "Vaste prijs per vergunning",
+      trustResponse: "Reactie binnen 1 werkdag",
+      trustApproval: "U betaalt na goedkeuring",
       reassurance: "Vaste tarieven per vergunning — geen verrassingen achteraf.",
       customQuestion: "Andere vraag? Neem contact op →",
       starter: {
