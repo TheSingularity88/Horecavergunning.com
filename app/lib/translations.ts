@@ -165,12 +165,12 @@ export const translations = {
           a: "From startup entrepreneurs opening their first coffee bar to experienced owners with multiple venues. We support anyone who wants to get rid of administrative hassle."
         },
         {
-          q: "Am I required to purchase a fixed subscription?",
-          a: "No, although our subscriptions offer the most peace of mind, we are happy to help on a project basis. For example, for a one-off permit application or a takeover."
+          q: "Do you work with fixed prices?",
+          a: "Yes. You pay one fixed fee per permit we apply for — clear upfront, no hourly billing. For a complete track with several permits we give a clear total price in advance."
         },
         {
-          q: "What can I expect within my monthly package?",
-          a: "Complete unburdening. Depending on your package, we handle your permits, contracts, financial administration, and tax filings. You get one point of contact for all these matters."
+          q: "What exactly do you handle?",
+          a: "Complete unburdening of your permit application: we determine which permits you need, collect and check the documents, submit the application, and guide the Bibob screening. You get one fixed point of contact."
         },
         {
           q: "Will I receive hourly invoices afterwards?",
@@ -634,12 +634,12 @@ export const translations = {
           a: "Van startende ondernemers die hun eerste koffiebar openen tot ervaren eigenaars met meerdere vestigingen. Wij ondersteunen iedereen die af wil van administratieve rompslomp."
         },
         {
-          q: "Ben ik verplicht om een vast abonnement af te nemen?",
-          a: "Nee, hoewel onze abonnementen de meeste rust en zekerheid bieden, helpen we u ook graag op projectbasis. Bijvoorbeeld bij een eenmalige vergunningaanvraag of een overname."
+          q: "Werken jullie met vaste tarieven?",
+          a: "Ja. U betaalt één vaste prijs per vergunning die wij voor u aanvragen — vooraf duidelijk, geen uurtje-factuurtje. Voor een compleet traject met meerdere vergunningen geven we vooraf een heldere totaalprijs."
         },
         {
-          q: "Wat kan ik verwachten binnen mijn maandelijkse pakket?",
-          a: "Volledige ontzorging. Afhankelijk van uw pakket regelen wij uw vergunningen, contracten, financiële administratie en fiscale aangiftes. U krijgt één aanspreekpunt voor al deze zaken."
+          q: "Wat verzorgen jullie precies?",
+          a: "Volledige ontzorging van uw vergunningaanvraag: wij bepalen welke vergunningen u nodig heeft, verzamelen en controleren de documenten, dienen de aanvraag in en begeleiden de Bibob-toets. U heeft één vast aanspreekpunt."
         },
         {
           q: "Krijg ik achteraf nog facturen per uur?",

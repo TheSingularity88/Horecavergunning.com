@@ -8,6 +8,7 @@ import { Quiz } from './components/Quiz';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
+import { HomeJsonLd } from './components/seo/HomeJsonLd';
 import { createPublicClient } from './lib/supabase/public';
 import type { PermitType } from './lib/types/database';
 
@@ -34,6 +35,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-amber-500 selection:text-white">
+      <HomeJsonLd />
       <Navbar />
       <Hero />
       <SocialProof />
