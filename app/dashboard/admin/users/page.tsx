@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Plus, Search, UserCog, Mail, Phone, Shield, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { createClient } from '@/app/lib/supabase/client';
+import { createStaffUser, changeUserRole, setUserActive } from '@/app/lib/actions/admin-users';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -109,67 +110,54 @@ export default function UsersPage() {
     setError(null);
     setIsCreating(true);
 
-    try {
-      // Create auth user with metadata
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: newUser.password,
-        options: {
-          data: {
-            full_name: newUser.full_name,
-            role: newUser.role,
-          },
-        },
-      });
+    // Server action: runs with the service role after verifying the caller
+    // is an admin. Does NOT touch this browser's session (the old client-side
+    // signUp used to log the admin out and log the new user in).
+    const result = await createStaffUser({
+      email: newUser.email,
+      full_name: newUser.full_name,
+      password: newUser.password,
+      role: newUser.role as 'employee' | 'admin',
+    });
 
-      if (signUpError) throw signUpError;
-
-      // Refresh user list
-      const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-      setUsers((data as Profile[]) || []);
-
-      setShowCreateModal(false);
-      setNewUser({ email: '', full_name: '', role: 'employee', password: '' });
-    } catch (err: unknown) {
-      console.error('Error creating user:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create user');
-    } finally {
+    if (!result.success) {
+      setError(result.error);
       setIsCreating(false);
+      return;
     }
+
+    // Refresh user list
+    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    setUsers((data as Profile[]) || []);
+
+    setShowCreateModal(false);
+    setNewUser({ email: '', full_name: '', role: 'employee', password: '' });
+    setIsCreating(false);
   };
 
   const handleToggleActive = async (userId: string, isActive: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_active: !isActive } as unknown as never)
-        .eq('id', userId);
-
-      if (error) throw error;
-
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, is_active: !isActive } : u))
-      );
-    } catch (error) {
-      console.error('Error toggling user status:', error);
+    const result = await setUserActive({ userId, isActive: !isActive });
+    if (!result.success) {
+      alert(result.error);
+      return;
     }
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, is_active: !isActive } : u))
+    );
   };
 
   const handleRoleChange = async (userId: string, newRole: string) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole } as unknown as never)
-        .eq('id', userId);
-
-      if (error) throw error;
-
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, role: newRole as 'admin' | 'employee' } : u))
-      );
-    } catch (error) {
-      console.error('Error updating role:', error);
+    const result = await changeUserRole({
+      userId,
+      role: newRole as 'employee' | 'admin',
+    });
+    if (!result.success) {
+      alert(result.error);
+      return;
     }
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, role: newRole as 'admin' | 'employee' } : u))
+    );
   };
 
   const roleOptions = [

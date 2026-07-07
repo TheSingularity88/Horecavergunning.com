@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Settings, Save } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { createClient } from '@/app/lib/supabase/client';
+import { saveSystemSettings } from '@/app/lib/actions/settings';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -21,7 +22,7 @@ interface Setting {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { isAdmin, profile } = useAuth();
+  const { isAdmin } = useAuth();
   const [settings, setSettings] = useState<Setting[]>([
     { key: 'company_name', value: 'HorecaVergunning', description: 'Company name displayed in emails and documents' },
     { key: 'support_email', value: 'info@horecavergunning.com', description: 'Support email address' },
@@ -70,26 +71,15 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    try {
-      for (const setting of settings) {
-        const { error } = await supabase
-          .from('system_settings')
-          .upsert({
-            key: setting.key,
-            value: setting.value,
-            description: setting.description,
-            updated_by: profile?.id,
-          } as unknown as never, { onConflict: 'key' });
-
-        if (error) throw error;
-      }
+    // Server action: admin check + validation happen server-side.
+    const result = await saveSystemSettings({ settings });
+    if (result.success) {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (error) {
-      console.error('Error saving settings:', error);
-    } finally {
-      setIsSaving(false);
+    } else {
+      alert(result.error);
     }
+    setIsSaving(false);
   };
 
   if (!isAdmin) return null;

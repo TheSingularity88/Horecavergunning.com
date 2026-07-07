@@ -189,7 +189,17 @@ export const translations = {
         checkEmail: "Check your email",
         resetEmailSent: "We've sent a password reset link to your email address.",
         sendResetLink: "Send reset link",
-        forgotPasswordInstructions: "Enter your email address and we will send you a link to reset your password."
+        forgotPasswordInstructions: "Enter your email address and we will send you a link to reset your password.",
+        chooseNewPassword: "Choose a new password",
+        newPassword: "New password",
+        confirmPassword: "Confirm password",
+        updatePassword: "Update password",
+        passwordUpdated: "Password updated",
+        redirectingToLogin: "Your password has been changed. Redirecting to login…",
+        passwordTooShort: "Password must be at least 8 characters.",
+        passwordMismatch: "Passwords do not match.",
+        invalidResetLink: "Invalid or expired link",
+        requestNewLink: "This password reset link is invalid or has expired. Please request a new one."
       },
       greeting: {
         morning: "Good morning",
@@ -609,7 +619,17 @@ export const translations = {
         checkEmail: "Controleer uw e-mail",
         resetEmailSent: "We hebben een link naar uw e-mailadres gestuurd om uw wachtwoord opnieuw in te stellen.",
         sendResetLink: "Verstuur reset link",
-        forgotPasswordInstructions: "Voer uw e-mailadres in en wij sturen u een link om uw wachtwoord opnieuw in te stellen."
+        forgotPasswordInstructions: "Voer uw e-mailadres in en wij sturen u een link om uw wachtwoord opnieuw in te stellen.",
+        chooseNewPassword: "Kies een nieuw wachtwoord",
+        newPassword: "Nieuw wachtwoord",
+        confirmPassword: "Bevestig wachtwoord",
+        updatePassword: "Wachtwoord bijwerken",
+        passwordUpdated: "Wachtwoord bijgewerkt",
+        redirectingToLogin: "Uw wachtwoord is gewijzigd. U wordt doorgestuurd naar de inlogpagina…",
+        passwordTooShort: "Het wachtwoord moet minimaal 8 tekens bevatten.",
+        passwordMismatch: "De wachtwoorden komen niet overeen.",
+        invalidResetLink: "Ongeldige of verlopen link",
+        requestNewLink: "Deze link om uw wachtwoord opnieuw in te stellen is ongeldig of verlopen. Vraag een nieuwe aan."
       },
       greeting: {
         morning: "Goedemorgen",
