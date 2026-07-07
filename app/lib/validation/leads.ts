@@ -10,8 +10,10 @@ export const leadSchema = z.object({
   permit_type_slug: z.string().trim().max(64).optional().or(z.literal('')),
   quiz_answers: z.record(z.string(), z.unknown()).optional(),
   locale: z.enum(['nl', 'en']).default('nl'),
-  // Honeypot: bots fill hidden fields; humans leave it empty.
-  website: z.string().max(0).optional().or(z.literal('')),
+  // Honeypot: bots fill this hidden field; humans leave it empty. Accept any
+  // value here so the route can silently drop bot submissions (a strict schema
+  // would 422 and tell the bot which field to fix).
+  website: z.string().optional(),
 });
 export type LeadInput = z.infer<typeof leadSchema>;
 

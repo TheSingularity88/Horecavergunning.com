@@ -56,8 +56,13 @@ export const translations = {
       ]
     },
     pricing: {
-      title: "Transparent, Fixed Monthly Rates",
-      subtitle: "No hourly billing. Choose the package that fits your stage.",
+      title: "Transparent, Fixed Fees Per Permit",
+      subtitle: "One clear price per permit. No hourly billing, no surprises.",
+      oneTime: "one-time",
+      onRequest: "On request",
+      startCta: "Start your application",
+      reassurance: "Fixed fee per permit — no surprises afterwards.",
+      customQuestion: "Different question? Get in touch →",
       starter: {
         name: "Starter",
         desc: "Essential compliance for new venues.",
@@ -92,7 +97,19 @@ export const translations = {
       result_cta: "Book Free Consultation",
       result_download: "Download Guide",
       back: "Back",
-      restart: "Start Over"
+      restart: "Start Over",
+      formTitle: "Leave your details and we'll advise you — free of charge.",
+      recommendation: "Recommended for you",
+      namePlaceholder: "Your name",
+      emailPlaceholder: "Email address",
+      phonePlaceholder: "Phone (optional)",
+      submit: "Get free advice",
+      submitting: "Sending...",
+      successTitle: "Thank you! We'll be in touch.",
+      successDesc: "We received your details and will contact you within one business day.",
+      errorMsg: "Something went wrong. Please try again.",
+      createAccount: "Create an account",
+      contactUs: "Contact us"
     },
     footer: {
       tagline: "Empowering Dutch hospitality with simplified legal and financial support.",
@@ -494,8 +511,13 @@ export const translations = {
       ]
     },
     pricing: {
-      title: "Transparante, Vaste Maandtarieven",
-      subtitle: "Geen uurtje-factuurtje. Kies het pakket dat bij uw fase past.",
+      title: "Transparante, Vaste Tarieven Per Vergunning",
+      subtitle: "Eén duidelijke prijs per vergunning. Geen uurtje-factuurtje, geen verrassingen.",
+      oneTime: "eenmalig",
+      onRequest: "Op aanvraag",
+      startCta: "Aanvraag starten",
+      reassurance: "Vaste tarieven per vergunning — geen verrassingen achteraf.",
+      customQuestion: "Andere vraag? Neem contact op →",
       starter: {
         name: "Starter",
         desc: "Essentiële compliance voor nieuwe zaken.",
@@ -530,7 +552,19 @@ export const translations = {
       result_cta: "Gratis Consult Boeken",
       result_download: "Download Gids",
       back: "Terug",
-      restart: "Opnieuw Beginnen"
+      restart: "Opnieuw Beginnen",
+      formTitle: "Laat uw gegevens achter en wij adviseren u — geheel vrijblijvend.",
+      recommendation: "Aanbevolen voor u",
+      namePlaceholder: "Uw naam",
+      emailPlaceholder: "E-mailadres",
+      phonePlaceholder: "Telefoon (optioneel)",
+      submit: "Gratis advies aanvragen",
+      submitting: "Versturen...",
+      successTitle: "Bedankt! Wij nemen contact op.",
+      successDesc: "We hebben uw gegevens ontvangen en nemen binnen één werkdag contact met u op.",
+      errorMsg: "Er ging iets mis. Probeer het opnieuw.",
+      createAccount: "Account aanmaken",
+      contactUs: "Contact opnemen"
     },
     footer: {
       tagline: "De Nederlandse horeca versterken met eenvoudige juridische en financiële support.",

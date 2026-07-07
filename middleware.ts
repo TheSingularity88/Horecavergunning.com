@@ -56,8 +56,10 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isDashboard = pathname.startsWith('/dashboard');
-  const isClientPortal = pathname.startsWith('/client');
+  // Segment-aware so /client-register (an auth page) is NOT treated as the
+  // /client portal.
+  const isDashboard = pathname === '/dashboard' || pathname.startsWith('/dashboard/');
+  const isClientPortal = pathname === '/client' || pathname.startsWith('/client/');
 
   if (!isDashboard && !isClientPortal) {
     return response;

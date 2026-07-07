@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: '/private/',
+      disallow: ['/dashboard/', '/client/', '/login', '/client-register', '/forgot-password', '/reset-password', '/api/'],
     },
     sitemap: 'https://horecavergunning.com/sitemap.xml',
   };

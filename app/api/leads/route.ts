@@ -34,6 +34,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
+  // Guard the server-only integration: without the service-role key we can't
+  // persist leads. Fail cleanly instead of throwing a 500.
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('[api/leads] SUPABASE_SERVICE_ROLE_KEY not configured');
+    return NextResponse.json(
+      { error: 'Lead capture is temporarily unavailable. Please email us directly.' },
+      { status: 503 }
+    );
+  }
+
   const ip = clientIp(request.headers);
   const [ipOk, emailOk] = await Promise.all([
     checkRateLimit(`lead:ip:${ip}`, 10, 3600), // 10/hour per IP

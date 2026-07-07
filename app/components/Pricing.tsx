@@ -1,10 +1,23 @@
 'use client';
+import Link from 'next/link';
 import { Check } from 'lucide-react';
 import { Button } from './ui/Button';
 import { useLanguage } from '../context/LanguageContext';
+import type { PermitType } from '../lib/types/database';
 
-export function Pricing() {
-  const { t } = useLanguage();
+interface PricingProps {
+  permitTypes: PermitType[];
+}
+
+export function Pricing({ permitTypes }: PricingProps) {
+  const { language, t } = useLanguage();
+
+  const euro = (cents: number) =>
+    new Intl.NumberFormat('nl-NL', {
+      style: 'currency',
+      currency: 'EUR',
+      maximumFractionDigits: 0,
+    }).format(cents / 100);
 
   return (
     <section id="pricing" className="py-24 bg-slate-50">
@@ -14,60 +27,53 @@ export function Pricing() {
           <p className="text-slate-600">{t.pricing.subtitle}</p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-start">
-          
-          {/* Starter */}
-          <div className="bg-white rounded-2xl p-8 border border-slate-200">
-            <h3 className="font-bold text-lg text-slate-900">{t.pricing.starter.name}</h3>
-            <div className="mt-4 mb-6">
-              <span className="text-4xl font-bold text-slate-900">€295</span>
-              <span className="text-slate-500">/mo</span>
-            </div>
-            <p className="text-sm text-slate-600 mb-6">{t.pricing.starter.desc}</p>
-            <Button variant="outline" className="w-full mb-8">{t.pricing.starter.cta}</Button>
-            <ul className="space-y-3 text-sm text-slate-700">
-              {t.pricing.starter.features.map((feature, i) => (
-                 <li key={i} className="flex gap-3"><Check className="w-4 h-4 text-green-500" /> {feature}</li>
-              ))}
-            </ul>
+        {permitTypes.length === 0 ? (
+          <p className="text-center text-slate-500">{t.pricing.subtitle}</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {permitTypes.map((pt) => {
+              const name = language === 'en' ? pt.name_en : pt.name_nl;
+              const desc = language === 'en' ? pt.description_en : pt.description_nl;
+              return (
+                <div
+                  key={pt.id}
+                  className="bg-white rounded-2xl p-7 border border-slate-200 flex flex-col hover:border-amber-300 hover:shadow-lg transition-all"
+                >
+                  <h3 className="font-bold text-lg text-slate-900">{name}</h3>
+                  <div className="mt-3 mb-4">
+                    {pt.base_fee_cents > 0 ? (
+                      <>
+                        <span className="text-3xl font-bold text-slate-900">
+                          {euro(pt.base_fee_cents)}
+                        </span>
+                        <span className="text-slate-500 text-sm ml-1">
+                          {t.pricing.oneTime || 'eenmalig'}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-2xl font-bold text-slate-900">
+                        {t.pricing.onRequest || 'Op aanvraag'}
+                      </span>
+                    )}
+                  </div>
+                  {desc && <p className="text-sm text-slate-600 mb-6 flex-1">{desc}</p>}
+                  <Link href="/client-register" className="mt-auto">
+                    <Button variant="outline" className="w-full">
+                      {t.pricing.startCta || 'Aanvraag starten'}
+                    </Button>
+                  </Link>
+                </div>
+              );
+            })}
           </div>
+        )}
 
-          {/* Growth (Highlight) */}
-          <div className="bg-slate-900 rounded-2xl p-8 border border-slate-800 shadow-xl relative transform md:-translate-y-4">
-            <div className="absolute top-0 right-0 left-0 h-1 bg-amber-500 rounded-t-2xl" />
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-xs font-bold px-3 py-1 rounded-full text-slate-900 uppercase tracking-wide">
-              {t.pricing.growth.badge}
-            </div>
-            
-            <h3 className="font-bold text-lg text-white">{t.pricing.growth.name}</h3>
-            <div className="mt-4 mb-6">
-              <span className="text-4xl font-bold text-white">€495</span>
-              <span className="text-slate-400">/mo</span>
-            </div>
-            <p className="text-sm text-slate-400 mb-6">{t.pricing.growth.desc}</p>
-            <Button className="w-full mb-8">{t.pricing.growth.cta}</Button>
-            <ul className="space-y-3 text-sm text-slate-300">
-              {t.pricing.growth.features.map((feature, i) => (
-                 <li key={i} className="flex gap-3"><Check className="w-4 h-4 text-amber-500" /> {feature}</li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Enterprise */}
-          <div className="bg-white rounded-2xl p-8 border border-slate-200">
-            <h3 className="font-bold text-lg text-slate-900">{t.pricing.all_in.name}</h3>
-            <div className="mt-4 mb-6">
-              <span className="text-4xl font-bold text-slate-900">{t.pricing.all_in.price}</span>
-            </div>
-            <p className="text-sm text-slate-600 mb-6">{t.pricing.all_in.desc}</p>
-            <Button variant="outline" className="w-full mb-8">{t.pricing.all_in.cta}</Button>
-            <ul className="space-y-3 text-sm text-slate-700">
-               {t.pricing.all_in.features.map((feature, i) => (
-                 <li key={i} className="flex gap-3"><Check className="w-4 h-4 text-green-500" /> {feature}</li>
-              ))}
-            </ul>
-          </div>
-
+        <div className="max-w-6xl mx-auto mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 text-sm text-slate-600">
+          <Check className="w-4 h-4 text-green-500" />
+          <span>{t.pricing.reassurance || 'Vaste tarieven per vergunning — geen verrassingen achteraf.'}</span>
+          <Link href="/contact" className="text-amber-600 hover:text-amber-700 font-medium">
+            {t.pricing.customQuestion || 'Andere vraag? Neem contact op →'}
+          </Link>
         </div>
       </div>
     </section>

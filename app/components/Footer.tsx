@@ -37,7 +37,7 @@ export function Footer() {
               <li><a href="#faq" className="hover:text-amber-500 transition-colors">{t.navbar.faq}</a></li>
               <li><a href="#" className="hover:text-amber-500 transition-colors">Careers</a></li>
               <li><Link href="/blog" className="hover:text-amber-500 transition-colors">Blog</Link></li>
-              <li><a href="#" className="hover:text-amber-500 transition-colors">{t.footer.contact}</a></li>
+              <li><Link href="/contact" className="hover:text-amber-500 transition-colors">{t.footer.contact}</Link></li>
             </ul>
           </div>
 
