@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Send, CheckCircle2 } from 'lucide-react';
@@ -11,53 +11,15 @@ import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
-import { Select } from '@/app/components/ui/Select';
 import { Textarea } from '@/app/components/ui/Textarea';
 import { Spinner } from '@/app/components/ui/Spinner';
 import Link from 'next/link';
 import { dashboardRoutes } from '@/app/lib/routes/dashboard';
-import type { CaseType, RequestUrgency } from '@/app/lib/types/database';
-
-const REQUEST_TYPES: { value: CaseType; label: string; description: string }[] = [
-  {
-    value: 'exploitatievergunning',
-    label: 'Exploitatievergunning',
-    description: 'Operating permit for hospitality businesses',
-  },
-  {
-    value: 'alcoholvergunning',
-    label: 'Alcoholvergunning',
-    description: 'License to serve alcoholic beverages',
-  },
-  {
-    value: 'terrasvergunning',
-    label: 'Terrasvergunning',
-    description: 'Permit for outdoor seating/terrace',
-  },
-  {
-    value: 'bibob',
-    label: 'Bibob Screening',
-    description: 'Integrity assessment for permit applications',
-  },
-  {
-    value: 'overname',
-    label: 'Business Takeover',
-    description: 'Transfer permits to new owner',
-  },
-  {
-    value: 'verbouwing',
-    label: 'Renovation',
-    description: 'Building/renovation permits',
-  },
-  {
-    value: 'other',
-    label: 'Other',
-    description: 'Other permit-related requests',
-  },
-];
+import type { CaseType, RequestUrgency, PermitType } from '@/app/lib/types/database';
 
 interface FormData {
   request_type: CaseType | '';
+  permit_type_id: string | null;
   title: string;
   description: string;
   municipality: string;
@@ -67,11 +29,13 @@ interface FormData {
 export default function NewRequestPage() {
   const router = useRouter();
   const { clientData } = useAuth();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const [permitTypes, setPermitTypes] = useState<PermitType[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     request_type: '',
+    permit_type_id: null,
     title: '',
     description: '',
     municipality: '',
@@ -79,6 +43,22 @@ export default function NewRequestPage() {
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const supabase = useMemo(() => createClient(), []);
+
+  // Load the live permit catalog so options + fees stay in sync with admin edits.
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from('permit_types')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+      setPermitTypes((data as PermitType[]) || []);
+    };
+    load();
+  }, [supabase]);
+
+  const euro = (cents: number) =>
+    new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(cents / 100);
 
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
@@ -106,12 +86,13 @@ export default function NewRequestPage() {
       const { error } = await supabase.from('client_requests').insert({
         client_id: clientData.id,
         request_type: formData.request_type,
+        permit_type_id: formData.permit_type_id,
         title: formData.title.trim(),
         description: formData.description.trim(),
         municipality: formData.municipality.trim() || null,
         urgency: formData.urgency,
         status: 'pending',
-      } as never);
+      });
 
       if (error) throw error;
 
@@ -200,23 +181,38 @@ export default function NewRequestPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {REQUEST_TYPES.map((type) => (
-                      <button
-                        key={type.value}
-                        type="button"
-                        onClick={() =>
-                          setFormData((prev) => ({ ...prev, request_type: type.value }))
-                        }
-                        className={`p-4 rounded-lg border-2 text-left transition-colors ${
-                          formData.request_type === type.value
-                            ? 'border-amber-500 bg-amber-50'
-                            : 'border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        <p className="font-medium text-slate-900">{type.label}</p>
-                        <p className="text-sm text-slate-500 mt-1">{type.description}</p>
-                      </button>
-                    ))}
+                    {permitTypes.map((type) => {
+                      const label = language === 'en' ? type.name_en : type.name_nl;
+                      const desc = language === 'en' ? type.description_en : type.description_nl;
+                      return (
+                        <button
+                          key={type.id}
+                          type="button"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              request_type: type.slug as CaseType,
+                              permit_type_id: type.id,
+                            }))
+                          }
+                          className={`p-4 rounded-lg border-2 text-left transition-colors ${
+                            formData.permit_type_id === type.id
+                              ? 'border-amber-500 bg-amber-50'
+                              : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-medium text-slate-900">{label}</p>
+                            {type.base_fee_cents > 0 && (
+                              <span className="text-sm font-semibold text-amber-600 whitespace-nowrap">
+                                {euro(type.base_fee_cents)}
+                              </span>
+                            )}
+                          </div>
+                          {desc && <p className="text-sm text-slate-500 mt-1">{desc}</p>}
+                        </button>
+                      );
+                    })}
                   </div>
                   {errors.request_type && (
                     <p className="text-red-500 text-sm mt-2">{errors.request_type}</p>

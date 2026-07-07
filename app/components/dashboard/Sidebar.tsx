@@ -14,6 +14,8 @@ import {
   UserCog,
   Settings,
   Activity,
+  Tag,
+  UserPlus,
   ChevronLeft,
   Menu,
 } from 'lucide-react';
@@ -187,6 +189,11 @@ export function Sidebar() {
       href: dashboardRoutes.employee.documents,
       icon: FileText,
     },
+    {
+      name: t.dashboard?.nav?.leads || 'Leads',
+      href: dashboardRoutes.employee.leads,
+      icon: UserPlus,
+    },
   ];
 
   const adminNavItems: NavItem[] = [
@@ -194,6 +201,11 @@ export function Sidebar() {
       name: t.dashboard?.nav?.users || 'Users',
       href: dashboardRoutes.employee.admin.users,
       icon: UserCog,
+    },
+    {
+      name: t.dashboard?.nav?.permitTypes || 'Permit Types',
+      href: dashboardRoutes.employee.admin.permitTypes,
+      icon: Tag,
     },
     {
       name: t.dashboard?.nav?.settings || 'Settings',

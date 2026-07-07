@@ -8,9 +8,11 @@ export const dashboardRoutes = {
     requests: '/dashboard/requests',
     tasks: '/dashboard/tasks',
     documents: '/dashboard/documents',
+    leads: '/dashboard/leads',
     profile: '/dashboard/profile',
     admin: {
       users: '/dashboard/admin/users',
+      permitTypes: '/dashboard/admin/permit-types',
       settings: '/dashboard/admin/settings',
       activity: '/dashboard/admin/activity',
     },
