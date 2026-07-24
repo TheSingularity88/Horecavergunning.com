@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from './ui/Button';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle2, Circle, Clock } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Circle, Clock, Sparkles } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export function Hero() {
@@ -67,7 +67,7 @@ export function Hero() {
               </Link>
             </div>
 
-            <div className="flex items-center gap-6 text-sm text-slate-400">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-slate-400">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-amber-500" />
                 <span>{t.hero.fixed_rates}</span>
@@ -76,6 +76,13 @@ export function Hero() {
                 <CheckCircle2 className="w-4 h-4 text-amber-500" />
                 <span>{t.hero.support}</span>
               </div>
+              <Link
+                href="/#ai-controle"
+                className="flex items-center gap-2 hover:text-amber-500 transition-colors"
+              >
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>{t.hero.ai_check}</span>
+              </Link>
             </div>
           </motion.div>
 
