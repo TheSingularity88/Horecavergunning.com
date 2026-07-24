@@ -19,7 +19,14 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, label, error, options, placeholder, ...props }, ref) => {
     return (
-      <div className="w-full">
+      // className sizes the WHOLE control, not the inner <select>. It must land
+      // on this wrapper: the wrapper is the flex/grid item, and it is also what
+      // the absolutely-positioned chevron is anchored to. Putting a width on
+      // the inner select instead left this wrapper at w-full, which ate the
+      // whole flex row (collapsing sibling content to 0px) and stranded the
+      // chevron at the far edge. w-full stays the default so form layouts
+      // still fill their cell; twMerge lets a passed w-* win.
+      <div className={cn('w-full', className)}>
         {label && (
           <label className="block text-sm font-medium text-slate-700 mb-1.5">
             {label}
@@ -32,8 +39,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
               'focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent',
               'disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed',
               'transition-colors duration-200',
-              error && 'border-red-500 focus:ring-red-500',
-              className
+              error && 'border-red-500 focus:ring-red-500'
             )}
             ref={ref}
             {...props}
