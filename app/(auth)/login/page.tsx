@@ -43,18 +43,45 @@ function LoginForm() {
       const { error } = await signIn(email, password);
       if (error) {
         setError(error.message);
-        setIsLoading(false);
       } else {
         // Check if user is a client by looking up in clients table
         const supabase = createClient();
         const { data: session } = await supabase.auth.getSession();
 
         if (session?.session?.user) {
+          const userId = session.session.user.id;
           const { data: clientData } = await supabase
             .from('clients')
             .select('id')
-            .eq('user_id', session.session.user.id)
+            .eq('user_id', userId)
             .maybeSingle();
+
+          if (!clientData) {
+            // No client record — the only other valid audience is ACTIVE
+            // staff. Without this check a deactivated employee (or a client
+            // whose signup trigger failed) is pushed to /dashboard, silently
+            // bounced to the marketing homepage by the middleware, and left
+            // with no idea why.
+            const { data: staffProfile } = await supabase
+              .from('profiles')
+              .select('role, is_active')
+              .eq('id', userId)
+              .maybeSingle();
+
+            const isActiveStaff =
+              !!staffProfile &&
+              (staffProfile.role === 'employee' || staffProfile.role === 'admin') &&
+              staffProfile.is_active !== false;
+
+            if (!isActiveStaff) {
+              await supabase.auth.signOut();
+              setError(
+                t.dashboard?.auth?.accountInactive ||
+                  'Uw account is nog niet actief. Neem contact op met ons team.'
+              );
+              return;
+            }
+          }
 
           // Determine redirect path
           let redirectPath: string;
@@ -78,6 +105,11 @@ function LoginForm() {
       }
     } catch {
       setError('An unexpected error occurred');
+    } finally {
+      // Always reset: if the middleware bounces us back to /login (e.g. auth
+      // cookies didn't reach the server), this same form instance stays
+      // mounted — without the reset the submit button would stay disabled on
+      // its spinner forever. After a successful navigation this is a no-op.
       setIsLoading(false);
     }
   };

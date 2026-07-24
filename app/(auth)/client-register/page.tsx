@@ -78,7 +78,7 @@ function RegisterForm() {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email.trim(),
         password: formData.password,
         options: {
@@ -94,6 +94,15 @@ function RegisterForm() {
 
       if (error) {
         setSubmitError(error.message);
+      } else if (data.user && data.user.identities?.length === 0) {
+        // Anti-enumeration: with email confirmation on, signUp for an already
+        // confirmed address succeeds with an obfuscated user and sends no
+        // mail. Without this branch the user waits forever for an email that
+        // never arrives.
+        setSubmitError(
+          t.dashboard?.auth?.emailAlreadyRegistered ||
+            'Er bestaat al een account met dit e-mailadres. Log in, of gebruik "Wachtwoord vergeten".'
+        );
       } else {
         setIsSuccess(true);
       }
