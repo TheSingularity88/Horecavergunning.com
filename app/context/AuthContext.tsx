@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { User } from '@supabase/supabase-js';
 import { createClient } from '@/app/lib/supabase/client';
 import type { Profile, Client } from '@/app/lib/types/database';
@@ -26,6 +26,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [clientData, setClientData] = useState<Client | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = useMemo(() => createClient(), []);
+  // Monotonic sequence so a slow fetch for a previous user/session can never
+  // clobber state written by a newer one (e.g. sign-out during a load).
+  const loadSeq = useRef(0);
+  // Which user id we last finished loading profile/client data for — lets us
+  // skip pointless refetches on TOKEN_REFRESHED events for the same user.
+  const loadedForUserId = useRef<string | null>(null);
 
   const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     try {
@@ -36,8 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        // Profile table might not exist or user might not have a profile yet
-        // This is not a critical error - user can still access the app
+        // Clients intentionally have no profiles row (see handle_new_user) —
+        // not a critical error, the app works without one.
         console.warn('Profile fetch warning:', error.message);
         return null;
       }
@@ -69,6 +75,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [supabase]);
 
+  const loadUserData = useCallback(async (userId: string) => {
+    const seq = ++loadSeq.current;
+    try {
+      const [profileData, clientDataResult] = await Promise.all([
+        fetchProfile(userId),
+        fetchClientData(userId),
+      ]);
+      if (seq !== loadSeq.current) return; // superseded by a newer auth event
+      setProfile(profileData);
+      setClientData(clientDataResult);
+      loadedForUserId.current = userId;
+    } finally {
+      if (seq === loadSeq.current) {
+        setIsLoading(false);
+      }
+    }
+  }, [fetchProfile, fetchClientData]);
+
   const refreshProfile = useCallback(async () => {
     if (user) {
       const [profileData, clientDataResult] = await Promise.all([
@@ -81,64 +105,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchProfile, fetchClientData]);
 
   useEffect(() => {
-    let isMounted = true;
-
-    // Get initial session
-    const initAuth = async () => {
-      try {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-        }
-
-        if (isMounted && session?.user) {
-          setUser(session.user);
-          // IMPORTANT: Wait for profile and client data before setting isLoading to false
-          // This prevents race conditions where isClient is checked before data loads
-          const [profileData, clientDataResult] = await Promise.all([
-            fetchProfile(session.user.id),
-            fetchClientData(session.user.id),
-          ]);
-          if (isMounted) {
-            setProfile(profileData);
-            setClientData(clientDataResult);
-          }
-        }
-      } catch (error) {
-        console.error('Error getting session:', error);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    initAuth();
-
-    // Listen for auth changes
+    // DEADLOCK WARNING — this callback MUST stay synchronous.
+    //
+    // GoTrueClient emits auth events while holding its auth lock (a
+    // navigator.locks entry keyed on the sb-<ref>-auth-token storage key) and
+    // AWAITS the callback before releasing it. Any supabase query awaited in
+    // here re-enters getSession() → queues on that same lock → the callback
+    // waits for the lock while the lock waits for the callback. The app then
+    // hangs on the "Loading..." spinner forever (isLoading never resolves).
+    // Confirmed via navigator.locks.query(): the lock stayed held with the
+    // old async-callback code. Supabase's own docs say: do not await Supabase
+    // calls inside onAuthStateChange; defer them instead.
+    //
+    // INITIAL_SESSION fires on subscribe (with a null session when logged
+    // out), so this single listener also covers initial page load — no
+    // separate getSession() bootstrap needed.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMounted) return;
-
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUser(session.user);
-        // IMPORTANT: Wait for profile and client data before setting isLoading to false
-        // This prevents race conditions where isClient is checked before data loads
-        const [profileData, clientDataResult] = await Promise.all([
-          fetchProfile(session.user.id),
-          fetchClientData(session.user.id),
-        ]);
-        if (isMounted) {
-          setProfile(profileData);
-          setClientData(clientDataResult);
-          setIsLoading(false);
+        if (session.user.id !== loadedForUserId.current) {
+          const userId = session.user.id;
+          // setTimeout escapes the auth lock's critical section; the queries
+          // then run against a released lock and complete normally.
+          setTimeout(() => {
+            void loadUserData(userId);
+          }, 0);
         }
       } else {
+        loadSeq.current++; // invalidate any in-flight load
+        loadedForUserId.current = null;
         setUser(null);
         setProfile(null);
         setClientData(null);
@@ -147,10 +144,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
-      isMounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase, fetchProfile, fetchClientData]);
+  }, [supabase, loadUserData]);
 
   const signIn = async (email: string, password: string) => {
     try {
