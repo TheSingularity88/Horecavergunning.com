@@ -1,7 +1,12 @@
 'use server';
 
 import { createAdminClient } from '@/app/lib/supabase/admin';
-import { requireStaff, toActionError, type ActionResult } from '@/app/lib/auth/guards';
+import {
+  requireClient,
+  requireStaff,
+  toActionError,
+  type ActionResult,
+} from '@/app/lib/auth/guards';
 import { getMollie, centsToMollieAmount, siteUrl } from '@/app/lib/mollie';
 import { sendEmail } from '@/app/lib/email/resend';
 import { requestApprovedPaymentLink } from '@/app/lib/email/templates';
@@ -129,44 +134,80 @@ export async function createInvoiceForCase(
   return { success: true, data: { invoiceId, checkoutUrl } };
 }
 
+/**
+ * Shared checkout creation. Callers MUST have authorized the caller against
+ * this invoice first (staff, or the owning client) — this helper does no
+ * authorization of its own.
+ *
+ * `expectedClientId` is a defence-in-depth ownership re-check performed in the
+ * same read that loads the invoice.
+ */
+async function startCheckoutForInvoice(
+  invoiceId: string,
+  expectedClientId?: string
+): Promise<ActionResult<{ checkoutUrl: string | null }>> {
+  const admin = createAdminClient();
+
+  const { data: invoice } = await admin
+    .from('invoices')
+    .select('id, client_id, case_id, amount_cents, description, status')
+    .eq('id', invoiceId)
+    .maybeSingle();
+  if (!invoice) return { success: false, error: 'Invoice not found.' };
+  // Same message as "not found" so a client cannot probe for other clients'
+  // invoice ids.
+  if (expectedClientId && invoice.client_id !== expectedClientId) {
+    return { success: false, error: 'Invoice not found.' };
+  }
+  if (invoice.status === 'paid') {
+    return { success: false, error: 'This invoice is already paid.' };
+  }
+
+  const mollie = getMollie();
+  if (!mollie) return { success: false, error: 'Payments are not configured yet.' };
+  if (invoice.amount_cents <= 0) {
+    return { success: false, error: 'Invoice has no amount to charge.' };
+  }
+
+  const payment = await mollie.payments.create({
+    amount: { currency: 'EUR', value: centsToMollieAmount(invoice.amount_cents) },
+    description: invoice.description ?? 'HorecaVergunning',
+    redirectUrl: `${siteUrl()}/client/invoices/${invoice.id}`,
+    webhookUrl: `${siteUrl()}/api/webhooks/mollie`,
+    metadata: { invoice_id: invoice.id },
+  });
+
+  await admin
+    .from('invoices')
+    .update({ mollie_payment_id: payment.id, status: 'open' })
+    .eq('id', invoice.id);
+
+  return { success: true, data: { checkoutUrl: payment.getCheckoutUrl() ?? null } };
+}
+
 /** Staff-triggered: (re)generate a fresh Mollie checkout link for an invoice. */
 export async function resendPaymentLink(
   invoiceId: string
 ): Promise<ActionResult<{ checkoutUrl: string | null }>> {
   try {
     await requireStaff();
-    const admin = createAdminClient();
+    return await startCheckoutForInvoice(invoiceId);
+  } catch (err) {
+    return toActionError(err);
+  }
+}
 
-    const { data: invoice } = await admin
-      .from('invoices')
-      .select('id, case_id, amount_cents, description, status')
-      .eq('id', invoiceId)
-      .maybeSingle();
-    if (!invoice) return { success: false, error: 'Invoice not found.' };
-    if (invoice.status === 'paid') {
-      return { success: false, error: 'This invoice is already paid.' };
-    }
-
-    const mollie = getMollie();
-    if (!mollie) return { success: false, error: 'Payments are not configured yet.' };
-    if (invoice.amount_cents <= 0) {
-      return { success: false, error: 'Invoice has no amount to charge.' };
-    }
-
-    const payment = await mollie.payments.create({
-      amount: { currency: 'EUR', value: centsToMollieAmount(invoice.amount_cents) },
-      description: invoice.description ?? 'HorecaVergunning',
-      redirectUrl: `${siteUrl()}/client/invoices/${invoice.id}`,
-      webhookUrl: `${siteUrl()}/api/webhooks/mollie`,
-      metadata: { invoice_id: invoice.id },
-    });
-
-    await admin
-      .from('invoices')
-      .update({ mollie_payment_id: payment.id, status: 'open' })
-      .eq('id', invoice.id);
-
-    return { success: true, data: { checkoutUrl: payment.getCheckoutUrl() ?? null } };
+/**
+ * Client-triggered: start (or retry) payment for one of the caller's OWN
+ * invoices. The client portal must use this — resendPaymentLink is staff-only
+ * and clients have no profiles row, so it always denied them.
+ */
+export async function payMyInvoice(
+  invoiceId: string
+): Promise<ActionResult<{ checkoutUrl: string | null }>> {
+  try {
+    const { clientId } = await requireClient();
+    return await startCheckoutForInvoice(invoiceId, clientId);
   } catch (err) {
     return toActionError(err);
   }

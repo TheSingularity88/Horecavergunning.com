@@ -8,7 +8,7 @@ import { CheckCircle, Clock, XCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
-import { resendPaymentLink } from '@/app/lib/actions/billing';
+import { payMyInvoice } from '@/app/lib/actions/billing';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -50,13 +50,20 @@ export default function InvoiceDetailPage() {
 
   const handlePay = async () => {
     setPaying(true);
-    const result = await resendPaymentLink(invoiceId);
-    if (result.success && result.data?.checkoutUrl) {
-      window.location.href = result.data.checkoutUrl;
-    } else {
+    try {
+      const result = await payMyInvoice(invoiceId);
+      if (result.success && result.data?.checkoutUrl) {
+        window.location.href = result.data.checkoutUrl;
+        return; // keep the spinner while the browser navigates away
+      }
       alert(result.success ? 'Payment is not available.' : result.error);
-      setPaying(false);
+    } catch {
+      // Server-action calls REJECT (not resolve) on a dropped connection or
+      // after a redeploy invalidates the action id — without this the button
+      // would stay disabled on its spinner until a full page reload.
+      alert('Could not start the payment. Please check your connection and try again.');
     }
+    setPaying(false);
   };
 
   const statusUi: Record<InvoiceStatus, { icon: typeof CheckCircle; color: string; label: string }> = {

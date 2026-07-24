@@ -20,20 +20,34 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Distinguishes "row absent" (ok, data null — e.g. clients intentionally have
+ * no profiles row) from "fetch failed" (network error, 5xx, transient RLS
+ * hiccup). Failures must NOT be treated as absence: latching a failed fetch
+ * as loaded would strip isAdmin/isClient until remount.
+ */
+type FetchResult<T> = { ok: true; data: T | null } | { ok: false };
+
+/** Retry delays for transient profile/client fetch failures. */
+const RETRY_DELAYS_MS = [2000, 8000];
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [clientData, setClientData] = useState<Client | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = useMemo(() => createClient(), []);
-  // Monotonic sequence so a slow fetch for a previous user/session can never
-  // clobber state written by a newer one (e.g. sign-out during a load).
+  // Monotonic sequence so a stale load (scheduled OR in-flight) can never
+  // clobber state written for a newer auth event. Claimed at SCHEDULING time
+  // in the auth callback — claiming it at execution time would let a
+  // scheduled-but-not-started load survive a sign-out's invalidation.
   const loadSeq = useRef(0);
-  // Which user id we last finished loading profile/client data for — lets us
-  // skip pointless refetches on TOKEN_REFRESHED events for the same user.
+  // Which user id we last SUCCESSFULLY loaded data for — lets us skip
+  // refetches on TOKEN_REFRESHED for the same user. Only set when both
+  // fetches succeeded, so transient failures keep retrying on later events.
   const loadedForUserId = useRef<string | null>(null);
 
-  const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
+  const fetchProfile = useCallback(async (userId: string): Promise<FetchResult<Profile>> => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -42,20 +56,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        // Clients intentionally have no profiles row (see handle_new_user) —
-        // not a critical error, the app works without one.
         console.warn('Profile fetch warning:', error.message);
-        return null;
+        return { ok: false };
       }
 
-      return data as Profile;
+      return { ok: true, data: data as Profile | null };
     } catch (err) {
       console.warn('Profile fetch error:', err);
-      return null;
+      return { ok: false };
     }
   }, [supabase]);
 
-  const fetchClientData = useCallback(async (userId: string): Promise<Client | null> => {
+  const fetchClientData = useCallback(async (userId: string): Promise<FetchResult<Client>> => {
     try {
       const { data, error } = await supabase
         .from('clients')
@@ -64,28 +76,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (error) {
-        // User might not be a client - this is normal for employees/admins
-        return null;
+        console.warn('Client data fetch warning:', error.message);
+        return { ok: false };
       }
 
-      return data as Client;
+      return { ok: true, data: data as Client | null };
     } catch (err) {
       console.warn('Client data fetch error:', err);
-      return null;
+      return { ok: false };
     }
   }, [supabase]);
 
-  const loadUserData = useCallback(async (userId: string) => {
-    const seq = ++loadSeq.current;
+  const loadUserData = useCallback(async (userId: string, seq: number, attempt = 0) => {
+    if (seq !== loadSeq.current) return; // superseded before we even started
     try {
-      const [profileData, clientDataResult] = await Promise.all([
+      const [profileResult, clientResult] = await Promise.all([
         fetchProfile(userId),
         fetchClientData(userId),
       ]);
       if (seq !== loadSeq.current) return; // superseded by a newer auth event
-      setProfile(profileData);
-      setClientData(clientDataResult);
-      loadedForUserId.current = userId;
+
+      // Apply whatever succeeded; never overwrite existing state with a
+      // failure — a mid-session blip must not strip isAdmin/isClient.
+      if (profileResult.ok) setProfile(profileResult.data);
+      if (clientResult.ok) setClientData(clientResult.data);
+
+      if (profileResult.ok && clientResult.ok) {
+        loadedForUserId.current = userId;
+      } else if (attempt < RETRY_DELAYS_MS.length) {
+        // Transient failure: leave the latch unset and retry with the SAME
+        // seq — any newer auth event bumps loadSeq and the retry bails at
+        // the guard above. If retries exhaust, the latch stays unset so the
+        // next TOKEN_REFRESHED / SIGNED_IN event triggers a fresh load.
+        setTimeout(() => {
+          void loadUserData(userId, seq, attempt + 1);
+        }, RETRY_DELAYS_MS[attempt]);
+      }
     } finally {
       if (seq === loadSeq.current) {
         setIsLoading(false);
@@ -95,12 +121,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = useCallback(async () => {
     if (user) {
-      const [profileData, clientDataResult] = await Promise.all([
+      const [profileResult, clientResult] = await Promise.all([
         fetchProfile(user.id),
         fetchClientData(user.id),
       ]);
-      setProfile(profileData);
-      setClientData(clientDataResult);
+      if (profileResult.ok) setProfile(profileResult.data);
+      if (clientResult.ok) setClientData(clientResult.data);
     }
   }, [user, fetchProfile, fetchClientData]);
 
@@ -127,14 +153,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session.user);
         if (session.user.id !== loadedForUserId.current) {
           const userId = session.user.id;
+          // Claim the sequence NOW (a ref increment — never touches the auth
+          // lock) so a SIGNED_OUT arriving before the timer fires invalidates
+          // this load instead of letting it resurrect signed-out state.
+          const seq = ++loadSeq.current;
           // setTimeout escapes the auth lock's critical section; the queries
           // then run against a released lock and complete normally.
           setTimeout(() => {
-            void loadUserData(userId);
+            void loadUserData(userId, seq);
           }, 0);
         }
       } else {
-        loadSeq.current++; // invalidate any in-flight load
+        loadSeq.current++; // invalidate any scheduled or in-flight load
         loadedForUserId.current = null;
         setUser(null);
         setProfile(null);
