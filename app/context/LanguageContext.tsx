@@ -34,6 +34,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep <html lang> honest.
+  //
+  // The layout hardcodes lang="nl", so switching the UI to English left the
+  // document still declaring Dutch. Screen readers pick a pronunciation from
+  // this attribute, so an English page announced as Dutch is an accessibility
+  // defect, and it is a wrong signal to crawlers too. Updated on the client
+  // because the language lives in a cookie, and reading cookies during render
+  // would make every page dynamic and lose static generation.
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
+
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     if (typeof document !== 'undefined') {
