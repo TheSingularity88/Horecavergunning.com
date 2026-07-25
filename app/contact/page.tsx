@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { SITE_NAME } from '../lib/site';
+import { SITE_NAME, SITE_URL } from '../lib/site';
+import { JsonLd, breadcrumb, ORGANIZATION_REF } from '@/app/components/seo/JsonLd';
 import ContactClient from './ContactClient';
 
 const title = 'Contact & gratis intake';
@@ -21,5 +22,23 @@ export const metadata: Metadata = {
 };
 
 export default function ContactPage() {
-  return <ContactClient />;
+  return (
+    <>
+      <JsonLd
+        graph={[
+          breadcrumb([{ name: 'Contact', path: '/contact' }]),
+          {
+            '@type': 'ContactPage',
+            '@id': `${SITE_URL}/contact#contactpage`,
+            url: `${SITE_URL}/contact`,
+            name: title,
+            description,
+            inLanguage: 'nl-NL',
+            about: ORGANIZATION_REF,
+          },
+        ]}
+      />
+      <ContactClient />
+    </>
+  );
 }

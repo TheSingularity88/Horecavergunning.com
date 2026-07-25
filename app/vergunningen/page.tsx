@@ -5,7 +5,8 @@ import { Navbar } from '@/app/components/Navbar';
 import { Footer } from '@/app/components/Footer';
 import { FloatingWhatsApp } from '@/app/components/FloatingWhatsApp';
 import { createPublicClient } from '@/app/lib/supabase/public';
-import { PERMIT_SLUGS } from '@/app/lib/permit-content';
+import { PERMIT_CONTENT, PERMIT_SLUGS } from '@/app/lib/permit-content';
+import { JsonLd, breadcrumb, permitCollection } from '@/app/components/seo/JsonLd';
 import type { PermitType } from '@/app/lib/types/database';
 
 export const revalidate = 3600;
@@ -44,6 +45,20 @@ export default async function VergunningenHub() {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      <JsonLd
+        graph={[
+          breadcrumb([{ name: 'Vergunningen', path: '/vergunningen' }]),
+          permitCollection(
+            permitTypes.map((p) => ({
+              slug: p.slug,
+              name: p.name_nl,
+              description:
+                PERMIT_CONTENT[p.slug]?.metaDescription ?? p.name_nl,
+              priceCents: p.base_fee_cents,
+            }))
+          ),
+        ]}
+      />
       <Navbar />
 
       <section className="bg-slate-900 text-white pt-32 pb-16">

@@ -69,7 +69,11 @@ export async function generateMetadata({
   const content = getPermitContent(slug);
   if (!content) return {};
   return {
-    title: content.metaTitle,
+    // `absolute` opts out of the root layout's "%s | HorecaVergunning.com"
+    // template. These metaTitles already name the brand's subject and run
+    // ~57 chars; the suffix pushed them to 78-81 and Google truncated the
+    // part that carries the intent.
+    title: { absolute: content.metaTitle },
     description: content.metaDescription,
     alternates: { canonical: `/${slug}` },
     openGraph: {
@@ -78,6 +82,15 @@ export async function generateMetadata({
       url: `/${slug}`,
       type: 'website',
       locale: 'nl_NL',
+      // Without an explicit image these pages fell back to nothing, so every
+      // share of a money page rendered as a bare link.
+      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: content.h1 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: content.metaTitle,
+      description: content.metaDescription,
+      images: ['/opengraph-image'],
     },
   };
 }

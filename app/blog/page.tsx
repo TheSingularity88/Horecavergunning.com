@@ -6,6 +6,8 @@ import BlogCard from '@/app/components/blog/BlogCard';
 import { blogPosts, categories } from '@/app/lib/blog-data';
 import { Search } from 'lucide-react';
 import { useLanguage } from '@/app/context/LanguageContext';
+import { JsonLd, breadcrumb, ORGANIZATION_REF } from '@/app/components/seo/JsonLd';
+import { SITE_URL } from '@/app/lib/site';
 
 export default function BlogIndex() {
   const { language, t } = useLanguage();
@@ -13,6 +15,30 @@ export default function BlogIndex() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
+      {/* This page shipped no structured data at all, so the article index —
+          our main topical-authority surface — was invisible as a Blog entity. */}
+      <JsonLd
+        graph={[
+          breadcrumb([{ name: 'Blog', path: '/blog' }]),
+          {
+            '@type': 'Blog',
+            '@id': `${SITE_URL}/blog#blog`,
+            name: 'HorecaKennis & Nieuws',
+            url: `${SITE_URL}/blog`,
+            inLanguage: 'nl-NL',
+            publisher: ORGANIZATION_REF,
+            blogPost: blogPosts.map((post) => ({
+              '@type': 'BlogPosting',
+              '@id': `${SITE_URL}/blog/${post.slug}`,
+              headline: post.content.nl.title,
+              description: post.content.nl.excerpt,
+              url: `${SITE_URL}/blog/${post.slug}`,
+              author: { '@type': 'Person', name: post.author },
+              publisher: ORGANIZATION_REF,
+            })),
+          },
+        ]}
+      />
       <Navbar />
       
       {/* Header Section */}
