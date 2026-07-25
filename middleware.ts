@@ -12,12 +12,22 @@ function safeRedirectPath(pathname: string): string {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  const isPortalPath =
+    pathname === '/dashboard' ||
+    pathname.startsWith('/dashboard/') ||
+    pathname === '/client' ||
+    pathname.startsWith('/client/');
+
   // Skip static files. API routes handle their own auth (webhooks/leads must
   // stay reachable without a session).
+  //
+  // The `includes('.')` shortcut is for static assets, but it used to apply to
+  // portal paths too — so any /dashboard/... or /client/... URL containing a
+  // dot skipped the ONLY server-side auth and admin gate. Portal paths are now
+  // always gated regardless of their shape.
   if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.includes('.')
+    !isPortalPath &&
+    (pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.includes('.'))
   ) {
     return NextResponse.next();
   }

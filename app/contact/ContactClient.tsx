@@ -89,25 +89,34 @@ export default function ContactClient() {
             </motion.h1>
             <p className="text-slate-600 mb-8">{s.subtitle}</p>
 
+            {/* Only render channels that are actually configured — the form
+                below is always available, so an unconfigured channel costs us
+                nothing, while a dead phone number costs us the lead. */}
             <div className="space-y-4 text-slate-700">
-              <a href={`mailto:${contact.contactEmail}`} className="flex items-center gap-3 hover:text-amber-600">
-                <span className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center">
-                  <Mail className="w-5 h-5 text-amber-500" />
-                </span>
-                {contact.contactEmail}
-              </a>
-              <a href={`tel:${contact.contactPhone.replace(/[^\d+]/g, '')}`} className="flex items-center gap-3 hover:text-amber-600">
-                <span className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center">
-                  <Phone className="w-5 h-5 text-amber-500" />
-                </span>
-                {contact.contactPhone}
-              </a>
-              <div className="flex items-center gap-3">
-                <span className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-amber-500" />
-                </span>
-                {contact.contactAddress}
-              </div>
+              {contact.contactEmail && (
+                <a href={`mailto:${contact.contactEmail}`} className="flex items-center gap-3 hover:text-amber-600">
+                  <span className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-amber-500" />
+                  </span>
+                  {contact.contactEmail}
+                </a>
+              )}
+              {contact.contactPhone && (
+                <a href={`tel:${contact.contactPhone.replace(/[^\d+]/g, '')}`} className="flex items-center gap-3 hover:text-amber-600">
+                  <span className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center">
+                    <Phone className="w-5 h-5 text-amber-500" />
+                  </span>
+                  {contact.contactPhone}
+                </a>
+              )}
+              {contact.contactAddress && (
+                <div className="flex items-center gap-3">
+                  <span className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center">
+                    <MapPin className="w-5 h-5 text-amber-500" />
+                  </span>
+                  {contact.contactAddress}
+                </div>
+              )}
             </div>
           </div>
 

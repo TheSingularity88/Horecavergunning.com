@@ -64,17 +64,28 @@ export function Footer() {
 
           <div>
             <h4 className="text-white font-bold mb-4">{t.footer.contact}</h4>
+            {/* Each channel renders only once it is configured — never show a
+                contact route that does not reach us. */}
             <ul className="space-y-2 text-sm">
-              <li>{settings.contactAddress}</li>
-              <li className="pt-2">
-                <a href={telHref} className="hover:text-amber-500 transition-colors">
-                  {settings.contactPhone}
-                </a>
-              </li>
-              <li>
-                <a href={`mailto:${settings.contactEmail}`} className="hover:text-amber-500 transition-colors">
-                  {settings.contactEmail}
-                </a>
+              {settings.contactAddress && <li>{settings.contactAddress}</li>}
+              {settings.contactPhone && (
+                <li className="pt-2">
+                  <a href={telHref} className="hover:text-amber-500 transition-colors">
+                    {settings.contactPhone}
+                  </a>
+                </li>
+              )}
+              {settings.contactEmail && (
+                <li>
+                  <a href={`mailto:${settings.contactEmail}`} className="hover:text-amber-500 transition-colors">
+                    {settings.contactEmail}
+                  </a>
+                </li>
+              )}
+              <li className={settings.contactAddress || settings.contactPhone || settings.contactEmail ? 'pt-2' : ''}>
+                <Link href="/contact" className="hover:text-amber-500 transition-colors">
+                  {t.footer.contact}
+                </Link>
               </li>
             </ul>
           </div>

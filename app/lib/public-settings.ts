@@ -9,24 +9,35 @@ export interface PublicSettings {
   socialProofCompanies: string[];
 }
 
-// Defaults = the current placeholders. The owner overrides these from the
-// admin dashboard; only then do real values appear (and LocalBusiness JSON-LD).
+/**
+ * Defaults are EMPTY on purpose.
+ *
+ * These used to be invented placeholders — a Keizersgracht address, a
+ * 020-123 45 67 phone, info@horecavergunning.nl (the wrong TLD; the site is
+ * .com) and a real-format WhatsApp number belonging to nobody we know. All of
+ * it shipped to production, so a visitor who wanted to get in touch hit a dead
+ * number, a bounced address, or a stranger's WhatsApp. For a site whose whole
+ * job is collecting leads, publishing fake contact details is worse than
+ * publishing none: consumers now hide any channel that is not configured.
+ *
+ * Fill these in at /dashboard/admin/settings and every channel appears, along
+ * with the LocalBusiness structured data that depends on a real address.
+ */
 export const DEFAULT_PUBLIC_SETTINGS: PublicSettings = {
-  contactEmail: 'info@horecavergunning.nl',
-  contactPhone: '020 - 123 45 67',
-  contactAddress: 'Keizersgracht 123, 1015 CJ Amsterdam',
-  whatsappNumber: '31612345678',
+  contactEmail: '',
+  contactPhone: '',
+  contactAddress: '',
+  whatsappNumber: '',
   socialProofMode: 'facts',
   socialProofCompanies: [],
 };
 
-// Which settings are considered "real" (owner-provided), used to decide whether
-// to emit LocalBusiness structured data.
+/**
+ * True once the owner has supplied real contact details. Gates LocalBusiness
+ * structured data — fake or absent NAP in schema.org markup hurts SEO.
+ */
 export function hasRealContact(s: PublicSettings): boolean {
-  return (
-    s.contactEmail !== DEFAULT_PUBLIC_SETTINGS.contactEmail ||
-    s.contactAddress !== DEFAULT_PUBLIC_SETTINGS.contactAddress
-  );
+  return Boolean(s.contactEmail.trim() || s.contactAddress.trim());
 }
 
 const asString = (v: unknown): string | null =>

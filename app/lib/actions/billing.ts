@@ -25,6 +25,15 @@ type CreateInvoiceResult = { invoiceId: string; checkoutUrl: string | null };
 export async function createInvoiceForCase(
   caseId: string
 ): Promise<ActionResult<CreateInvoiceResult>> {
+  // Every export in a 'use server' module is a callable POST endpoint the
+  // moment anything references it. This one creates invoices and charges
+  // customers, so it must assert staff itself rather than rely on its callers.
+  try {
+    await requireStaff();
+  } catch (err) {
+    return toActionError(err);
+  }
+
   const admin = createAdminClient();
 
   // Load case + client + permit fee.
