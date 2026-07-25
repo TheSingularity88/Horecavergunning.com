@@ -54,19 +54,16 @@ export async function generateMetadata({
       url,
       siteName: SITE_NAME,
       locale: "nl_NL",
-      images: [
-        {
-          url: post.image,
-          alt: content.title,
-        },
-      ],
+      // No explicit `images` here on purpose: an explicit entry overrides the
+      // file-based opengraph-image.tsx in this folder, and the old value
+      // pointed at an SVG, which no social platform renders. Letting the
+      // convention win gives every article a real generated PNG card.
       publishedTime,
     },
     twitter: {
       card: "summary_large_image",
       title: content.title,
       description: content.excerpt,
-      images: [post.image],
     },
   };
 }
@@ -93,7 +90,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       "@type": "Person",
       name: post.author,
     },
-    image: [new URL(post.image, SITE_URL).toString()],
+    // Points at the generated PNG, not the /blog/*.svg illustration — Google's
+    // image surfaces reject SVG, so the old value made this field dead weight.
+    image: [`${SITE_URL}/blog/${post.slug}/opengraph-image`],
     mainEntityOfPage: {
       "@type": "WebPage",
       "@id": `${SITE_URL}/blog/${post.slug}`,

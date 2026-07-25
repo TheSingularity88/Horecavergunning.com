@@ -7,10 +7,22 @@ import { createPublicClient } from "./lib/supabase/public";
 const toIsoDate = (value: string) => {
   const [day, month, year] = value.split("-").map(Number);
   if (!day || !month || !year) {
-    return new Date();
+    return CONTENT_LAST_UPDATED;
   }
   return new Date(Date.UTC(year, month - 1, day));
 };
+
+/**
+ * When the marketing/permit copy was last materially changed.
+ *
+ * These entries used to report `new Date()`, i.e. build time — so every deploy,
+ * including one that only touched the client portal, told Google that every
+ * page had just changed. Crawlers learn to distrust a lastmod that always says
+ * "just now", and it wastes crawl budget re-fetching identical pages.
+ *
+ * Bump this by hand when the permit or homepage copy actually changes.
+ */
+const CONTENT_LAST_UPDATED = new Date(Date.UTC(2026, 6, 26));
 
 // Only include permit pages that are both active in the DB and have content.
 async function activePermitSlugs(): Promise<string[]> {
@@ -36,9 +48,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  const newestPostDate = blogEntries.reduce<Date>(
+    (newest, entry) => (entry.lastModified > newest ? entry.lastModified : newest),
+    CONTENT_LAST_UPDATED
+  );
+
   const permitEntries = (await activePermitSlugs()).map((slug) => ({
     url: `${base}/${slug}`,
-    lastModified: new Date(),
+    lastModified: CONTENT_LAST_UPDATED,
     changeFrequency: "monthly" as const,
     priority: 0.9,
   }));
@@ -46,26 +63,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     {
       url: base,
-      lastModified: new Date(),
+      lastModified: CONTENT_LAST_UPDATED,
       changeFrequency: "weekly",
       priority: 1,
     },
     {
       url: `${base}/vergunningen`,
-      lastModified: new Date(),
+      lastModified: CONTENT_LAST_UPDATED,
       changeFrequency: "weekly",
       priority: 0.9,
     },
     ...permitEntries,
     {
       url: `${base}/contact`,
-      lastModified: new Date(),
+      lastModified: CONTENT_LAST_UPDATED,
       changeFrequency: "yearly",
       priority: 0.6,
     },
     {
       url: `${base}/blog`,
-      lastModified: new Date(),
+      // The index is only as fresh as its newest post.
+      lastModified: newestPostDate,
       changeFrequency: "weekly",
       priority: 0.8,
     },

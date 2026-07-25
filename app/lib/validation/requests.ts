@@ -6,6 +6,7 @@ export const reviewRequestSchema = z.object({
 export type ReviewRequestInput = z.infer<typeof reviewRequestSchema>;
 
 export const newClientRequestSchema = z.object({
+  permit_type_id: z.string().uuid().nullable().optional(),
   request_type: z.enum([
     'exploitatievergunning',
     'alcoholvergunning',

@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Send, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
+import { submitClientRequest } from '@/app/lib/actions/requests';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -42,6 +43,9 @@ export default function NewRequestPage() {
     urgency: 'normal',
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  // Inline error instead of a native alert() — the portal should never hand a
+  // customer a browser dialog as its failure UI.
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const supabase = useMemo(() => createClient(), []);
 
   // Load the live permit catalog so options + fees stay in sync with admin edits.
@@ -82,24 +86,32 @@ export default function NewRequestPage() {
     if (!validate() || !clientData?.id) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
-      const { error } = await supabase.from('client_requests').insert({
-        client_id: clientData.id,
+      // Goes through a server action rather than a direct insert so the input
+      // is validated server-side AND the owner actually gets told a request
+      // came in.
+      const result = await submitClientRequest({
         request_type: formData.request_type,
-        permit_type_id: formData.permit_type_id,
+        permit_type_id: formData.permit_type_id || null,
         title: formData.title.trim(),
         description: formData.description.trim(),
         municipality: formData.municipality.trim() || null,
         urgency: formData.urgency,
-        status: 'pending',
       });
 
-      if (error) throw error;
+      if (!result.success) {
+        setSubmitError(result.error);
+        return;
+      }
 
       setIsSubmitted(true);
     } catch (error) {
       console.error('Error submitting request:', error);
-      alert('Failed to submit request. Please try again.');
+      setSubmitError(
+        t.clientPortal?.requests?.submitFailed ||
+          'Your request could not be submitted. Please check your connection and try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -164,6 +176,15 @@ export default function NewRequestPage() {
       </motion.div>
 
       <form onSubmit={handleSubmit}>
+        {submitError && (
+          <div
+            role="alert"
+            className="mb-6 flex items-start gap-2 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700"
+          >
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span>{submitError}</span>
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Form */}
           <div className="lg:col-span-2 space-y-6">

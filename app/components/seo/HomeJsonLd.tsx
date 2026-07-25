@@ -19,13 +19,34 @@ export function HomeJsonLd({ nap }: { nap?: Nap }) {
   const graph: Record<string, unknown>[] = [
     {
       '@type': 'Organization',
+      // A stable @id lets the other nodes (and other pages) reference this one
+      // entity instead of each re-declaring a nameless organisation.
+      '@id': `${SITE_URL}/#organization`,
       name: SITE_NAME,
       url: SITE_URL,
       description:
         'Wij verzorgen horecavergunningen voor Nederlandse ondernemers: exploitatievergunning, alcoholvergunning, terrasvergunning en Bibob.',
       areaServed: { '@type': 'City', name: 'Amsterdam' },
+      knowsAbout: [
+        'Exploitatievergunning',
+        'Alcoholvergunning',
+        'Terrasvergunning',
+        'Wet Bibob',
+        'Horeca-overname',
+        'Gebruiksvergunning',
+      ],
+      logo: { '@type': 'ImageObject', url: `${SITE_URL}/icon` },
+      image: `${SITE_URL}/opengraph-image`,
       ...(nap?.email ? { email: nap.email } : {}),
       ...(nap?.phone ? { telephone: nap.phone } : {}),
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: SITE_NAME,
+      inLanguage: 'nl-NL',
+      publisher: { '@id': `${SITE_URL}/#organization` },
     },
     {
       '@type': 'FAQPage',

@@ -25,7 +25,7 @@ export function Navbar() {
           </div>
         
         <div className="flex items-center gap-2">
-          <Link href="/#services" className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">{t.navbar.services}</Link>
+          <Link href="/vergunningen" className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">{t.navbar.services}</Link>
           <Link href="/#pricing" className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">{t.navbar.pricing}</Link>
           <Link href="/#faq" className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">{t.navbar.faq}</Link>
           
@@ -160,7 +160,7 @@ export function Navbar() {
               
               <div className="flex-1 overflow-y-auto py-4">
                 <div className="flex flex-col gap-2 px-4">
-                  <Link href="/#services" onClick={() => setIsMobileMenuOpen(false)} className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-slate-700 font-semibold hover:bg-slate-50 hover:text-amber-600 transition-colors">{t.navbar.services}</Link>
+                  <Link href="/vergunningen" onClick={() => setIsMobileMenuOpen(false)} className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-slate-700 font-semibold hover:bg-slate-50 hover:text-amber-600 transition-colors">{t.navbar.services}</Link>
                   <Link href="/#pricing" onClick={() => setIsMobileMenuOpen(false)} className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-slate-700 font-semibold hover:bg-slate-50 hover:text-amber-600 transition-colors">{t.navbar.pricing}</Link>
                   <Link href="/#faq" onClick={() => setIsMobileMenuOpen(false)} className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-slate-700 font-semibold hover:bg-slate-50 hover:text-amber-600 transition-colors">{t.navbar.faq}</Link>
                 </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   FileText,
@@ -29,6 +30,7 @@ import { Select } from '@/app/components/ui/Select';
 import { Textarea } from '@/app/components/ui/Textarea';
 import { Modal } from '@/app/components/ui/Modal';
 import { Spinner } from '@/app/components/ui/Spinner';
+import { dashboardRoutes } from '@/app/lib/routes/dashboard';
 import type { Document, Case, DocumentCategory } from '@/app/lib/types/database';
 
 const DOCUMENT_CATEGORIES: { value: DocumentCategory; label: string }[] = [
@@ -57,8 +59,44 @@ export default function ClientDocumentsPage() {
     case_id: preselectedCaseId || '',
     category: 'general' as DocumentCategory,
     notes: '',
+    // Which required-document item this upload satisfies (optional).
+    checklist_item_id: '',
   });
+  // Outstanding checklist items for the case selected in the upload form.
+  const [checklistItems, setChecklistItems] = useState<{ id: string; name: string }[]>([]);
   const supabase = useMemo(() => createClient(), []);
+
+  // When arriving from a case ("View all"), show only that case's documents.
+  const visibleDocuments = useMemo(
+    () =>
+      preselectedCaseId
+        ? documents.filter((d) => d.case_id === preselectedCaseId)
+        : documents,
+    [documents, preselectedCaseId]
+  );
+
+  // Load the still-outstanding checklist items whenever the upload form's case
+  // changes, so the customer can say which requirement this file answers.
+  useEffect(() => {
+    const caseId = uploadForm.case_id;
+    if (!caseId) {
+      setChecklistItems([]);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from('case_documents')
+      .select('id, name')
+      .eq('case_id', caseId)
+      .in('status', ['pending', 'rejected'])
+      .order('sort_order')
+      .then(({ data }) => {
+        if (!cancelled) setChecklistItems((data as { id: string; name: string }[]) || []);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, uploadForm.case_id]);
 
   const fetchDocuments = useCallback(async () => {
     if (!clientData?.id) return;
@@ -145,19 +183,38 @@ export default function ClientDocumentsPage() {
       // Create document record. uploaded_by stays NULL for client uploads:
       // it references profiles (staff only) and RLS marks NULL as
       // "uploaded by the client".
-      const { error: insertError } = await supabase.from('documents').insert({
-        name: file.name,
-        file_path: filePath,
-        file_type: file.type,
-        file_size: file.size,
-        category: uploadForm.category,
-        notes: uploadForm.notes || null,
-        case_id: uploadForm.case_id || null,
-        client_id: clientData.id,
-        uploaded_by: null,
-      });
+      const { data: insertedDoc, error: insertError } = await supabase
+        .from('documents')
+        .insert({
+          name: file.name,
+          file_path: filePath,
+          file_type: file.type,
+          file_size: file.size,
+          category: uploadForm.category,
+          notes: uploadForm.notes || null,
+          case_id: uploadForm.case_id || null,
+          client_id: clientData.id,
+          uploaded_by: null,
+        })
+        .select('id')
+        .single();
 
       if (insertError) throw insertError;
+
+      // Tick off the checklist item this upload answers. Without this the
+      // checklist could never advance: nothing linked an uploaded file back to
+      // case_documents, so every item stayed "pending" no matter what the
+      // customer supplied. The column grants let a client set only document_id
+      // and status here — approval stays with staff.
+      if (uploadForm.checklist_item_id && insertedDoc) {
+        const { error: linkError } = await supabase
+          .from('case_documents')
+          .update({ document_id: insertedDoc.id, status: 'uploaded' })
+          .eq('id', uploadForm.checklist_item_id);
+        if (linkError) {
+          console.error('Document uploaded but checklist link failed:', linkError);
+        }
+      }
 
       // Refresh documents list
       await fetchDocuments();
@@ -167,6 +224,7 @@ export default function ClientDocumentsPage() {
         case_id: preselectedCaseId || '',
         category: 'general',
         notes: '',
+        checklist_item_id: '',
       });
     } catch (error) {
       console.error('Error uploading document:', error);
@@ -199,21 +257,47 @@ export default function ClientDocumentsPage() {
   };
 
   const handleDelete = async (doc: Document) => {
-    if (!confirm('Are you sure you want to delete this document?')) return;
+    if (!confirm(t.clientPortal?.documents?.confirmDelete || 'Are you sure you want to delete this document?')) {
+      return;
+    }
 
     try {
-      // Delete from storage
-      await supabase.storage.from('documents').remove([doc.file_path]);
-
-      // Delete record
-      const { error } = await supabase.from('documents').delete().eq('id', doc.id);
+      // Delete the ROW FIRST. It is the RLS-checked, authoritative step.
+      //
+      // This used to remove the storage object first and only then delete the
+      // row, so when RLS refused the row delete — which it does for anything
+      // staff uploaded — the file was already destroyed. The customer lost the
+      // permit we sent them, the card reappeared on refresh, and it pointed at
+      // a file that no longer existed. Deleting the row first means a refusal
+      // costs nothing.
+      const { error, count } = await supabase
+        .from('documents')
+        .delete({ count: 'exact' })
+        .eq('id', doc.id);
 
       if (error) throw error;
+      if (!count) {
+        // RLS silently matched zero rows: not ours to delete.
+        alert(
+          t.clientPortal?.documents?.deleteNotAllowed ||
+            'This document was added by our team, so it cannot be deleted here.'
+        );
+        return;
+      }
+
+      // Row is gone; now clean up the object. A failure here only leaves an
+      // orphaned file, which is recoverable — unlike losing the customer's.
+      const { error: storageError } = await supabase.storage
+        .from('documents')
+        .remove([doc.file_path]);
+      if (storageError) {
+        console.error('Document row deleted but storage cleanup failed:', storageError);
+      }
 
       setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
     } catch (error) {
       console.error('Error deleting document:', error);
-      alert('Failed to delete document.');
+      alert(t.clientPortal?.documents?.deleteFailed || 'Failed to delete document.');
     }
   };
 
@@ -258,11 +342,31 @@ export default function ClientDocumentsPage() {
         </Button>
       </motion.div>
 
+      {/* `?case=` used to only preselect the upload form, so the "View all" link
+          from a case landed here showing every document with no indication of
+          which case they belonged to. It now actually filters. */}
+      {preselectedCaseId && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+          <span className="text-sm text-amber-800">
+            {(t.clientPortal?.documents?.filteredByCase || 'Showing documents for: {case}').replace(
+              '{case}',
+              cases.find((c) => c.id === preselectedCaseId)?.title || '—'
+            )}
+          </span>
+          <Link
+            href={dashboardRoutes.client.documents}
+            className="text-sm font-medium text-amber-700 hover:text-amber-800 underline"
+          >
+            {t.clientPortal?.documents?.showAll || 'Show all documents'}
+          </Link>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Spinner size="lg" />
         </div>
-      ) : documents.length === 0 ? (
+      ) : visibleDocuments.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -286,7 +390,7 @@ export default function ClientDocumentsPage() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
         >
-          {documents.map((doc, index) => {
+          {visibleDocuments.map((doc, index) => {
             const FileIcon = getFileIcon(doc.file_type);
             return (
               <motion.div
@@ -388,12 +492,16 @@ export default function ClientDocumentsPage() {
                 </p>
               </>
             )}
+            {/* The inline `position: relative` used to override the
+                `absolute inset-0` class, so the input sat BELOW the dropzone
+                text instead of covering it — the visible "click to select"
+                prompt did nothing. */}
             <input
               type="file"
               accept={FILE_INPUT_ACCEPT}
               onChange={handleFileSelect}
+              aria-label={t.clientPortal?.documents?.dropzone || 'Select a file to upload'}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              style={{ position: 'relative' }}
             />
           </div>
 
@@ -420,7 +528,28 @@ export default function ClientDocumentsPage() {
               ]}
               value={uploadForm.case_id}
               onChange={(e) =>
-                setUploadForm((prev) => ({ ...prev, case_id: e.target.value }))
+                // Changing case invalidates the chosen checklist item.
+                setUploadForm((prev) => ({
+                  ...prev,
+                  case_id: e.target.value,
+                  checklist_item_id: '',
+                }))
+              }
+            />
+          )}
+
+          {/* Which required document does this answer? Only shown when the
+              selected case still has outstanding checklist items. */}
+          {checklistItems.length > 0 && (
+            <Select
+              label={t.clientPortal?.documents?.answersRequirement || 'Which required document is this? (optional)'}
+              options={[
+                { value: '', label: t.clientPortal?.documents?.notInChecklist || 'Not on the list' },
+                ...checklistItems.map((i) => ({ value: i.id, label: i.name })),
+              ]}
+              value={uploadForm.checklist_item_id}
+              onChange={(e) =>
+                setUploadForm((prev) => ({ ...prev, checklist_item_id: e.target.value }))
               }
             />
           )}

@@ -29,12 +29,14 @@ export function Hero() {
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex flex-col md:flex-row items-center gap-12">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex-1 space-y-8"
-          >
+          {/* NOT animated on entry, deliberately.
+              The <h1> here is the page's LCP element. Wrapping it in a Framer
+              Motion fade meant the server HTML shipped it at opacity:0 and it
+              only became visible once JS hydrated — so Largest Contentful Paint
+              was measured from hydration rather than from first paint, on the
+              page that has to rank. The visual card beside it still animates;
+              nothing that carries the LCP does. */}
+          <div className="flex-1 space-y-8">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 text-sm font-medium">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
@@ -84,7 +86,7 @@ export function Hero() {
                 <span>{t.hero.ai_check}</span>
               </Link>
             </div>
-          </motion.div>
+          </div>
 
           <motion.div
             initial={{ opacity: 0, x: 20 }}

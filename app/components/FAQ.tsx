@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { translations } from '../lib/translations';
@@ -27,6 +27,8 @@ export function FAQ() {
                   <dt>
                     <button
                       onClick={() => setOpenIndex(isOpen ? null : index)}
+                      aria-expanded={isOpen}
+                      aria-controls={`faq-answer-${index}`}
                       className="flex w-full items-start justify-between text-left text-slate-900"
                     >
                       <span className="text-base font-semibold leading-7">
@@ -42,21 +44,24 @@ export function FAQ() {
                       </span>
                     </button>
                   </dt>
-                  <AnimatePresence>
-                    {isOpen && (
-                      <motion.dd
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
-                        className="overflow-hidden pr-12"
-                      >
-                        <p className="mt-2 text-base leading-7 text-slate-600 pb-4">
-                          {item.a}
-                        </p>
-                      </motion.dd>
-                    )}
-                  </AnimatePresence>
+                  {/* The answer is ALWAYS in the DOM and only collapsed
+                      visually. It used to be mounted/unmounted by
+                      AnimatePresence, so the rendered HTML contained the
+                      questions and none of the answers — the substance lived
+                      only in the FAQPage JSON-LD. Crawlers and answer engines
+                      reward extractable on-page answers, and this FAQ is some
+                      of the most citable content on the site. */}
+                  <motion.dd
+                    id={`faq-answer-${index}`}
+                    initial={false}
+                    animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="overflow-hidden pr-12"
+                  >
+                    <p className="mt-2 text-base leading-7 text-slate-600 pb-4">
+                      {item.a}
+                    </p>
+                  </motion.dd>
                 </div>
               );
             })}

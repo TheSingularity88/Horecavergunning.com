@@ -12,6 +12,11 @@ export function FloatingWhatsApp() {
     fetchPublicSettings().then((s) => setNumber(s.whatsappNumber.replace(/\D/g, '')));
   }, []);
 
+  // No configured number means no button. Rendering it anyway pointed every
+  // visitor at https://wa.me/ with a placeholder number — at best a dead end,
+  // at worst a stranger's WhatsApp receiving our customers' enquiries.
+  if (!number) return null;
+
   return (
     <a
       href={`https://wa.me/${number}`}
