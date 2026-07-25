@@ -70,12 +70,19 @@ export async function createInvoiceForCase(
   }
 
   // Reuse an existing non-terminal invoice for this case if present.
-  const { data: existing } = await admin
+  //
+  // Ordered + limit(1) rather than a bare .maybeSingle(): maybeSingle ERRORS
+  // when more than one row matches, which returned null and sent us down the
+  // "create a new invoice" branch — so once duplicates existed, every call
+  // added another one. A deterministic pick cannot compound the problem.
+  const { data: existingRows } = await admin
     .from('invoices')
     .select('id, status')
     .eq('case_id', caseId)
     .in('status', ['open', 'paid'])
-    .maybeSingle();
+    .order('created_at', { ascending: true })
+    .limit(1);
+  const existing = existingRows?.[0] ?? null;
 
   let invoiceId: string;
   if (existing) {
@@ -101,6 +108,21 @@ export async function createInvoiceForCase(
       .select('id')
       .single();
     if (invError || !inserted) {
+      // 23505 = unique violation on invoices_one_active_per_case: a concurrent
+      // caller won the race and already created the invoice for this case.
+      // That is the constraint doing its job, not a failure — adopt theirs.
+      if (invError?.code === '23505') {
+        const { data: raced } = await admin
+          .from('invoices')
+          .select('id')
+          .eq('case_id', caseId)
+          .in('status', ['open', 'paid'])
+          .order('created_at', { ascending: true })
+          .limit(1);
+        if (raced?.[0]) {
+          return { success: true, data: { invoiceId: raced[0].id, checkoutUrl: null } };
+        }
+      }
       return { success: false, error: 'Failed to create invoice.' };
     }
     invoiceId = inserted.id;
@@ -192,6 +214,56 @@ async function startCheckoutForInvoice(
     .eq('id', invoice.id);
 
   return { success: true, data: { checkoutUrl: payment.getCheckoutUrl() ?? null } };
+}
+
+/**
+ * Staff-triggered: bill a case that did not come through the request-approval
+ * flow (a customer who phoned or emailed).
+ *
+ * createInvoiceForCase had exactly one caller — approveClientRequest — so a
+ * case created by hand in the dashboard could never be invoiced at all. Those
+ * customers simply could not be charged through the product.
+ *
+ * Also self-heals the permit link: cases created before permit_type_id was
+ * wired up have no permit type, so they would price at zero. We resolve it from
+ * case_type (which matches permit_types.slug) before invoicing.
+ */
+export async function billCase(
+  caseId: string
+): Promise<ActionResult<CreateInvoiceResult>> {
+  try {
+    await requireStaff();
+    const admin = createAdminClient();
+
+    const { data: caseRow } = await admin
+      .from('cases')
+      .select('id, case_type, permit_type_id')
+      .eq('id', caseId)
+      .maybeSingle();
+    if (!caseRow) return { success: false, error: 'Case not found.' };
+
+    // Re-resolve every time, not just when null. permit_type_id is only ever
+    // derived from case_type, and editing a case's type never updated it — so
+    // a case switched from e.g. terrasvergunning to exploitatievergunning kept
+    // the old permit's fee and billed the wrong amount.
+    if (caseRow.case_type) {
+      const { data: permitType } = await admin
+        .from('permit_types')
+        .select('id')
+        .eq('slug', caseRow.case_type)
+        .maybeSingle();
+      if (permitType && permitType.id !== caseRow.permit_type_id) {
+        await admin
+          .from('cases')
+          .update({ permit_type_id: permitType.id })
+          .eq('id', caseId);
+      }
+    }
+
+    return await createInvoiceForCase(caseId);
+  } catch (err) {
+    return toActionError(err);
+  }
 }
 
 /** Staff-triggered: (re)generate a fresh Mollie checkout link for an invoice. */

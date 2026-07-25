@@ -16,6 +16,7 @@ import {
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
+import { billCase } from '@/app/lib/actions/billing';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -46,6 +47,8 @@ export default function CaseDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isBilling, setIsBilling] = useState(false);
+  const [billingMessage, setBillingMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -153,6 +156,31 @@ export default function CaseDetailPage() {
       setError('Failed to update case');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleBillCase = async () => {
+    setIsBilling(true);
+    setBillingMessage(null);
+    try {
+      const result = await billCase(caseId);
+      if (!result.success) {
+        setBillingMessage({ ok: false, text: result.error });
+        return;
+      }
+      setBillingMessage({
+        ok: true,
+        text: result.data?.checkoutUrl
+          ? 'Factuur aangemaakt en betaallink naar de klant gemaild.'
+          : 'Factuur aangemaakt. Er is geen betaallink verstuurd (Mollie niet geconfigureerd of bedrag is €0).',
+      });
+    } catch {
+      setBillingMessage({
+        ok: false,
+        text: 'Aanmaken van de factuur is mislukt. Controleer de verbinding en probeer het opnieuw.',
+      });
+    } finally {
+      setIsBilling(false);
     }
   };
 
@@ -449,6 +477,44 @@ export default function CaseDetailPage() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Billing — the only way to invoice a case that did not come
+                  in through the request-approval flow (phone/email customers). */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Facturatie</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {billingMessage && (
+                    <p
+                      className={
+                        billingMessage.ok
+                          ? 'text-sm text-green-700'
+                          : 'text-sm text-red-600'
+                      }
+                    >
+                      {billingMessage.text}
+                    </p>
+                  )}
+                  <Button
+                    variant="outline"
+                    className="w-full justify-center"
+                    disabled={isBilling}
+                    onClick={handleBillCase}
+                  >
+                    {isBilling ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      'Factuur aanmaken & betaallink mailen'
+                    )}
+                  </Button>
+                  <p className="text-xs text-slate-500">
+                    Maakt een factuur voor het vaste tarief van dit vergunningtype en
+                    mailt de klant een betaallink. Bestaat er al een openstaande
+                    factuur, dan wordt die hergebruikt.
+                  </p>
+                </CardContent>
+              </Card>
 
               {/* Danger Zone */}
               {isAdmin && (

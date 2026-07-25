@@ -29,6 +29,7 @@ export default function NewCasePage() {
   const { profile } = useAuth();
   const { t } = useLanguage();
   const [clients, setClients] = useState<ClientOption[]>([]);
+  const [permitTypeBySlug, setPermitTypeBySlug] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +65,19 @@ export default function NewCasePage() {
       }
     };
 
+    // permit_types.slug matches the case_type values, so we can resolve the
+    // permit type from the chosen case type. Without this link a staff-created
+    // case has no permit_type_id, which means no fee and no invoice — the
+    // customer literally could not be billed through the product.
+    const fetchPermitTypes = async () => {
+      const { data } = await supabase.from('permit_types').select('id, slug');
+      setPermitTypeBySlug(
+        Object.fromEntries(((data as { id: string; slug: string }[]) || []).map((p) => [p.slug, p.id]))
+      );
+    };
+
     fetchClients();
+    fetchPermitTypes();
   }, [supabase]);
 
   const handleChange = (
@@ -87,6 +100,9 @@ export default function NewCasePage() {
         .insert({
           ...formData,
           deadline: formData.deadline || null,
+          // Keep permit_type_id in step with case_type so the case carries a
+          // fee and can actually be invoiced.
+          permit_type_id: permitTypeBySlug[formData.case_type] ?? null,
           assigned_employee_id: profile?.id,
         } as unknown as never)
         .select()
