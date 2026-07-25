@@ -1,11 +1,14 @@
 import 'server-only';
 
 import type { Locale } from '@/app/lib/types/database';
+import { SITE_URL } from '@/app/lib/site';
 
 const BRAND = 'HorecaVergunning';
 
 function siteUrl(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL || 'https://horecavergunning.com';
+  // Fall back to the canonical host rather than a second hardcoded literal,
+  // so email links can never drift from the rest of the site.
+  return process.env.NEXT_PUBLIC_SITE_URL || SITE_URL;
 }
 
 function euro(cents: number): string {

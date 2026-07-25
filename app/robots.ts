@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next';
+import { SITE_URL } from '@/app/lib/site';
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -7,6 +8,8 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/dashboard/', '/client/', '/login', '/client-register', '/forgot-password', '/reset-password', '/api/'],
     },
-    sitemap: 'https://horecavergunning.com/sitemap.xml',
+    // Derived from SITE_URL so it can never point at a host that redirects.
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }
