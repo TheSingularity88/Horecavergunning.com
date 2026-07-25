@@ -479,7 +479,9 @@ export const translations = {
         deleteNotAllowed: "This document was added by our team, so it cannot be deleted here.",
         deleteFailed: "Could not delete the document. Please try again.",
         filteredByCase: "Showing documents for: {case}",
-        showAll: "Show all documents"
+        showAll: "Show all documents",
+        answersRequirement: "Which required document is this? (optional)",
+        notInChecklist: "Not on the list"
       },
       profile: {
         title: "My Profile",
@@ -1027,7 +1029,9 @@ export const translations = {
         deleteNotAllowed: "Dit document is door ons team toegevoegd en kan hier niet worden verwijderd.",
         deleteFailed: "Het document kon niet worden verwijderd. Probeer het opnieuw.",
         filteredByCase: "Documenten voor: {case}",
-        showAll: "Toon alle documenten"
+        showAll: "Toon alle documenten",
+        answersRequirement: "Welk benodigd document is dit? (optioneel)",
+        notInChecklist: "Staat niet op de lijst"
       },
       profile: {
         title: "Mijn Profiel",

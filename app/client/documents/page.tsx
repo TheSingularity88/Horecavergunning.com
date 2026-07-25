@@ -59,7 +59,11 @@ export default function ClientDocumentsPage() {
     case_id: preselectedCaseId || '',
     category: 'general' as DocumentCategory,
     notes: '',
+    // Which required-document item this upload satisfies (optional).
+    checklist_item_id: '',
   });
+  // Outstanding checklist items for the case selected in the upload form.
+  const [checklistItems, setChecklistItems] = useState<{ id: string; name: string }[]>([]);
   const supabase = useMemo(() => createClient(), []);
 
   // When arriving from a case ("View all"), show only that case's documents.
@@ -70,6 +74,29 @@ export default function ClientDocumentsPage() {
         : documents,
     [documents, preselectedCaseId]
   );
+
+  // Load the still-outstanding checklist items whenever the upload form's case
+  // changes, so the customer can say which requirement this file answers.
+  useEffect(() => {
+    const caseId = uploadForm.case_id;
+    if (!caseId) {
+      setChecklistItems([]);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from('case_documents')
+      .select('id, name')
+      .eq('case_id', caseId)
+      .in('status', ['pending', 'rejected'])
+      .order('sort_order')
+      .then(({ data }) => {
+        if (!cancelled) setChecklistItems((data as { id: string; name: string }[]) || []);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, uploadForm.case_id]);
 
   const fetchDocuments = useCallback(async () => {
     if (!clientData?.id) return;
@@ -156,19 +183,38 @@ export default function ClientDocumentsPage() {
       // Create document record. uploaded_by stays NULL for client uploads:
       // it references profiles (staff only) and RLS marks NULL as
       // "uploaded by the client".
-      const { error: insertError } = await supabase.from('documents').insert({
-        name: file.name,
-        file_path: filePath,
-        file_type: file.type,
-        file_size: file.size,
-        category: uploadForm.category,
-        notes: uploadForm.notes || null,
-        case_id: uploadForm.case_id || null,
-        client_id: clientData.id,
-        uploaded_by: null,
-      });
+      const { data: insertedDoc, error: insertError } = await supabase
+        .from('documents')
+        .insert({
+          name: file.name,
+          file_path: filePath,
+          file_type: file.type,
+          file_size: file.size,
+          category: uploadForm.category,
+          notes: uploadForm.notes || null,
+          case_id: uploadForm.case_id || null,
+          client_id: clientData.id,
+          uploaded_by: null,
+        })
+        .select('id')
+        .single();
 
       if (insertError) throw insertError;
+
+      // Tick off the checklist item this upload answers. Without this the
+      // checklist could never advance: nothing linked an uploaded file back to
+      // case_documents, so every item stayed "pending" no matter what the
+      // customer supplied. The column grants let a client set only document_id
+      // and status here — approval stays with staff.
+      if (uploadForm.checklist_item_id && insertedDoc) {
+        const { error: linkError } = await supabase
+          .from('case_documents')
+          .update({ document_id: insertedDoc.id, status: 'uploaded' })
+          .eq('id', uploadForm.checklist_item_id);
+        if (linkError) {
+          console.error('Document uploaded but checklist link failed:', linkError);
+        }
+      }
 
       // Refresh documents list
       await fetchDocuments();
@@ -178,6 +224,7 @@ export default function ClientDocumentsPage() {
         case_id: preselectedCaseId || '',
         category: 'general',
         notes: '',
+        checklist_item_id: '',
       });
     } catch (error) {
       console.error('Error uploading document:', error);
@@ -481,7 +528,28 @@ export default function ClientDocumentsPage() {
               ]}
               value={uploadForm.case_id}
               onChange={(e) =>
-                setUploadForm((prev) => ({ ...prev, case_id: e.target.value }))
+                // Changing case invalidates the chosen checklist item.
+                setUploadForm((prev) => ({
+                  ...prev,
+                  case_id: e.target.value,
+                  checklist_item_id: '',
+                }))
+              }
+            />
+          )}
+
+          {/* Which required document does this answer? Only shown when the
+              selected case still has outstanding checklist items. */}
+          {checklistItems.length > 0 && (
+            <Select
+              label={t.clientPortal?.documents?.answersRequirement || 'Which required document is this? (optional)'}
+              options={[
+                { value: '', label: t.clientPortal?.documents?.notInChecklist || 'Not on the list' },
+                ...checklistItems.map((i) => ({ value: i.id, label: i.name })),
+              ]}
+              value={uploadForm.checklist_item_id}
+              onChange={(e) =>
+                setUploadForm((prev) => ({ ...prev, checklist_item_id: e.target.value }))
               }
             />
           )}
