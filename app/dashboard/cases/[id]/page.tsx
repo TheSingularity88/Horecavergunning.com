@@ -17,6 +17,7 @@ import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
 import { billCase } from '@/app/lib/actions/billing';
+import { updateCaseStatus } from '@/app/lib/actions/cases';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -49,6 +50,7 @@ export default function CaseDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isBilling, setIsBilling] = useState(false);
   const [billingMessage, setBillingMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -137,17 +139,44 @@ export default function CaseDetailPage() {
   const handleSave = async () => {
     setError(null);
     setIsSaving(true);
+    setStatusMessage(null);
+
+    const statusChanged = caseData?.status !== formData.status;
 
     try {
+      // Everything except status is a plain field edit; status is handled
+      // below so the customer gets told about it.
       const { error } = await supabase
         .from('cases')
         .update({
-          ...formData,
+          title: formData.title,
+          description: formData.description,
+          case_type: formData.case_type,
+          priority: formData.priority,
+          municipality: formData.municipality,
+          reference_number: formData.reference_number,
           deadline: formData.deadline || null,
         } as unknown as never)
         .eq('id', caseId);
 
       if (error) throw error;
+
+      // Status goes through a server action so the customer is actually told.
+      // Updating it straight from the browser meant a case could sit in
+      // "waiting_client" with the customer never finding out they were the
+      // hold-up.
+      if (statusChanged) {
+        const result = await updateCaseStatus({ caseId, status: formData.status });
+        if (!result.success) {
+          setError(result.error);
+          return;
+        }
+        setStatusMessage(
+          result.data?.notified
+            ? 'Status bijgewerkt en de klant is per e-mail geïnformeerd.'
+            : 'Status bijgewerkt. Er is geen e-mail verstuurd (geen e-mailadres bekend of mail niet geconfigureerd).'
+        );
+      }
 
       setCaseData((prev) => (prev ? { ...prev, ...formData } as Case : null));
       setIsEditing(false);
@@ -244,6 +273,12 @@ export default function CaseDetailPage() {
           {error && (
             <div className="mb-6 p-3 rounded-lg bg-red-50 text-red-600 text-sm">
               {error}
+            </div>
+          )}
+
+          {statusMessage && (
+            <div className="mb-6 p-3 rounded-lg bg-green-50 text-green-700 text-sm">
+              {statusMessage}
             </div>
           )}
 

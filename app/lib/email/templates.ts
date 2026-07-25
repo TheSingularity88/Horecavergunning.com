@@ -191,12 +191,14 @@ export function caseStatusChanged(params: {
 }): { subject: string; html: string } {
   const { locale } = params;
   return {
+    // Subjects are plain text, not HTML — escaping here would surface literal
+    // &amp; in the customer's inbox.
     subject: params.actionRequired
-      ? t(locale, `Actie vereist: ${esc(params.caseTitle)}`, `Action required: ${esc(params.caseTitle)}`)
+      ? t(locale, `Actie vereist: ${params.caseTitle}`, `Action required: ${params.caseTitle}`)
       : t(
           locale,
-          `Statusupdate: ${esc(params.caseTitle)}`,
-          `Status update: ${esc(params.caseTitle)}`
+          `Statusupdate: ${params.caseTitle}`,
+          `Status update: ${params.caseTitle}`
         ),
     html: layout(`
       <h2 style="margin:0 0 12px;font-size:18px;">${
