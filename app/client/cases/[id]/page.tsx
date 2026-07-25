@@ -25,6 +25,25 @@ import Link from 'next/link';
 import { dashboardRoutes } from '@/app/lib/routes/dashboard';
 import type { Case, Document, Task } from '@/app/lib/types/database';
 
+/**
+ * One row of the per-case document checklist. These rows are snapshotted from
+ * the permit type's required_documents when a request is approved
+ * (app/lib/actions/requests.ts) but were never rendered anywhere, so the
+ * customer was told to "upload documents" without ever being told which.
+ */
+interface ChecklistItem {
+  id: string;
+  name: string;
+  status: string;
+  document_id: string | null;
+  review_note: string | null;
+  sort_order: number;
+  required_documents: {
+    description_nl: string | null;
+    description_en: string | null;
+  } | null;
+}
+
 // Case status timeline order
 const STATUS_ORDER = [
   'intake',
@@ -48,9 +67,10 @@ export default function ClientCaseDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { clientData } = useAuth();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +112,19 @@ export default function ClientCaseDetailPage() {
 
         setDocuments((docsResult as Document[]) || []);
 
+        // Fetch the per-case document checklist (RLS scopes this to the
+        // caller's own cases). The description comes from the permit type's
+        // required_documents template so we can explain each item.
+        const { data: checklistResult } = await supabase
+          .from('case_documents')
+          .select(
+            'id, name, status, document_id, review_note, sort_order, required_documents(description_nl, description_en)'
+          )
+          .eq('case_id', caseId)
+          .order('sort_order');
+
+        setChecklist((checklistResult as unknown as ChecklistItem[]) || []);
+
         // Fetch related tasks (read-only view)
         const { data: tasksResult } = await supabase
           .from('tasks')
@@ -120,6 +153,25 @@ export default function ClientCaseDetailPage() {
     });
   };
 
+  /**
+   * Human status labels. Previously the UI printed the raw database enum, so a
+   * Dutch restaurant owner read "waiting_government" as their case status.
+   */
+  const statusLabel = (status: string): string => {
+    const map = t.clientPortal?.cases?.status as Record<string, string> | undefined;
+    return map?.[status] ?? status.replace(/_/g, ' ');
+  };
+
+  const docStatusLabel = (status: string): string => {
+    const map = t.clientPortal?.cases?.docStatus as Record<string, string> | undefined;
+    return map?.[status] ?? status.replace(/_/g, ' ');
+  };
+
+  const checklistDone = checklist.filter((c) =>
+    ['uploaded', 'in_review', 'approved'].includes(c.status)
+  ).length;
+  const checklistOutstanding = checklist.length - checklistDone;
+
   const getTimelineSteps = (): TimelineStep[] => {
     if (!caseData) return [];
 
@@ -133,7 +185,7 @@ export default function ClientCaseDetailPage() {
 
       return {
         status,
-        label: status.replace(/_/g, ' '),
+        label: statusLabel(status),
         icon,
         isCompleted: !isRejectedOrCancelled && index < currentIndex,
         isCurrent: status === caseData.status,
@@ -198,7 +250,7 @@ export default function ClientCaseDetailPage() {
             variant={getStatusBadgeVariant(caseData.status)}
             className="self-start sm:self-auto text-sm px-3 py-1"
           >
-            {caseData.status.replace(/_/g, ' ')}
+            {statusLabel(caseData.status)}
           </Badge>
         </div>
       </motion.div>
@@ -267,14 +319,34 @@ export default function ClientCaseDetailPage() {
                       {t.clientPortal?.cases?.actionRequired || 'Action required from you'}
                     </p>
                     <p className="text-amber-700 text-sm mt-1">
-                      {t.clientPortal?.cases?.actionRequiredDesc || 'Please check if there are any documents you need to upload or information you need to provide.'}
+                      {/* Name the outstanding count instead of the old vague
+                          "check if there are any documents" copy. */}
+                      {checklistOutstanding > 0
+                        ? (t.clientPortal?.cases?.stillNeeded || '{count} document(s) still needed').replace(
+                            '{count}',
+                            String(checklistOutstanding)
+                          )
+                        : t.clientPortal?.cases?.actionRequiredDesc ||
+                          'Please check if there are any documents you need to upload or information you need to provide.'}
                     </p>
-                    <Link
-                      href={dashboardRoutes.client.documents}
+                    <a
+                      href="#checklist"
                       className="inline-block mt-2 text-amber-600 hover:text-amber-700 font-medium text-sm"
                     >
                       {t.clientPortal?.cases?.uploadDocuments || 'Upload documents'}
-                    </Link>
+                    </a>
+                  </div>
+                )}
+
+                {caseData.status === 'cancelled' && (
+                  <div className="mt-6 p-4 bg-slate-100 border border-slate-200 rounded-lg">
+                    <p className="text-slate-800 font-medium">
+                      {t.clientPortal?.cases?.cancelled || 'Application Cancelled'}
+                    </p>
+                    <p className="text-slate-600 text-sm mt-1">
+                      {t.clientPortal?.cases?.cancelledDesc ||
+                        'This application has been cancelled. Contact us if you would like to restart it.'}
+                    </p>
                   </div>
                 )}
 
@@ -287,6 +359,104 @@ export default function ClientCaseDetailPage() {
                       {t.clientPortal?.cases?.rejectedDesc || 'Your application has been rejected. Please contact us for more information.'}
                     </p>
                   </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Required-documents checklist — the customer's answer to "what do
+              I actually have to do next?". */}
+          <motion.div
+            id="checklist"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            <Card>
+              <CardHeader className="flex flex-row items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <CardTitle>
+                    {t.clientPortal?.cases?.checklist || 'Required documents'}
+                  </CardTitle>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {t.clientPortal?.cases?.checklistDesc ||
+                      'These are the documents we need for this application.'}
+                  </p>
+                </div>
+                {checklist.length > 0 && (
+                  <span className="flex-shrink-0 text-sm font-medium text-slate-500 whitespace-nowrap">
+                    {(t.clientPortal?.cases?.checklistProgress || '{done} of {total} complete')
+                      .replace('{done}', String(checklistDone))
+                      .replace('{total}', String(checklist.length))}
+                  </span>
+                )}
+              </CardHeader>
+              <CardContent>
+                {checklist.length === 0 ? (
+                  <p className="text-slate-500 text-sm py-2">
+                    {t.clientPortal?.cases?.checklistEmpty ||
+                      'We have not set a document checklist for this application yet.'}
+                  </p>
+                ) : (
+                  <>
+                    <ul className="space-y-3">
+                      {checklist.map((item) => {
+                        const supplied = ['uploaded', 'in_review', 'approved'].includes(item.status);
+                        const needsAttention = item.status === 'rejected';
+                        const description =
+                          language === 'en'
+                            ? item.required_documents?.description_en
+                            : item.required_documents?.description_nl;
+
+                        return (
+                          <li
+                            key={item.id}
+                            className="flex items-start gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50"
+                          >
+                            {needsAttention ? (
+                              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                            ) : supplied ? (
+                              <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                            ) : (
+                              <Hourglass className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-slate-900">{item.name}</p>
+                              {description && (
+                                <p className="text-sm text-slate-500 mt-0.5">{description}</p>
+                              )}
+                              {item.review_note && (
+                                <p className="text-sm text-red-600 mt-1">{item.review_note}</p>
+                              )}
+                            </div>
+                            <div className="flex-shrink-0 flex flex-col items-end gap-2">
+                              <Badge
+                                variant={
+                                  needsAttention ? 'error' : supplied ? 'success' : 'warning'
+                                }
+                              >
+                                {docStatusLabel(item.status)}
+                              </Badge>
+                              {!supplied && (
+                                <Link
+                                  href={`${dashboardRoutes.client.documents}?case=${caseId}`}
+                                  className="text-sm font-medium text-amber-600 hover:text-amber-700"
+                                >
+                                  {t.clientPortal?.cases?.upload || 'Upload'}
+                                </Link>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {checklistOutstanding === 0 && (
+                      <p className="text-sm text-green-700 mt-4">
+                        {t.clientPortal?.cases?.allDocumentsIn ||
+                          'We have everything we need for now.'}
+                      </p>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -394,7 +564,7 @@ export default function ClientCaseDetailPage() {
                           <span className="text-slate-900">{task.title}</span>
                         </div>
                         <Badge variant={getStatusBadgeVariant(task.status)}>
-                          {task.status.replace(/_/g, ' ')}
+                          {statusLabel(task.status)}
                         </Badge>
                       </div>
                     ))}

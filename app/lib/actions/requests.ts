@@ -1,9 +1,16 @@
 'use server';
 
 import { createAdminClient } from '@/app/lib/supabase/admin';
-import { requireStaff, toActionError, type ActionResult } from '@/app/lib/auth/guards';
-import { reviewRequestSchema } from '@/app/lib/validation/requests';
+import {
+  requireClient,
+  requireStaff,
+  toActionError,
+  type ActionResult,
+} from '@/app/lib/auth/guards';
+import { newClientRequestSchema, reviewRequestSchema } from '@/app/lib/validation/requests';
 import { createInvoiceForCase } from '@/app/lib/actions/billing';
+import { sendEmail, ownerEmail } from '@/app/lib/email/resend';
+import { newRequestOwner } from '@/app/lib/email/templates';
 
 /**
  * Snapshot the required-documents template of a permit type into per-case
@@ -32,6 +39,78 @@ async function snapshotChecklist(
       sort_order: r.sort_order,
     }))
   );
+}
+
+/**
+ * Submit a new permit request from the client portal.
+ *
+ * This used to be a raw browser insert into client_requests, which meant the
+ * zod schema was never applied and — more importantly — nobody was told. A
+ * customer could submit a request and it would sit in the database with no
+ * email to the owner and no acknowledgement anywhere. The owner only found it
+ * by happening to open the dashboard.
+ */
+export async function submitClientRequest(
+  input: unknown
+): Promise<ActionResult<{ requestId: string }>> {
+  try {
+    const { clientId } = await requireClient();
+
+    const parsed = newClientRequestSchema.safeParse(input);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: parsed.error.issues[0]?.message ?? 'Please check the form and try again.',
+      };
+    }
+    const data = parsed.data;
+
+    const admin = createAdminClient();
+
+    const { data: inserted, error } = await admin
+      .from('client_requests')
+      .insert({
+        client_id: clientId,
+        request_type: data.request_type,
+        permit_type_id: data.permit_type_id ?? null,
+        title: data.title,
+        description: data.description || null,
+        municipality: data.municipality || null,
+        urgency: data.urgency,
+        status: 'pending',
+      })
+      .select('id')
+      .single();
+
+    if (error || !inserted) {
+      return { success: false, error: 'Could not submit your request. Please try again.' };
+    }
+
+    // Tell the owner. Awaited (a floating promise gets killed when the
+    // serverless function freezes) but isolated — a mail outage must not make
+    // the customer think their submission failed.
+    const owner = ownerEmail();
+    if (owner) {
+      const { data: client } = await admin
+        .from('clients')
+        .select('company_name')
+        .eq('id', clientId)
+        .maybeSingle();
+
+      const tpl = newRequestOwner({
+        company: client?.company_name ?? 'Onbekend bedrijf',
+        requestTitle: data.title,
+        requestType: data.request_type,
+      });
+      await sendEmail({ to: owner, subject: tpl.subject, html: tpl.html }).catch((err) =>
+        console.error('[requests] owner notification failed:', err)
+      );
+    }
+
+    return { success: true, data: { requestId: inserted.id } };
+  } catch (err) {
+    return toActionError(err);
+  }
 }
 
 /**

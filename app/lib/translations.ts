@@ -429,7 +429,36 @@ export const translations = {
         actionRequiredDesc: "Please check if there are any documents you need to upload or information you need to provide.",
         uploadDocuments: "Upload documents",
         rejected: "Application Rejected",
-        rejectedDesc: "Your application has been rejected. Please contact us for more information."
+        rejectedDesc: "Your application has been rejected. Please contact us for more information.",
+        cancelled: "Application Cancelled",
+        cancelledDesc: "This application has been cancelled. Contact us if you would like to restart it.",
+        checklist: "Required documents",
+        checklistDesc: "These are the documents we need for this application.",
+        checklistEmpty: "We have not set a document checklist for this application yet. We will let you know as soon as we need anything.",
+        checklistProgress: "{done} of {total} complete",
+        stillNeeded: "{count} document(s) still needed",
+        allDocumentsIn: "We have everything we need for now.",
+        upload: "Upload",
+        // Case status vocabulary — never show the raw database enum.
+        status: {
+          intake: "Intake",
+          in_progress: "In progress",
+          waiting_client: "Waiting for you",
+          waiting_government: "Waiting for the municipality",
+          review: "Final review",
+          approved: "Approved",
+          completed: "Completed",
+          rejected: "Rejected",
+          cancelled: "Cancelled"
+        },
+        // Per-document checklist status.
+        docStatus: {
+          pending: "Not yet supplied",
+          uploaded: "Received",
+          in_review: "Being checked",
+          approved: "Approved",
+          rejected: "Needs attention"
+        }
       },
       documents: {
         title: "My Documents",
@@ -445,7 +474,12 @@ export const translations = {
         notesPlaceholder: "Add any notes about this document...",
         dropzone: "Drag and drop or click to select",
         maxSize: "Maximum file size: 10MB",
-        uploading: "Uploading..."
+        uploading: "Uploading...",
+        confirmDelete: "Are you sure you want to delete this document?",
+        deleteNotAllowed: "This document was added by our team, so it cannot be deleted here.",
+        deleteFailed: "Could not delete the document. Please try again.",
+        filteredByCase: "Showing documents for: {case}",
+        showAll: "Show all documents"
       },
       profile: {
         title: "My Profile",
@@ -459,6 +493,7 @@ export const translations = {
       requests: {
         title: "My Requests",
         subtitle: "View and submit permit application requests",
+        submitFailed: "Your request could not be submitted. Please check your connection and try again.",
         newRequest: "New Request",
         noRequests: "You haven't submitted any requests yet",
         submitFirst: "Submit your first request",
@@ -942,7 +977,36 @@ export const translations = {
         actionRequiredDesc: "Controleer of er documenten zijn die u moet uploaden of informatie die u moet verstrekken.",
         uploadDocuments: "Documenten uploaden",
         rejected: "Aanvraag Afgewezen",
-        rejectedDesc: "Uw aanvraag is afgewezen. Neem contact met ons op voor meer informatie."
+        rejectedDesc: "Uw aanvraag is afgewezen. Neem contact met ons op voor meer informatie.",
+        cancelled: "Aanvraag Geannuleerd",
+        cancelledDesc: "Deze aanvraag is geannuleerd. Neem contact met ons op als u hem opnieuw wilt starten.",
+        checklist: "Benodigde documenten",
+        checklistDesc: "Dit zijn de documenten die wij voor deze aanvraag nodig hebben.",
+        checklistEmpty: "Wij hebben voor deze aanvraag nog geen documentenlijst klaargezet. U hoort het zodra wij iets nodig hebben.",
+        checklistProgress: "{done} van {total} compleet",
+        stillNeeded: "Nog {count} document(en) nodig",
+        allDocumentsIn: "Wij hebben voorlopig alles wat wij nodig hebben.",
+        upload: "Uploaden",
+        // Statusteksten voor zaken — toon nooit de ruwe database-enum.
+        status: {
+          intake: "Intake",
+          in_progress: "In behandeling",
+          waiting_client: "Wacht op u",
+          waiting_government: "Wacht op de gemeente",
+          review: "Laatste controle",
+          approved: "Goedgekeurd",
+          completed: "Afgerond",
+          rejected: "Afgewezen",
+          cancelled: "Geannuleerd"
+        },
+        // Status per document in de checklist.
+        docStatus: {
+          pending: "Nog aanleveren",
+          uploaded: "Ontvangen",
+          in_review: "Wordt gecontroleerd",
+          approved: "Goedgekeurd",
+          rejected: "Actie nodig"
+        }
       },
       documents: {
         title: "Mijn Documenten",
@@ -958,7 +1022,12 @@ export const translations = {
         notesPlaceholder: "Voeg notities toe over dit document...",
         dropzone: "Sleep bestanden of klik om te selecteren",
         maxSize: "Maximale bestandsgrootte: 10MB",
-        uploading: "Uploaden..."
+        uploading: "Uploaden...",
+        confirmDelete: "Weet u zeker dat u dit document wilt verwijderen?",
+        deleteNotAllowed: "Dit document is door ons team toegevoegd en kan hier niet worden verwijderd.",
+        deleteFailed: "Het document kon niet worden verwijderd. Probeer het opnieuw.",
+        filteredByCase: "Documenten voor: {case}",
+        showAll: "Toon alle documenten"
       },
       profile: {
         title: "Mijn Profiel",
@@ -972,6 +1041,7 @@ export const translations = {
       requests: {
         title: "Mijn Aanvragen",
         subtitle: "Bekijk en dien vergunningaanvragen in",
+        submitFailed: "Uw aanvraag kon niet worden verzonden. Controleer uw verbinding en probeer het opnieuw.",
         newRequest: "Nieuwe Aanvraag",
         noRequests: "U heeft nog geen aanvragen ingediend",
         submitFirst: "Dien uw eerste aanvraag in",
