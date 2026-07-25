@@ -2,6 +2,7 @@ import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { SocialProof } from './components/SocialProof';
 import { ProblemSolution } from './components/ProblemSolution';
+import { AiReview } from './components/AiReview';
 import { Services } from './components/Services';
 import { Pricing } from './components/Pricing';
 import { Quiz } from './components/Quiz';
@@ -52,6 +53,7 @@ export default async function Home() {
       <Hero />
       <SocialProof mode={settings.socialProofMode} companies={settings.socialProofCompanies} />
       <ProblemSolution />
+      <AiReview />
       <Services />
       <Pricing permitTypes={permitTypes} />
       <Quiz permitTypes={permitTypes} />

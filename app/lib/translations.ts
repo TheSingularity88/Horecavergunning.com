@@ -18,7 +18,8 @@ export const translations = {
       cta_primary: "Free intake",
       cta_secondary: "View permits & prices",
       fixed_rates: "Fixed Rates",
-      support: "24/7 Support"
+      support: "24/7 Support",
+      ai_check: "AI-assisted checks"
     },
     social_proof: {
       trusted_by: "Trusted by 50+ venues in Amsterdam, Rotterdam, and Utrecht"
@@ -33,6 +34,39 @@ export const translations = {
       solution_1: "We handle all filings, permits, and deadlines",
       solution_2: "Proactive Bibob management and compliance checks",
       solution_3: "One fixed fee per permit. Clear from the start. No surprises."
+    },
+    ai_review: {
+      badge: "AI-assisted review",
+      title_start: "Every requirement checked.",
+      title_accent: "By AI and by a specialist.",
+      subtitle:
+        "One missing document or one wrongly completed field can delay your application by weeks. That is why we check every application against the current permit requirements using AI models — and a specialist always reviews it before anything is filed.",
+      pillars: [
+        {
+          title: "Automatic document checks",
+          desc: "As soon as you submit documents they are checked automatically: anything missing, anything expired, any details that contradict each other? You see straight away what is still needed."
+        },
+        {
+          title: "Tested against every requirement",
+          desc: "We work through every requirement of the permit — from local APV rules to the questions in the Bibob screening. What a person misses on their hundredth application, a model still catches."
+        },
+        {
+          title: "A specialist has the final say",
+          desc: "AI checks, a human decides. No application leaves our office without one of our specialists having reviewed and approved it."
+        }
+      ],
+      privacy_title: "Your data is anonymised first",
+      privacy_desc:
+        "All data is anonymised before it reaches any AI system. Personal and commercially sensitive information — including your Bibob documents — cannot be traced back to you.",
+      demo_label: "Example",
+      demo_title: "Check: Exploitatievergunning",
+      demo_items: [
+        { label: "Chamber of Commerce extract", note: "valid, 12 days old", state: "ok" },
+        { label: "Lease agreement", note: "fully signed", state: "ok" },
+        { label: "Bibob form", note: "question 4b incomplete", state: "warn" },
+        { label: "Floor plan with surface areas", note: "meets requirements", state: "ok" }
+      ],
+      demo_footer: "Then reviewed by your dedicated specialist"
     },
     services: {
       title: "Everything You Need to Run a Compliant Venue",
@@ -183,6 +217,14 @@ export const translations = {
         {
           q: "What is the response time for urgent questions?",
           a: "We understand that hospitality operates 24/7. We are always reachable for emergencies. For regular questions, we typically respond within one business day."
+        },
+        {
+          q: "Do you use AI on my application?",
+          a: "Yes. Every application is checked against the current permit requirements using AI models: missing documents, expired paperwork and contradictory details are picked up early. A specialist then reviews everything before it is filed — AI supports our people, it does not replace them."
+        },
+        {
+          q: "What happens to my data and Bibob documents?",
+          a: "All data is anonymised before it reaches any AI system, so personal and commercially sensitive information cannot be traced back to you. Your documents remain yours and are used only for your own application."
         }
       ]
     },
@@ -485,7 +527,8 @@ export const translations = {
       cta_primary: "Gratis intake",
       cta_secondary: "Bekijk vergunningen & tarieven",
       fixed_rates: "Vaste Tarieven",
-      support: "24/7 Support"
+      support: "24/7 Support",
+      ai_check: "AI-gecontroleerd"
     },
     social_proof: {
       trusted_by: "Vertrouwd door 50+ zaken in Amsterdam, Rotterdam en Utrecht"
@@ -500,6 +543,39 @@ export const translations = {
       solution_1: "Wij regelen alle aanvragen, vergunningen en deadlines",
       solution_2: "Proactief Bibob-beheer en compliance checks",
       solution_3: "Eén vaste prijs per vergunning. Vooraf duidelijk. Geen verrassingen.",
+    },
+    ai_review: {
+      badge: "AI-ondersteunde controle",
+      title_start: "Elke eis gecontroleerd.",
+      title_accent: "Door AI én door een specialist.",
+      subtitle:
+        "Eén ontbrekend stuk of één verkeerd ingevuld veld kan uw aanvraag weken vertragen. Daarom toetsen wij elke aanvraag met AI-modellen aan de actuele vergunningseisen — en kijkt een specialist er altijd overheen voordat er iets wordt ingediend.",
+      pillars: [
+        {
+          title: "Automatische documentcontrole",
+          desc: "Zodra u documenten aanlevert, worden ze automatisch gecontroleerd: ontbreken er stukken, zijn ze verlopen, of spreken gegevens elkaar tegen? U ziet direct wat er nog nodig is."
+        },
+        {
+          title: "Getoetst aan álle eisen",
+          desc: "Wij lopen elke eis van de vergunning na — van APV-bepalingen tot de vragen in de Bibob-toets. Wat een mens bij de honderdste aanvraag over het hoofd ziet, ziet een model nog steeds."
+        },
+        {
+          title: "Een specialist heeft het laatste woord",
+          desc: "AI controleert, een mens beslist. Geen enkele aanvraag gaat de deur uit zonder dat een van onze specialisten hem heeft nagekeken en goedgekeurd."
+        }
+      ],
+      privacy_title: "Uw gegevens worden geanonimiseerd",
+      privacy_desc:
+        "Alle gegevens worden geanonimiseerd voordat ze een AI-systeem bereiken. Persoons- en bedrijfsgevoelige informatie — inclusief uw Bibob-stukken — is daarbij niet herleidbaar.",
+      demo_label: "Voorbeeld",
+      demo_title: "Controle: Exploitatievergunning",
+      demo_items: [
+        { label: "Uittreksel KvK", note: "geldig, 12 dagen oud", state: "ok" },
+        { label: "Huurovereenkomst", note: "compleet ondertekend", state: "ok" },
+        { label: "Bibob-formulier", note: "vraag 4b onvolledig", state: "warn" },
+        { label: "Plattegrond met oppervlaktes", note: "voldoet aan eisen", state: "ok" }
+      ],
+      demo_footer: "Daarna nagekeken door uw vaste specialist"
     },
     services: {
       title: "Alles wat u nodig heeft voor een compliant zaak",
@@ -654,6 +730,14 @@ export const translations = {
         {
           q: "Wat is de reactietijd bij dringende vragen?",
           a: "Wij begrijpen dat de horeca 24/7 doorgaat. Voor spoedgevallen zijn wij altijd bereikbaar. Op reguliere vragen reageren wij doorgaans binnen één werkdag."
+        },
+        {
+          q: "Gebruiken jullie AI bij mijn aanvraag?",
+          a: "Ja. Elke aanvraag wordt met AI-modellen getoetst aan de actuele vergunningseisen: ontbrekende documenten, verlopen stukken en tegenstrijdige gegevens worden zo vroeg opgespoord. Daarna kijkt een specialist alles na voordat er wordt ingediend — AI ondersteunt onze mensen, het vervangt ze niet."
+        },
+        {
+          q: "Wat gebeurt er met mijn gegevens en Bibob-documenten?",
+          a: "Alle gegevens worden geanonimiseerd voordat ze een AI-systeem bereiken, zodat persoons- en bedrijfsgevoelige informatie niet herleidbaar is. Uw documenten blijven van u en worden uitsluitend gebruikt voor uw eigen aanvraag."
         }
       ]
     },
