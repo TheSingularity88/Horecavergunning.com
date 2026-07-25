@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ShieldCheck } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { fetchPublicSettings, DEFAULT_PUBLIC_SETTINGS, type PublicSettings } from '../lib/public-settings';
+import { CookiePreferencesLink } from './CookieConsent';
 
 const PERMIT_LINKS = [
   { href: '/exploitatievergunning', label: 'Exploitatievergunning' },
@@ -93,6 +94,14 @@ export function Footer() {
 
         <div className="border-t border-slate-900 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-sm">{t.footer.rights}</div>
+          {/* Consent has to be as easy to withdraw as it was to give, so the
+              banner stays reachable from every page. */}
+          <div className="flex items-center gap-4 text-sm">
+            <Link href="/cookies" className="hover:text-amber-500 transition-colors">
+              {t.cookies.readMore}
+            </Link>
+            <CookiePreferencesLink className="hover:text-amber-500 transition-colors" />
+          </div>
         </div>
       </div>
     </footer>
