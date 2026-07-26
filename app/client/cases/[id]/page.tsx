@@ -1,4 +1,5 @@
 'use client';
+import { caseStatusLabel, caseTypeLabel, docStatusLabel } from '@/app/lib/status-labels';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -153,19 +154,8 @@ export default function ClientCaseDetailPage() {
     });
   };
 
-  /**
-   * Human status labels. Previously the UI printed the raw database enum, so a
-   * Dutch restaurant owner read "waiting_government" as their case status.
-   */
-  const statusLabel = (status: string): string => {
-    const map = t.clientPortal?.cases?.status as Record<string, string> | undefined;
-    return map?.[status] ?? status.replace(/_/g, ' ');
-  };
-
-  const docStatusLabel = (status: string): string => {
-    const map = t.clientPortal?.cases?.docStatus as Record<string, string> | undefined;
-    return map?.[status] ?? status.replace(/_/g, ' ');
-  };
+  const statusLabel = (status: string) => caseStatusLabel(status, t);
+  const docStatusLabelFor = (status: string) => docStatusLabel(status, t);
 
   const checklistDone = checklist.filter((c) =>
     ['uploaded', 'in_review', 'approved'].includes(c.status)
@@ -228,7 +218,7 @@ export default function ClientCaseDetailPage() {
     <DashboardPage>
       {/* Header */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
@@ -243,7 +233,7 @@ export default function ClientCaseDetailPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900">{caseData.title}</h1>
             <p className="text-slate-600 capitalize mt-1">
-              {caseData.case_type.replace(/_/g, ' ')}
+              {caseTypeLabel(caseData.case_type, t)}
             </p>
           </div>
           <Badge
@@ -260,7 +250,7 @@ export default function ClientCaseDetailPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Status Timeline */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 1, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
@@ -368,7 +358,7 @@ export default function ClientCaseDetailPage() {
               I actually have to do next?". */}
           <motion.div
             id="checklist"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 1, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
           >
@@ -435,7 +425,7 @@ export default function ClientCaseDetailPage() {
                                   needsAttention ? 'error' : supplied ? 'success' : 'warning'
                                 }
                               >
-                                {docStatusLabel(item.status)}
+                                {docStatusLabelFor(item.status)}
                               </Badge>
                               {!supplied && (
                                 <Link
@@ -464,7 +454,7 @@ export default function ClientCaseDetailPage() {
 
           {/* Case Details */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 1, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
@@ -534,7 +524,7 @@ export default function ClientCaseDetailPage() {
           {/* Tasks */}
           {tasks.length > 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
@@ -579,7 +569,7 @@ export default function ClientCaseDetailPage() {
         <div className="space-y-6">
           {/* Documents */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 1, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
@@ -627,7 +617,7 @@ export default function ClientCaseDetailPage() {
 
           {/* Quick Actions */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 1, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >

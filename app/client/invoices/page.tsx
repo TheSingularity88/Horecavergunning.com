@@ -1,4 +1,5 @@
 'use client';
+import { invoiceStatusLabel } from '@/app/lib/status-labels';
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
@@ -79,7 +80,7 @@ export default function ClientInvoicesPage() {
   return (
     <DashboardPage>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
@@ -107,7 +108,7 @@ export default function ClientInvoicesPage() {
           {invoices.map((inv, i) => (
             <motion.div
               key={inv.id}
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 1, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
             >
@@ -115,7 +116,7 @@ export default function ClientInvoicesPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-slate-900">{inv.invoice_number}</p>
-                    <Badge variant={statusVariant(inv.status)}>{inv.status}</Badge>
+                    <Badge variant={statusVariant(inv.status)}>{invoiceStatusLabel(inv.status, t)}</Badge>
                   </div>
                   <p className="text-sm text-slate-500 mt-0.5">
                     {inv.description || '—'} · {formatDate(inv.issued_at)}

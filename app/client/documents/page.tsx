@@ -324,7 +324,7 @@ export default function ClientDocumentsPage() {
   return (
     <DashboardPage>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
@@ -368,7 +368,7 @@ export default function ClientDocumentsPage() {
         </div>
       ) : visibleDocuments.length === 0 ? (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
@@ -385,7 +385,7 @@ export default function ClientDocumentsPage() {
         </motion.div>
       ) : (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
@@ -395,7 +395,7 @@ export default function ClientDocumentsPage() {
             return (
               <motion.div
                 key={doc.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 1, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 * index }}
               >

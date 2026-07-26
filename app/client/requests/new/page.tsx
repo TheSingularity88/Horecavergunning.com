@@ -121,7 +121,7 @@ export default function NewRequestPage() {
     return (
       <DashboardPage>
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 1, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-lg mx-auto text-center py-12"
         >
@@ -155,7 +155,7 @@ export default function NewRequestPage() {
   return (
     <DashboardPage>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
@@ -190,7 +190,7 @@ export default function NewRequestPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Request Type Selection */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
@@ -244,7 +244,7 @@ export default function NewRequestPage() {
 
             {/* Request Details */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
@@ -292,7 +292,7 @@ export default function NewRequestPage() {
           <div className="space-y-6">
             {/* Urgency */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
@@ -343,7 +343,7 @@ export default function NewRequestPage() {
 
             {/* Submit */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
@@ -376,7 +376,7 @@ export default function NewRequestPage() {
 
             {/* Help Card */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
             >

@@ -1,4 +1,5 @@
 'use client';
+import { caseStatusLabel, caseTypeLabel, requestStatusLabel } from '@/app/lib/status-labels';
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
@@ -140,7 +141,7 @@ export default function ClientDashboardPage() {
     <DashboardPage>
       {/* Welcome Section */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
@@ -163,7 +164,7 @@ export default function ClientDashboardPage() {
         <>
           {/* Stats Grid */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 1, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
@@ -198,7 +199,7 @@ export default function ClientDashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Recent Cases */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
@@ -233,7 +234,7 @@ export default function ClientDashboardPage() {
                               {caseItem.title}
                             </p>
                             <div className="flex items-center gap-2 text-sm text-slate-500">
-                              <span>{caseItem.case_type.replace(/_/g, ' ')}</span>
+                              <span>{caseTypeLabel(caseItem.case_type, t)}</span>
                               {caseItem.deadline && (
                                 <>
                                   <span>•</span>
@@ -246,7 +247,7 @@ export default function ClientDashboardPage() {
                             </div>
                           </div>
                           <Badge variant={getStatusBadgeVariant(caseItem.status)}>
-                            {caseItem.status.replace(/_/g, ' ')}
+                            {caseStatusLabel(caseItem.status, t)}
                           </Badge>
                         </Link>
                       ))}
@@ -258,7 +259,7 @@ export default function ClientDashboardPage() {
 
             {/* Recent Requests */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
@@ -300,11 +301,11 @@ export default function ClientDashboardPage() {
                               {request.title}
                             </p>
                             <p className="text-sm text-slate-500">
-                              {request.request_type.replace(/_/g, ' ')}
+                              {caseTypeLabel(request.request_type, t)}
                             </p>
                           </div>
                           <Badge variant={getRequestStatusVariant(request.status)}>
-                            {request.status}
+                            {requestStatusLabel(request.status, t)}
                           </Badge>
                         </div>
                       ))}
@@ -317,7 +318,7 @@ export default function ClientDashboardPage() {
 
           {/* Quick Actions */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 1, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
             className="mt-6"
