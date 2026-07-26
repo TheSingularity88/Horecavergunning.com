@@ -15,6 +15,7 @@ import { Select } from '@/app/components/ui/Select';
 import { Badge } from '@/app/components/ui/Badge';
 import { Table, Pagination } from '@/app/components/ui/Table';
 import { Spinner } from '@/app/components/ui/Spinner';
+import { useToast } from '@/app/components/ui/Toast';
 import type {
   Client,
   ClientRequest,
@@ -29,6 +30,7 @@ type RequestWithClient = ClientRequest & {
 };
 
 export default function RequestsPage() {
+  const { showError } = useToast();
   const { profile } = useAuth();
   const { t } = useLanguage();
   const [requests, setRequests] = useState<RequestWithClient[]>([]);
@@ -118,7 +120,7 @@ export default function RequestsPage() {
     setRowLoading(request.id, true);
     const result = await approveClientRequest({ requestId: request.id });
     if (!result.success) {
-      alert(result.error);
+      showError(result.error);
     } else {
       const caseId = result.data?.caseId ?? null;
       setRequests((prev) =>
@@ -141,7 +143,7 @@ export default function RequestsPage() {
     setRowLoading(request.id, true);
     const result = await rejectClientRequest({ requestId: request.id });
     if (!result.success) {
-      alert(result.error);
+      showError(result.error);
     } else {
       setRequests((prev) =>
         prev.map((item) =>

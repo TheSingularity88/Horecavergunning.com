@@ -114,6 +114,8 @@ interface ConfirmModalProps {
   message: string;
   confirmText?: string;
   cancelText?: string;
+  /** Shown on the confirm button while the action runs. Pass it translated. */
+  loadingText?: string;
   variant?: 'danger' | 'warning' | 'default';
   isLoading?: boolean;
 }
@@ -126,6 +128,7 @@ export function ConfirmModal({
   message,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
+  loadingText = 'Loading...',
   variant = 'default',
   isLoading = false,
 }: ConfirmModalProps) {
@@ -154,7 +157,7 @@ export function ConfirmModal({
             confirmButtonClasses[variant]
           )}
         >
-          {isLoading ? 'Loading...' : confirmText}
+          {isLoading ? loadingText : confirmText}
         </button>
       </div>
     </Modal>

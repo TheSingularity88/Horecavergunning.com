@@ -184,20 +184,37 @@ async function startCheckoutForInvoice(
     .select('id, client_id, case_id, amount_cents, description, status')
     .eq('id', invoiceId)
     .maybeSingle();
-  if (!invoice) return { success: false, error: 'Invoice not found.' };
-  // Same message as "not found" so a client cannot probe for other clients'
-  // invoice ids.
+  if (!invoice) {
+    return { success: false, error: 'Invoice not found.', code: 'invoice_not_found' };
+  }
+  // Same message AND same code as "not found" so a client cannot probe for
+  // other clients' invoice ids — the code must not leak the distinction the
+  // message deliberately hides.
   if (expectedClientId && invoice.client_id !== expectedClientId) {
-    return { success: false, error: 'Invoice not found.' };
+    return { success: false, error: 'Invoice not found.', code: 'invoice_not_found' };
   }
   if (invoice.status === 'paid') {
-    return { success: false, error: 'This invoice is already paid.' };
+    return {
+      success: false,
+      error: 'This invoice is already paid.',
+      code: 'invoice_already_paid',
+    };
   }
 
   const mollie = getMollie();
-  if (!mollie) return { success: false, error: 'Payments are not configured yet.' };
+  if (!mollie) {
+    return {
+      success: false,
+      error: 'Payments are not configured yet.',
+      code: 'payments_unavailable',
+    };
+  }
   if (invoice.amount_cents <= 0) {
-    return { success: false, error: 'Invoice has no amount to charge.' };
+    return {
+      success: false,
+      error: 'Invoice has no amount to charge.',
+      code: 'invoice_no_amount',
+    };
   }
 
   const payment = await mollie.payments.create({

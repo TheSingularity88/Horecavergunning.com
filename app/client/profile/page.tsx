@@ -6,6 +6,7 @@ import { User, Building2, Mail, Phone, MapPin, Save } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
+import { useToast } from '@/app/components/ui/Toast';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -26,6 +27,7 @@ interface ProfileForm {
 export default function ClientProfilePage() {
   const { clientData, refreshProfile } = useAuth();
   const { t } = useLanguage();
+  const { showError } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<ProfileForm>({
@@ -78,7 +80,10 @@ export default function ClientProfilePage() {
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
+      showError(
+        t.clientPortal?.errors?.profileSaveFailed ||
+          'Your details could not be saved. Please try again.',
+      );
     } finally {
       setIsSaving(false);
     }

@@ -15,6 +15,7 @@ import { Select } from '@/app/components/ui/Select';
 import { Textarea } from '@/app/components/ui/Textarea';
 import { Spinner } from '@/app/components/ui/Spinner';
 import type { SystemSetting } from '@/app/lib/types/database';
+import { useToast } from '@/app/components/ui/Toast';
 
 type FieldType = 'text' | 'textarea' | 'select';
 
@@ -66,6 +67,7 @@ const SECTIONS: { title: string; icon: typeof Settings; keys: string[] }[] = [
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { showError } = useToast();
   const { isAdmin } = useAuth();
   const [settings, setSettings] = useState<Setting[]>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
@@ -114,7 +116,7 @@ export default function SettingsPage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } else {
-      alert(result.error);
+      showError(result.error);
     }
     setIsSaving(false);
   };

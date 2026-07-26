@@ -83,7 +83,11 @@ export async function submitClientRequest(
       .single();
 
     if (error || !inserted) {
-      return { success: false, error: 'Could not submit your request. Please try again.' };
+      return {
+        success: false,
+        error: 'Could not submit your request. Please try again.',
+        code: 'request_submit_failed',
+      };
     }
 
     // Tell the owner. Awaited (a floating promise gets killed when the
