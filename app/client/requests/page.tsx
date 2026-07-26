@@ -1,4 +1,5 @@
 'use client';
+import { caseTypeLabel } from '@/app/lib/status-labels';
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
@@ -105,7 +106,7 @@ export default function ClientRequestsPage() {
   return (
     <DashboardPage>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
@@ -131,7 +132,7 @@ export default function ClientRequestsPage() {
         </div>
       ) : requests.length === 0 ? (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
@@ -150,7 +151,7 @@ export default function ClientRequestsPage() {
         </motion.div>
       ) : (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="space-y-4"
@@ -158,7 +159,7 @@ export default function ClientRequestsPage() {
           {requests.map((request, index) => (
             <motion.div
               key={request.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 * index }}
             >
@@ -183,7 +184,7 @@ export default function ClientRequestsPage() {
                     <div className="min-w-0">
                       <h3 className="font-medium text-slate-900">{request.title}</h3>
                       <p className="text-sm text-slate-500 capitalize">
-                        {request.request_type.replace(/_/g, ' ')}
+                        {caseTypeLabel(request.request_type, t)}
                       </p>
                       {request.municipality && (
                         <p className="text-sm text-slate-500">{request.municipality}</p>
@@ -228,7 +229,7 @@ export default function ClientRequestsPage() {
 
       {/* Info Card */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         className="mt-6"

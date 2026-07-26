@@ -113,7 +113,7 @@ export default function ClientProfilePage() {
   return (
     <DashboardPage>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
@@ -135,7 +135,7 @@ export default function ClientProfilePage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Company Information */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
@@ -167,7 +167,7 @@ export default function ClientProfilePage() {
 
         {/* Contact Information */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
@@ -210,7 +210,7 @@ export default function ClientProfilePage() {
 
         {/* Address */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="lg:col-span-2"
@@ -261,7 +261,7 @@ export default function ClientProfilePage() {
       {/* Action Buttons */}
       {isEditing && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex justify-end gap-3 mt-6"
         >
@@ -286,7 +286,7 @@ export default function ClientProfilePage() {
 
       {/* Account Status */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         className="mt-6"

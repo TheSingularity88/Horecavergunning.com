@@ -1,4 +1,5 @@
 'use client';
+import { invoiceStatusLabel } from '@/app/lib/status-labels';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -92,7 +93,7 @@ export default function InvoiceDetailPage() {
       ) : !invoice ? (
         <Card className="p-8 text-center text-slate-500">Invoice not found.</Card>
       ) : (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div initial={{ opacity: 1, y: 8 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="p-6 max-w-xl">
             {(() => {
               const ui = statusUi[invoice.status];
@@ -108,7 +109,7 @@ export default function InvoiceDetailPage() {
                     variant={invoice.status === 'paid' ? 'success' : invoice.status === 'open' ? 'warning' : 'error'}
                     className="ml-auto"
                   >
-                    {invoice.status}
+                    {invoiceStatusLabel(invoice.status, t)}
                   </Badge>
                 </div>
               );

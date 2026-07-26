@@ -1,4 +1,5 @@
 'use client';
+import { caseStatusLabel, caseTypeLabel, requestStatusLabel } from '@/app/lib/status-labels';
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
@@ -83,7 +84,7 @@ export default function ClientCasesPage() {
   return (
     <DashboardPage>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
@@ -97,7 +98,7 @@ export default function ClientCasesPage() {
 
       {/* Filters */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         className="flex flex-col sm:flex-row gap-4 mb-6"
@@ -126,7 +127,7 @@ export default function ClientCasesPage() {
         </div>
       ) : cases.length === 0 ? (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
@@ -149,7 +150,7 @@ export default function ClientCasesPage() {
         </motion.div>
       ) : (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="space-y-4"
@@ -157,7 +158,7 @@ export default function ClientCasesPage() {
           {cases.map((caseItem, index) => (
             <motion.div
               key={caseItem.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 * index }}
             >
@@ -173,7 +174,7 @@ export default function ClientCasesPage() {
                           {caseItem.title}
                         </h3>
                         <p className="text-sm text-slate-500 capitalize">
-                          {caseItem.case_type.replace(/_/g, ' ')}
+                          {caseTypeLabel(caseItem.case_type, t)}
                         </p>
                         {caseItem.municipality && (
                           <p className="text-sm text-slate-500">
@@ -190,7 +191,7 @@ export default function ClientCasesPage() {
                         </div>
                       )}
                       <Badge variant={getStatusBadgeVariant(caseItem.status)}>
-                        {caseItem.status.replace(/_/g, ' ')}
+                        {caseStatusLabel(caseItem.status, t)}
                       </Badge>
                     </div>
                   </div>

@@ -405,7 +405,10 @@ export const translations = {
         payNow: "Pay now",
         paid: "Paid",
         open: "Awaiting payment",
-        failed: "Payment failed"
+        failed: "Payment failed",
+        draft: "Draft",
+        expired: "Expired",
+        canceled: "Cancelled"
       },
       auth: {
         registerSubtitle: "Create your client account",
@@ -472,6 +475,15 @@ export const translations = {
         stillNeeded: "{count} document(s) still needed",
         allDocumentsIn: "We have everything we need for now.",
         upload: "Upload",
+        types: {
+          exploitatievergunning: "Operating permit",
+          alcoholvergunning: "Alcohol licence",
+          terrasvergunning: "Terrace",
+          bibob: "Bibob screening",
+          overname: "Business takeover",
+          verbouwing: "Renovation",
+          other: "Other"
+        },
         // Case status vocabulary — never show the raw database enum.
         status: {
           intake: "Intake",
@@ -988,7 +1000,10 @@ export const translations = {
         payNow: "Nu betalen",
         paid: "Betaald",
         open: "Wacht op betaling",
-        failed: "Betaling mislukt"
+        failed: "Betaling mislukt",
+        draft: "Concept",
+        expired: "Verlopen",
+        canceled: "Geannuleerd"
       },
       auth: {
         registerSubtitle: "Maak uw klantenaccount aan",
@@ -1055,6 +1070,15 @@ export const translations = {
         stillNeeded: "Nog {count} document(en) nodig",
         allDocumentsIn: "Wij hebben voorlopig alles wat wij nodig hebben.",
         upload: "Uploaden",
+        types: {
+          exploitatievergunning: "Exploitatievergunning",
+          alcoholvergunning: "Alcoholvergunning",
+          terrasvergunning: "Terras",
+          bibob: "Bibob-toets",
+          overname: "Overname",
+          verbouwing: "Verbouwing",
+          other: "Overig"
+        },
         // Statusteksten voor zaken — toon nooit de ruwe database-enum.
         status: {
           intake: "Intake",
