@@ -336,9 +336,10 @@ export const PERMIT_CONTENT: Record<string, PermitContent> = {
       { title: 'Aanvraag/melding indienen', body: 'Wij dienen de juiste aanvragen en meldingen in.' },
       { title: 'Besluit', body: 'U kunt veilig en vergund heropenen.' },
     ],
-    kostenIntro: 'Voor het verzorgen van de vergunningen rondom uw verbouwing rekenen wij een vaste servicetarief.',
+    kostenIntro:
+      'Voor het verzorgen van de vergunningen rondom uw verbouwing rekenen wij een vast servicetarief. Dit tarief dekt het reguliere traject: de intake, de benodigde tekeningen en onderbouwing, de meldingen rondom brandveilig gebruik en een eventuele aanpassing van uw exploitatievergunning.',
     kostenNote:
-      'De gemeente rekent afhankelijk van het traject eigen leges. Bouwkundige kosten en die van derden staan los van ons servicetarief.',
+      'Vraagt uw verbouwing een volledige omgevingsvergunning met bouwactiviteit — bijvoorbeeld bij constructieve ingrepen — dan is dat een aanzienlijk zwaarder traject. Daarvoor geven wij vooraf een aparte prijsopgave, zodat u ook dan precies weet waar u aan toe bent. De gemeente rekent daarnaast eigen leges; bij een bouwactiviteit zijn die een percentage van de bouwkosten en lopen ze snel op. Bouwkundige kosten en die van derden staan los van ons servicetarief.',
     faqs: [
       {
         q: 'Heb ik altijd een vergunning nodig voor een verbouwing?',
