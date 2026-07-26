@@ -19,7 +19,13 @@ import {
   insertKbDocument,
   updateKbDocumentFlags,
   deleteKbDocument,
+  previewKbExtraction,
+  runKbAnalysis,
+  activateKbVersion,
+  archiveKbVersion,
+  type KbExtractionPreview,
 } from '@/app/lib/actions/kb';
+import { bibleSchema } from '@/app/lib/ai/bible-schema';
 import {
   validateKbFile,
   KB_FILE_INPUT_ACCEPT,
@@ -32,7 +38,7 @@ import { Textarea } from '@/app/components/ui/Textarea';
 import { Modal, ConfirmModal } from '@/app/components/ui/Modal';
 import { Spinner } from '@/app/components/ui/Spinner';
 import { useToast } from '@/app/components/ui/Toast';
-import type { KbDocument } from '@/app/lib/types/database';
+import type { KbDocument, KbVersion } from '@/app/lib/types/database';
 
 /**
  * Admin-only knowledge base: the confidential source documents the AI system
@@ -52,6 +58,25 @@ async function sha256Hex(file: File): Promise<string> {
 /** Storage object keys are safest as plain ASCII; display keeps the original name. */
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(0, 180);
+}
+
+/**
+ * All stable rule ids in a bible, for the added/removed comparison between
+ * versions. Returns null when the rules don't parse against the current
+ * schema (an old version produced by an older prompt) — the UI then skips
+ * the comparison instead of showing a wrong one.
+ */
+function collectRuleIds(rules: unknown): Set<string> | null {
+  const parsed = bibleSchema.safeParse(rules);
+  if (!parsed.success) return null;
+  const ids = new Set<string>();
+  for (const ruleset of parsed.data.rulesets) {
+    ids.add(ruleset.id);
+    for (const item of ruleset.checklist) ids.add(`${ruleset.id}/${item.id}`);
+    for (const criterion of ruleset.criteria) ids.add(`${ruleset.id}/${criterion.id}`);
+    for (const threshold of ruleset.thresholds) ids.add(`${ruleset.id}/${threshold.id}`);
+  }
+  return ids;
 }
 
 export default function KnowledgeBasePage() {
@@ -74,6 +99,15 @@ export default function KnowledgeBasePage() {
     include_images: false,
   });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [versions, setVersions] = useState<KbVersion[]>([]);
+  const [preview, setPreview] = useState<KbExtractionPreview[] | null>(null);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzeDone, setAnalyzeDone] = useState(false);
+  const [viewVersion, setViewVersion] = useState<KbVersion | null>(null);
+  const [pendingActivate, setPendingActivate] = useState<KbVersion | null>(null);
+  const [pendingArchive, setPendingArchive] = useState<KbVersion | null>(null);
+  const [isActing, setIsActing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = useMemo(() => createClient(), []);
 
@@ -92,9 +126,91 @@ export default function KnowledgeBasePage() {
     setIsLoading(false);
   }, [supabase]);
 
+  const fetchVersions = useCallback(async () => {
+    const { data } = await supabase
+      .from('kb_versions')
+      .select('*')
+      .order('version', { ascending: false });
+    setVersions((data as KbVersion[]) || []);
+  }, [supabase]);
+
   useEffect(() => {
-    if (isAdmin) fetchDocuments();
-  }, [isAdmin, fetchDocuments]);
+    if (isAdmin) {
+      fetchDocuments();
+      fetchVersions();
+    }
+  }, [isAdmin, fetchDocuments, fetchVersions]);
+
+  const handlePreview = async () => {
+    setIsPreviewing(true);
+    const result = await previewKbExtraction();
+    if (result.success && result.data) setPreview(result.data.documents);
+    else if (!result.success) showError(result.error);
+    setIsPreviewing(false);
+  };
+
+  const handleAnalyze = async () => {
+    setIsAnalyzing(true);
+    setAnalyzeDone(false);
+    try {
+      const result = await runKbAnalysis();
+      if (result.success) {
+        setAnalyzeDone(true);
+        await fetchVersions();
+      } else {
+        showError(result.error);
+      }
+    } catch {
+      // A dropped connection mid-analysis rejects the action call even though
+      // the server may still finish; refresh so a completed draft shows up.
+      showError(t.clientPortal?.errors?.network || 'Connection lost. Refresh to see the result.');
+      await fetchVersions();
+    }
+    setIsAnalyzing(false);
+  };
+
+  const performActivate = async () => {
+    if (!pendingActivate) return;
+    setIsActing(true);
+    const result = await activateKbVersion({ id: pendingActivate.id });
+    if (!result.success) showError(result.error);
+    else await fetchVersions();
+    setIsActing(false);
+    setPendingActivate(null);
+  };
+
+  const performArchive = async () => {
+    if (!pendingArchive) return;
+    setIsActing(true);
+    const result = await archiveKbVersion({ id: pendingArchive.id });
+    if (!result.success) showError(result.error);
+    else await fetchVersions();
+    setIsActing(false);
+    setPendingArchive(null);
+  };
+
+  /** added/removed rule ids vs the version directly below this one. */
+  const versionDiff = (version: KbVersion): { added: number; removed: number } | null => {
+    const previous = versions.find((v) => v.version === version.version - 1);
+    if (!previous) return null;
+    const current = collectRuleIds(version.rules);
+    const prior = collectRuleIds(previous.rules);
+    if (!current || !prior) return null;
+    let added = 0;
+    let removed = 0;
+    current.forEach((id) => {
+      if (!prior.has(id)) added += 1;
+    });
+    prior.forEach((id) => {
+      if (!current.has(id)) removed += 1;
+    });
+    return { added, removed };
+  };
+
+  const openQuestionCount = (version: KbVersion): number => {
+    const parsed = bibleSchema.safeParse(version.rules);
+    return parsed.success ? parsed.data.open_questions.length : 0;
+  };
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -307,7 +423,188 @@ export default function KnowledgeBasePage() {
             ))}
           </div>
         )}
+
+        {/* ---- Analysis / rulebook ---- */}
+        <div className="mt-10">
+          <h2 className="text-lg font-semibold text-slate-900">{kb?.analysisTitle || 'Rulebook'}</h2>
+          <p className="mt-1 text-sm text-slate-600">{kb?.analysisIntro}</p>
+          <p className="mt-1 text-sm text-slate-500">{kb?.analysisCostHint}</p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={handlePreview}
+              disabled={isPreviewing || documents.length === 0}
+              className="gap-2"
+            >
+              {isPreviewing ? <Spinner size="sm" /> : <ShieldAlert className="h-4 w-4" />}
+              {kb?.previewButton || 'Preview what leaves the platform'}
+            </Button>
+            <Button
+              onClick={handleAnalyze}
+              disabled={isAnalyzing || documents.length === 0}
+              className="gap-2"
+            >
+              {isAnalyzing ? <Spinner size="sm" /> : <BookLock className="h-4 w-4" />}
+              {kb?.analyzeButton || 'Analyze & generate rulebook'}
+            </Button>
+          </div>
+          {isAnalyzing && (
+            <p className="mt-2 text-sm font-medium text-amber-700">{kb?.analyzeRunning}</p>
+          )}
+          {analyzeDone && !isAnalyzing && (
+            <p className="mt-2 text-sm font-medium text-green-700">{kb?.analyzeDone}</p>
+          )}
+
+          {/* Versions */}
+          <h3 className="mt-8 text-base font-semibold text-slate-900">
+            {kb?.versionsTitle || 'Versions'}
+          </h3>
+          {versions.length === 0 ? (
+            <p className="mt-2 text-sm text-slate-500">{kb?.versionsEmpty}</p>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {versions.map((version) => {
+                const diff = versionDiff(version);
+                const questions = openQuestionCount(version);
+                return (
+                  <Card key={version.id} className="p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-slate-900">v{version.version}</span>
+                          <Badge
+                            variant={
+                              version.status === 'active'
+                                ? 'success'
+                                : version.status === 'draft'
+                                  ? 'warning'
+                                  : 'default'
+                            }
+                          >
+                            {version.status === 'active'
+                              ? kb?.statusActive || 'Active'
+                              : version.status === 'draft'
+                                ? kb?.statusDraft || 'Draft'
+                                : kb?.statusArchived || 'Archived'}
+                          </Badge>
+                          {questions > 0 && (
+                            <Badge variant="warning">
+                              {questions} {kb?.openQuestions || 'open questions'}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-sm text-slate-500">
+                          {formatDate(version.created_at)} · {version.model} ·{' '}
+                          {(version.input_tokens ?? 0) + (version.output_tokens ?? 0)} tokens
+                          {diff &&
+                            ` · ${kb?.vsPrevious || 'vs previous'}: +${diff.added} ${kb?.rulesAdded || 'new'}, −${diff.removed} ${kb?.rulesRemoved || 'removed'}`}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setViewVersion(version)}>
+                          {kb?.viewVersion || 'View'}
+                        </Button>
+                        {version.status !== 'active' && (
+                          <Button size="sm" onClick={() => setPendingActivate(version)}>
+                            {kb?.activateVersion || 'Activate'}
+                          </Button>
+                        )}
+                        {version.status === 'draft' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPendingArchive(version)}
+                          >
+                            {kb?.archiveVersion || 'Archive'}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </motion.div>
+
+      {/* "What leaves the platform" preview */}
+      <Modal
+        isOpen={preview !== null}
+        onClose={() => setPreview(null)}
+        title={kb?.previewTitle || 'This is exactly what will be sent to the AI provider'}
+        size="xl"
+      >
+        <div className="max-h-[65vh] space-y-6 overflow-y-auto">
+          {preview?.map((doc) => (
+            <div key={doc.filename}>
+              <p className="font-medium text-slate-900">{doc.filename}</p>
+              <p className="text-sm text-slate-500">
+                {doc.characters.toLocaleString('nl-NL')} tekens
+                {Object.keys(doc.redactions).length > 0 && (
+                  <>
+                    {' '}
+                    · {kb?.previewRedactions || 'Automatically redacted'}:{' '}
+                    {Object.entries(doc.redactions)
+                      .map(([k, v]) => `${k}×${v}`)
+                      .join(', ')}
+                  </>
+                )}
+                {doc.imageCount > 0 &&
+                  ` · ${doc.imageCount} ${doc.imagesIncluded ? kb?.previewImages || 'image(s) included' : kb?.previewImagesOff || 'image(s) NOT included'}`}
+              </p>
+              <pre className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-xs text-slate-700">
+                {doc.text}
+              </pre>
+            </div>
+          ))}
+        </div>
+      </Modal>
+
+      {/* Version viewer */}
+      <Modal
+        isOpen={viewVersion !== null}
+        onClose={() => setViewVersion(null)}
+        title={`${kb?.analysisTitle || 'Rulebook'} v${viewVersion?.version ?? ''} — ${viewVersion?.model ?? ''}`}
+        size="xl"
+      >
+        <pre className="max-h-[70vh] overflow-y-auto whitespace-pre-wrap rounded-lg bg-slate-50 p-4 text-sm text-slate-800">
+          {viewVersion?.rendered_markdown}
+        </pre>
+      </Modal>
+
+      <ConfirmModal
+        isOpen={pendingActivate !== null}
+        onClose={() => setPendingActivate(null)}
+        onConfirm={performActivate}
+        isLoading={isActing}
+        variant="warning"
+        title={(kb?.confirmActivateTitle || 'Activate version {v}?').replace(
+          '{v}',
+          String(pendingActivate?.version ?? ''),
+        )}
+        message={kb?.confirmActivate || ''}
+        confirmText={kb?.activateVersion || 'Activate'}
+        cancelText={t.dashboard?.common?.cancel || 'Cancel'}
+        loadingText={t.dashboard?.common?.loading || 'Loading...'}
+      />
+
+      <ConfirmModal
+        isOpen={pendingArchive !== null}
+        onClose={() => setPendingArchive(null)}
+        onConfirm={performArchive}
+        isLoading={isActing}
+        variant="default"
+        title={kb?.confirmArchiveTitle || 'Archive draft'}
+        message={(kb?.confirmArchive || 'Version {v} will be archived.').replace(
+          '{v}',
+          String(pendingArchive?.version ?? ''),
+        )}
+        confirmText={kb?.archiveVersion || 'Archive'}
+        cancelText={t.dashboard?.common?.cancel || 'Cancel'}
+        loadingText={t.dashboard?.common?.loading || 'Loading...'}
+      />
 
       {/* Per-document analysis settings */}
       <Modal

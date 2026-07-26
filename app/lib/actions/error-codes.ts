@@ -29,4 +29,8 @@ export type ActionErrorCode =
   | 'not_authorised'
   /** A required environment variable is missing/empty. Retrying cannot help. */
   | 'server_misconfigured'
+  /** The AI provider failed, declined, or produced unusable output. */
+  | 'ai_unavailable'
+  /** A knowledge-base analysis is already in flight. */
+  | 'kb_analysis_running'
   | 'unknown';
