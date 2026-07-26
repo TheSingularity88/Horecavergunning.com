@@ -13,9 +13,11 @@ import { Button } from '@/app/components/ui/Button';
 import { Badge } from '@/app/components/ui/Badge';
 import { Spinner } from '@/app/components/ui/Spinner';
 import type { PermitType } from '@/app/lib/types/database';
+import { useToast } from '@/app/components/ui/Toast';
 
 export default function PermitTypesPage() {
   const router = useRouter();
+  const { showError } = useToast();
   const { isAdmin } = useAuth();
   const [permitTypes, setPermitTypes] = useState<PermitType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +47,7 @@ export default function PermitTypesPage() {
   const handleToggle = async (pt: PermitType) => {
     const result = await setPermitTypeActive(pt.id, !pt.is_active);
     if (!result.success) {
-      alert(result.error);
+      showError(result.error);
       return;
     }
     setPermitTypes((prev) =>

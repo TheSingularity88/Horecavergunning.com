@@ -1,6 +1,8 @@
 import 'server-only';
 
 import { createClient } from '@/app/lib/supabase/server';
+import { ConfigurationError } from '@/app/lib/errors';
+import type { ActionErrorCode } from '@/app/lib/actions/error-codes';
 import type { Profile, UserRole } from '@/app/lib/types/database';
 import type { User } from '@supabase/supabase-js';
 
@@ -76,16 +78,44 @@ export async function requireClient(): Promise<{ user: User; clientId: string }>
   return { user, clientId: client.id };
 }
 
-/** Standard shape for server-action results consumed by client components. */
+/**
+ * Standard shape for server-action results consumed by client components.
+ *
+ * `code` is optional so actions can adopt it one at a time; where it is
+ * present the caller can translate the failure, where it is absent the English
+ * `error` is still shown. See lib/actions/error-codes.ts.
+ */
 export type ActionResult<T = undefined> =
   | { success: true; data?: T }
-  | { success: false; error: string };
+  | { success: false; error: string; code?: ActionErrorCode };
 
 /** Map any thrown error to a safe ActionResult (never leak internals). */
-export function toActionError(err: unknown): { success: false; error: string } {
+export function toActionError(err: unknown): {
+  success: false;
+  error: string;
+  code?: ActionErrorCode;
+} {
   if (err instanceof AuthError) {
-    return { success: false, error: err.message };
+    return { success: false, error: err.message, code: 'not_authorised' };
+  }
+  // A missing environment variable is not a transient fault. "Please try
+  // again" would send the user into a loop that cannot succeed, so this says
+  // plainly that it is a setup problem on our side. The specific variable name
+  // stays in the server log — never in the response.
+  if (err instanceof ConfigurationError) {
+    console.error('[action] configuration error:', err.message);
+    return {
+      success: false,
+      error:
+        'The server is not configured correctly, so this could not be saved. ' +
+        'This is a problem on our side — retrying will not help.',
+      code: 'server_misconfigured',
+    };
   }
   console.error('[action]', err);
-  return { success: false, error: 'Something went wrong. Please try again.' };
+  return {
+    success: false,
+    error: 'Something went wrong. Please try again.',
+    code: 'unknown',
+  };
 }

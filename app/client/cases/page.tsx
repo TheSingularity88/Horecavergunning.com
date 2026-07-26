@@ -1,5 +1,5 @@
 'use client';
-import { caseStatusLabel, caseTypeLabel, requestStatusLabel } from '@/app/lib/status-labels';
+import { caseStatusLabel, caseTypeLabel } from '@/app/lib/status-labels';
 
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';

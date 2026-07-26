@@ -18,9 +18,11 @@ import { Table } from '@/app/components/ui/Table';
 import { Modal } from '@/app/components/ui/Modal';
 import { Spinner } from '@/app/components/ui/Spinner';
 import type { Client, Profile } from '@/app/lib/types/database';
+import { useToast } from '@/app/components/ui/Toast';
 
 export default function UsersPage() {
   const router = useRouter();
+  const { showError } = useToast();
   const { isAdmin } = useAuth();
   const [users, setUsers] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -138,7 +140,7 @@ export default function UsersPage() {
   const handleToggleActive = async (userId: string, isActive: boolean) => {
     const result = await setUserActive({ userId, isActive: !isActive });
     if (!result.success) {
-      alert(result.error);
+      showError(result.error);
       return;
     }
     setUsers((prev) =>
@@ -152,7 +154,7 @@ export default function UsersPage() {
       role: newRole as 'employee' | 'admin',
     });
     if (!result.success) {
-      alert(result.error);
+      showError(result.error);
       return;
     }
     setUsers((prev) =>

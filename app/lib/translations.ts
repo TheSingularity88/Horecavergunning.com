@@ -339,6 +339,8 @@ export const translations = {
         edit: "Edit",
         delete: "Delete",
         loading: "Loading...",
+        redirecting: "Redirecting...",
+        close: "Close",
         dangerZone: "Danger Zone"
       },
       clients: {
@@ -397,6 +399,24 @@ export const translations = {
         invoices: "Invoices",
         requests: "Requests",
         profile: "My Profile"
+      },
+      // Failure messages shown as toasts. Keys match ActionErrorCode, plus a
+      // few raised purely client-side (download/upload/network).
+      errors: {
+        invoice_not_found: "We could not find that invoice.",
+        invoice_already_paid: "This invoice has already been paid.",
+        payments_unavailable: "Online payment is temporarily unavailable. Please contact us and we will help you.",
+        invoice_no_amount: "There is nothing to pay on this invoice.",
+        request_already_reviewed: "This request has already been reviewed.",
+        request_not_found: "We could not find that request.",
+        request_submit_failed: "Your request could not be submitted. Please try again.",
+        not_authorised: "You do not have access to this. Please sign in again.",
+        server_misconfigured: "Something is wrong on our side, so this could not be saved. Retrying will not help — please contact us and we will sort it out.",
+        unknown: "Something went wrong. Please try again.",
+        network: "Could not reach the server. Please check your connection and try again.",
+        downloadFailed: "The document could not be downloaded. Please try again.",
+        profileSaveFailed: "Your details could not be saved. Please try again.",
+        paymentUnavailable: "This invoice cannot be paid online right now."
       },
       invoices: {
         title: "Invoices",
@@ -521,6 +541,7 @@ export const translations = {
         maxSize: "Maximum file size: 10MB",
         uploading: "Uploading...",
         confirmDelete: "Are you sure you want to delete this document?",
+        confirmDeleteTitle: "Delete document",
         deleteNotAllowed: "This document was added by our team, so it cannot be deleted here.",
         deleteFailed: "Could not delete the document. Please try again.",
         filteredByCase: "Showing documents for: {case}",
@@ -944,6 +965,8 @@ export const translations = {
         edit: "Bewerken",
         delete: "Verwijderen",
         loading: "Laden...",
+        redirecting: "Doorsturen...",
+        close: "Sluiten",
         dangerZone: "Gevarenzone"
       },
       clients: {
@@ -1002,6 +1025,24 @@ export const translations = {
         invoices: "Facturen",
         requests: "Aanvragen",
         profile: "Mijn Profiel"
+      },
+      // Foutmeldingen die als toast verschijnen. De sleutels komen overeen met
+      // ActionErrorCode, aangevuld met meldingen die puur client-side ontstaan.
+      errors: {
+        invoice_not_found: "We konden die factuur niet vinden.",
+        invoice_already_paid: "Deze factuur is al betaald.",
+        payments_unavailable: "Online betalen is tijdelijk niet beschikbaar. Neem contact met ons op, dan helpen wij u verder.",
+        invoice_no_amount: "Op deze factuur staat niets te betalen.",
+        request_already_reviewed: "Deze aanvraag is al beoordeeld.",
+        request_not_found: "We konden die aanvraag niet vinden.",
+        request_submit_failed: "Uw aanvraag kon niet worden verzonden. Probeer het opnieuw.",
+        not_authorised: "U heeft hier geen toegang toe. Log opnieuw in.",
+        server_misconfigured: "Er is iets mis aan onze kant, waardoor dit niet kon worden opgeslagen. Opnieuw proberen helpt niet — neem contact met ons op, dan lossen wij het op.",
+        unknown: "Er ging iets mis. Probeer het opnieuw.",
+        network: "We konden de server niet bereiken. Controleer uw internetverbinding en probeer het opnieuw.",
+        downloadFailed: "Het document kon niet worden gedownload. Probeer het opnieuw.",
+        profileSaveFailed: "Uw gegevens konden niet worden opgeslagen. Probeer het opnieuw.",
+        paymentUnavailable: "Deze factuur kan op dit moment niet online worden betaald."
       },
       invoices: {
         title: "Facturen",
@@ -1126,6 +1167,7 @@ export const translations = {
         maxSize: "Maximale bestandsgrootte: 10MB",
         uploading: "Uploaden...",
         confirmDelete: "Weet u zeker dat u dit document wilt verwijderen?",
+        confirmDeleteTitle: "Document verwijderen",
         deleteNotAllowed: "Dit document is door ons team toegevoegd en kan hier niet worden verwijderd.",
         deleteFailed: "Het document kon niet worden verwijderd. Probeer het opnieuw.",
         filteredByCase: "Documenten voor: {case}",

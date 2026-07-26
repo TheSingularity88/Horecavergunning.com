@@ -1,5 +1,7 @@
 'use client';
 import { invoiceStatusLabel } from '@/app/lib/status-labels';
+import { actionErrorMessage, networkErrorMessage } from '@/app/lib/action-messages';
+import { useToast } from '@/app/components/ui/Toast';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -27,6 +29,7 @@ export default function InvoiceDetailPage() {
   const invoiceId = params.id as string;
   const { clientData } = useAuth();
   const { t } = useLanguage();
+  const { showError } = useToast();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [paying, setPaying] = useState(false);
@@ -59,12 +62,18 @@ export default function InvoiceDetailPage() {
         window.location.assign(result.data.checkoutUrl);
         return; // keep the spinner while the browser navigates away
       }
-      alert(result.success ? 'Payment is not available.' : result.error);
+      // Succeeded but gave us no checkout url: Mollie accepted nothing to pay.
+      showError(
+        result.success
+          ? t.clientPortal?.errors?.paymentUnavailable ||
+              'This invoice cannot be paid online right now.'
+          : actionErrorMessage(result, t),
+      );
     } catch {
       // Server-action calls REJECT (not resolve) on a dropped connection or
       // after a redeploy invalidates the action id — without this the button
       // would stay disabled on its spinner until a full page reload.
-      alert('Could not start the payment. Please check your connection and try again.');
+      showError(networkErrorMessage(t));
     }
     setPaying(false);
   };

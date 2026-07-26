@@ -29,7 +29,8 @@ import { Button } from '@/app/components/ui/Button';
 import { Input } from '@/app/components/ui/Input';
 import { Select } from '@/app/components/ui/Select';
 import { Textarea } from '@/app/components/ui/Textarea';
-import { Modal } from '@/app/components/ui/Modal';
+import { Modal, ConfirmModal } from '@/app/components/ui/Modal';
+import { useToast } from '@/app/components/ui/Toast';
 import { Spinner } from '@/app/components/ui/Spinner';
 import { dashboardRoutes } from '@/app/lib/routes/dashboard';
 import type { Document, Case, DocumentCategory } from '@/app/lib/types/database';
@@ -50,12 +51,15 @@ export default function ClientDocumentsPage() {
 
   const { clientData, user } = useAuth();
   const { t } = useLanguage();
+  const { showError } = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [cases, setCases] = useState<Case[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Document | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [uploadForm, setUploadForm] = useState({
     file: null as File | null,
     case_id: preselectedCaseId || '',
@@ -259,14 +263,21 @@ export default function ClientDocumentsPage() {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading document:', error);
-      alert('Failed to download document.');
+      showError(
+        t.clientPortal?.errors?.downloadFailed ||
+          'The document could not be downloaded. Please try again.',
+      );
     }
   };
 
-  const handleDelete = async (doc: Document) => {
-    if (!confirm(t.clientPortal?.documents?.confirmDelete || 'Are you sure you want to delete this document?')) {
-      return;
-    }
+  /**
+   * Deleting is two steps so the confirmation can be a real dialog instead of
+   * window.confirm(): the button arms `pendingDelete`, the dialog performs it.
+   */
+  const performDelete = async () => {
+    const doc = pendingDelete;
+    if (!doc) return;
+    setIsDeleting(true);
 
     try {
       // Delete the ROW FIRST. It is the RLS-checked, authoritative step.
@@ -285,7 +296,7 @@ export default function ClientDocumentsPage() {
       if (error) throw error;
       if (!count) {
         // RLS silently matched zero rows: not ours to delete.
-        alert(
+        showError(
           t.clientPortal?.documents?.deleteNotAllowed ||
             'This document was added by our team, so it cannot be deleted here.'
         );
@@ -304,7 +315,12 @@ export default function ClientDocumentsPage() {
       setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
     } catch (error) {
       console.error('Error deleting document:', error);
-      alert(t.clientPortal?.documents?.deleteFailed || 'Failed to delete document.');
+      showError(t.clientPortal?.documents?.deleteFailed || 'Failed to delete document.');
+    } finally {
+      // Always close: leaving the dialog open on failure would hide the toast
+      // that explains why nothing happened.
+      setIsDeleting(false);
+      setPendingDelete(null);
     }
   };
 
@@ -438,7 +454,7 @@ export default function ClientDocumentsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDelete(doc)}
+                      onClick={() => setPendingDelete(doc)}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -596,6 +612,22 @@ export default function ClientDocumentsPage() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        isOpen={pendingDelete !== null}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={performDelete}
+        isLoading={isDeleting}
+        variant="danger"
+        title={t.clientPortal?.documents?.confirmDeleteTitle || 'Delete document'}
+        message={
+          t.clientPortal?.documents?.confirmDelete ||
+          'Are you sure you want to delete this document?'
+        }
+        confirmText={t.dashboard?.common?.delete || 'Delete'}
+        cancelText={t.dashboard?.common?.cancel || 'Cancel'}
+        loadingText={t.dashboard?.common?.loading || 'Loading...'}
+      />
     </DashboardPage>
   );
 }

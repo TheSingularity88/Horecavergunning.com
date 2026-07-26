@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { ConfigurationError } from '@/app/lib/errors';
 import type { Database } from '@/app/lib/types/database';
 
 /**
@@ -12,9 +13,18 @@ export function createAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+  // Kept as a single `!url || !serviceRoleKey` guard so TypeScript narrows both
+  // to string below; the message is built inside it. Note this treats
+  // present-but-empty as missing — `SUPABASE_SERVICE_ROLE_KEY=` with nothing
+  // after it reads as defined, so checking the file for the key is not enough.
   if (!url || !serviceRoleKey) {
-    throw new Error(
-      'Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variable'
+    const missing = [
+      !url && 'NEXT_PUBLIC_SUPABASE_URL',
+      !serviceRoleKey && 'SUPABASE_SERVICE_ROLE_KEY',
+    ].filter(Boolean);
+    throw new ConfigurationError(
+      `${missing.join(' and ')} ${missing.length > 1 ? 'are' : 'is'} missing or ` +
+        'empty. Server actions that write to the database cannot run without it.'
     );
   }
 

@@ -11,6 +11,7 @@ import { Select } from '@/app/components/ui/Select';
 import { Badge } from '@/app/components/ui/Badge';
 import { Spinner } from '@/app/components/ui/Spinner';
 import type { Lead, LeadStatus } from '@/app/lib/types/database';
+import { useToast } from '@/app/components/ui/Toast';
 
 const STATUS_OPTIONS = [
   { value: 'new', label: 'New' },
@@ -33,6 +34,7 @@ function statusVariant(status: LeadStatus) {
 }
 
 export default function LeadsPage() {
+  const { showError } = useToast();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sourceFilter, setSourceFilter] = useState('');
@@ -55,7 +57,7 @@ export default function LeadsPage() {
   const handleStatus = async (leadId: string, status: LeadStatus) => {
     const result = await updateLeadStatus({ leadId, status });
     if (!result.success) {
-      alert(result.error);
+      showError(result.error);
       return;
     }
     setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status } : l)));
