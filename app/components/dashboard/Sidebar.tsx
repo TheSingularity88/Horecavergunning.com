@@ -18,6 +18,7 @@ import {
   UserPlus,
   ChevronLeft,
   Menu,
+  BookLock,
 } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
@@ -206,6 +207,11 @@ export function Sidebar() {
       name: t.dashboard?.nav?.permitTypes || 'Permit Types',
       href: dashboardRoutes.employee.admin.permitTypes,
       icon: Tag,
+    },
+    {
+      name: t.dashboard?.nav?.knowledgeBase || 'Knowledge base',
+      href: dashboardRoutes.employee.admin.knowledgeBase,
+      icon: BookLock,
     },
     {
       name: t.dashboard?.nav?.settings || 'Settings',

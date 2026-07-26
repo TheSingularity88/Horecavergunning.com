@@ -13,6 +13,7 @@ export const dashboardRoutes = {
     admin: {
       users: '/dashboard/admin/users',
       permitTypes: '/dashboard/admin/permit-types',
+      knowledgeBase: '/dashboard/admin/knowledge-base',
       settings: '/dashboard/admin/settings',
       activity: '/dashboard/admin/activity',
     },

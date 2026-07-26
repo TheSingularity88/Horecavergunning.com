@@ -473,6 +473,137 @@ export type Database = {
           },
         ]
       }
+      kb_documents: {
+        Row: {
+          contains_pii: boolean
+          created_at: string
+          file_size: number
+          filename: string
+          id: string
+          include_images: boolean
+          mime_type: string
+          notes: string | null
+          redaction_terms: string[]
+          sha256: string
+          storage_path: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          contains_pii?: boolean
+          created_at?: string
+          file_size: number
+          filename: string
+          id?: string
+          include_images?: boolean
+          mime_type: string
+          notes?: string | null
+          redaction_terms?: string[]
+          sha256: string
+          storage_path: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          contains_pii?: boolean
+          created_at?: string
+          file_size?: number
+          filename?: string
+          id?: string
+          include_images?: boolean
+          mime_type?: string
+          notes?: string | null
+          redaction_terms?: string[]
+          sha256?: string
+          storage_path?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_versions: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          input_tokens: number | null
+          latency_ms: number | null
+          model: string
+          output_tokens: number | null
+          prompt_version: string
+          provider: string
+          redactions_applied: Json | null
+          rendered_markdown: string
+          rules: Json
+          source_documents: Json
+          status: string
+          version: number
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model: string
+          output_tokens?: number | null
+          prompt_version: string
+          provider: string
+          redactions_applied?: Json | null
+          rendered_markdown: string
+          rules: Json
+          source_documents: Json
+          status?: string
+          version: number
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model?: string
+          output_tokens?: number | null
+          prompt_version?: string
+          provider?: string
+          redactions_applied?: Json | null
+          rendered_markdown?: string
+          rules?: Json
+          source_documents?: Json
+          status?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_versions_activated_by_fkey"
+            columns: ["activated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kb_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           company_name: string | null
@@ -833,6 +964,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_kb_version: {
+        Args: { p_admin: string; p_id: string }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: { p_key: string; p_max: number; p_window: string }
         Returns: boolean
