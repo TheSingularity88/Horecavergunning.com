@@ -2,6 +2,7 @@ import { MetadataRoute } from "next";
 import { blogPosts } from "./lib/blog-data";
 import { SITE_URL } from "./lib/site";
 import { PERMIT_SLUGS, PERMIT_SLUGS_EN } from "./lib/permit-content";
+import { STARTEN_SLUG } from "./lib/starten-content";
 import { createPublicClient } from "./lib/supabase/public";
 
 const toIsoDate = (value: string) => {
@@ -85,6 +86,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     },
     {
+      url: `${base}/en/${STARTEN_SLUG}`,
+      lastModified: CONTENT_LAST_UPDATED,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    },
+    {
       url: `${base}/en/blog`,
       lastModified: newestPostDate,
       changeFrequency: "weekly" as const,
@@ -123,6 +130,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     ...permitEntries,
+    {
+      url: `${base}/${STARTEN_SLUG}`,
+      lastModified: CONTENT_LAST_UPDATED,
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
     {
       url: `${base}/contact`,
       lastModified: CONTENT_LAST_UPDATED,

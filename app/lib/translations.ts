@@ -24,7 +24,7 @@ export const translations = {
       ai_check: "AI-assisted checks"
     },
     social_proof: {
-      trusted_by: "Trusted by 50+ venues in Amsterdam, Rotterdam, and Utrecht"
+      trusted_by: "Trusted by hospitality operators in Amsterdam"
     },
     problem_solution: {
       section_title: "Why hospitality entrepreneurs choose us",
@@ -601,7 +601,7 @@ export const translations = {
       ai_check: "AI-gecontroleerd"
     },
     social_proof: {
-      trusted_by: "Vertrouwd door 50+ zaken in Amsterdam, Rotterdam en Utrecht"
+      trusted_by: "Vertrouwd door horecaondernemers in Amsterdam"
     },
     problem_solution: {
       section_title: "Waarom horecaondernemers voor ons kiezen",
