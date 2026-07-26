@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "./context/LanguageContext";
-import Script from 'next/script';
+import { Analytics } from "./components/Analytics";
+import { CookieConsent } from "./components/CookieConsent";
 import { SITE_NAME, SITE_URL } from "./lib/site";
 
 const geistSans = Geist({
@@ -65,27 +66,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="nl">
-      <head>
-        <Script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-V9T4HXT3C0"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-
-            gtag('config', 'G-V9T4HXT3C0');
-          `}
-        </Script>
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <LanguageProvider>
           {children}
+          {/* Analytics mounts only after consent; the banner is what grants it.
+              Previously gtag sat in <head> and ran unconditionally, so _ga and
+              _ga_<id> were written on first paint with nothing asked. */}
+          <Analytics />
+          <CookieConsent />
         </LanguageProvider>
       </body>
     </html>

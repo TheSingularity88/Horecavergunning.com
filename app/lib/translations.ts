@@ -163,6 +163,15 @@ export const translations = {
       rights: "© 2026 HorecaVergunning BV. All rights reserved."
     },
     whatsapp: "WhatsApp Us",
+    cookies: {
+      title: "Cookies on this website",
+      body: "We use cookies that are necessary for the site to work. We would also like to place analytics cookies to see how the site is used — only if you agree.",
+      readMore: "Read our cookie statement",
+      accept: "Accept analytics",
+      refuse: "Refuse",
+      necessaryNote: "Necessary cookies are always placed. Without them the site cannot work. You can change your choice at any time.",
+      managePreferences: "Cookie preferences",
+    },
     blog: {
       title: "Hospitality Knowledge & News",
       subtitle: "Stay up to date with the latest legislation, trends, and tips for the hospitality industry.",
@@ -709,6 +718,15 @@ export const translations = {
       rights: "© 2026 HorecaVergunning BV. Alle rechten voorbehouden."
     },
     whatsapp: "App Ons",
+    cookies: {
+      title: "Cookies op deze website",
+      body: "Wij gebruiken cookies die nodig zijn om de site te laten werken. Daarnaast willen wij graag analytische cookies plaatsen om te zien hoe de site gebruikt wordt — alleen als u daarmee akkoord gaat.",
+      readMore: "Lees onze cookieverklaring",
+      accept: "Analytische cookies accepteren",
+      refuse: "Weigeren",
+      necessaryNote: "Noodzakelijke cookies worden altijd geplaatst. Zonder deze cookies werkt de site niet. U kunt uw keuze op elk moment wijzigen.",
+      managePreferences: "Cookievoorkeuren",
+    },
     blog: {
       title: "HorecaKennis & Nieuws",
       subtitle: "Blijf op de hoogte van de laatste wetgeving, trends en tips voor de horeca.",
