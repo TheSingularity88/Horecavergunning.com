@@ -12,13 +12,12 @@ import { Badge } from '@/app/components/ui/Badge';
 import { Spinner } from '@/app/components/ui/Spinner';
 import type { Lead, LeadStatus } from '@/app/lib/types/database';
 import { useToast } from '@/app/components/ui/Toast';
+import { useLanguage } from '@/app/context/LanguageContext';
+import { enumOptions, leadSourceLabel, leadStatusLabel } from '@/app/lib/dashboard-labels';
 
-const STATUS_OPTIONS = [
-  { value: 'new', label: 'New' },
-  { value: 'contacted', label: 'Contacted' },
-  { value: 'converted', label: 'Converted' },
-  { value: 'closed', label: 'Closed' },
-];
+/** Order only — labels come from the shared enum map. */
+const LEAD_STATUS_ORDER = ['new', 'contacted', 'converted', 'closed'] as const;
+const LEAD_SOURCE_ORDER = ['quiz', 'contact', 'newsletter'] as const;
 
 function statusVariant(status: LeadStatus) {
   switch (status) {
@@ -35,11 +34,31 @@ function statusVariant(status: LeadStatus) {
 
 export default function LeadsPage() {
   const { showError } = useToast();
+  const { t } = useLanguage();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sourceFilter, setSourceFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const supabase = useMemo(() => createClient(), []);
+
+  const sourceOptions = useMemo(
+    () =>
+      enumOptions('leadSource', LEAD_SOURCE_ORDER, t, t.dashboard?.leads?.allSources || 'All sources'),
+    [t],
+  );
+  const statusFilterOptions = useMemo(
+    () =>
+      enumOptions(
+        'leadStatus',
+        LEAD_STATUS_ORDER,
+        t,
+        t.dashboard?.common?.allStatuses || 'All statuses',
+      ),
+    [t],
+  );
+  // Same list without the "all" entry: this one sets a lead's status, so a
+  // blank option would offer to clear it.
+  const statusOptions = useMemo(() => enumOptions('leadStatus', LEAD_STATUS_ORDER, t), [t]);
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -73,24 +92,19 @@ export default function LeadsPage() {
     });
 
   return (
-    <DashboardPage title="Leads">
+    <DashboardPage title={t.dashboard?.leads?.title || 'Leads'}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <Select
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
-            options={[
-              { value: '', label: 'All sources' },
-              { value: 'quiz', label: 'Quiz' },
-              { value: 'contact', label: 'Contact form' },
-              { value: 'newsletter', label: 'Newsletter' },
-            ]}
+            options={sourceOptions}
             className="w-48"
           />
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            options={[{ value: '', label: 'All statuses' }, ...STATUS_OPTIONS]}
+            options={statusFilterOptions}
             className="w-48"
           />
         </div>
@@ -100,7 +114,7 @@ export default function LeadsPage() {
             <Spinner size="lg" />
           </div>
         ) : leads.length === 0 ? (
-          <Card className="p-8 text-center text-slate-500">No leads yet.</Card>
+          <Card className="p-8 text-center text-slate-500">{t.dashboard?.leads?.empty || 'No leads yet.'}</Card>
         ) : (
           <div className="space-y-3">
             {leads.map((lead, i) => (
@@ -117,10 +131,10 @@ export default function LeadsPage() {
                         <span className="font-medium text-slate-900">
                           {lead.name || lead.email}
                         </span>
-                        <Badge variant="default" className="capitalize">
-                          {lead.source}
+                        <Badge variant="default">{leadSourceLabel(lead.source, t)}</Badge>
+                        <Badge variant={statusVariant(lead.status)}>
+                          {leadStatusLabel(lead.status, t)}
                         </Badge>
-                        <Badge variant={statusVariant(lead.status)}>{lead.status}</Badge>
                         <span className="text-xs text-slate-400 ml-auto">
                           {formatDate(lead.created_at)}
                         </span>
@@ -150,7 +164,7 @@ export default function LeadsPage() {
                     <Select
                       value={lead.status}
                       onChange={(e) => handleStatus(lead.id, e.target.value as LeadStatus)}
-                      options={STATUS_OPTIONS}
+                      options={statusOptions}
                       className="w-40 flex-shrink-0"
                     />
                   </div>

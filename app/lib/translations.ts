@@ -341,7 +341,26 @@ export const translations = {
         loading: "Loading...",
         redirecting: "Redirecting...",
         close: "Close",
-        dangerZone: "Danger Zone"
+        dangerZone: "Danger zone",
+        actions: "Actions",
+        description: "Description",
+        unassigned: "Unassigned",
+        name: "Name",
+        saveChanges: "Save changes",
+        saved: "Saved!",
+        view: "View",
+        upload: "Upload",
+        download: "Download",
+        backTo: "Back to {what}",
+        titleField: "Title",
+        category: "Category",
+        dueDate: "Due date",
+        assignedTo: "Assigned to",
+        relatedCase: "Related case",
+        relatedClient: "Related client",
+        fullName: "Full name",
+        role: "Role",
+        notFound: "Not found"
       },
       clients: {
         companyName: "Company",
@@ -359,6 +378,7 @@ export const translations = {
         newClient: "New Client",
         clientDetails: "Client Details",
         noClients: "No clients found",
+        notFound: "Client not found",
         deleteClient: "Delete Client",
         deleteConfirm: "Are you sure you want to delete this client? This action cannot be undone.",
         statusActive: "Active",
@@ -377,18 +397,225 @@ export const translations = {
         addCase: "Add Case",
         newCase: "New Case",
         caseDetails: "Case Details",
-        noCases: "No cases found"
+        noCases: "No cases found",
+        noCasesYet: "No cases yet",
+        backToCases: "Back to cases",
+        notFound: "Case not found",
+        noTasksYet: "No tasks yet",
+        noDocumentsYet: "No documents yet",
+        deleteCase: "Delete case",
+        governmentReference: "Government reference",
+        billing: "Billing"
       },
       tasks: {
         title: "Tasks",
         addTask: "Add Task",
         newTask: "New Task",
-        noTasks: "No tasks found"
+        noTasks: "No tasks found",
+        notFound: "Task not found",
+        taskDetails: "Task details",
+        deleteTask: "Delete task",
+        backToTasks: "Back to tasks",
+        search: "Search tasks...",
+        noCaseStandalone: "No case (standalone task)",
+        titlePlaceholder: "What needs to be done?",
+        descriptionPlaceholder: "Additional details..."
       },
       documents: {
         title: "Documents",
         upload: "Upload",
-        noDocuments: "No documents found"
+        noDocuments: "No documents found",
+        allCategories: "All categories",
+        noCase: "No case",
+        noClient: "No client",
+        search: "Search documents...",
+        uploadDocument: "Upload document",
+        deleteDocument: "Delete document"
+      },
+      // Database enum values -> readable labels. Keys are the exact stored
+      // value, so a status added later falls back to the de-underscored enum
+      // rather than rendering blank. See lib/dashboard-labels.ts.
+      enums: {
+        caseType: {
+          exploitatievergunning: "Operating permit",
+          alcoholvergunning: "Alcohol licence",
+          terrasvergunning: "Terrace permit",
+          bibob: "Bibob screening",
+          overname: "Business takeover",
+          verbouwing: "Renovation",
+          other: "Other"
+        },
+        caseStatus: {
+          intake: "Intake",
+          in_progress: "In progress",
+          waiting_client: "Waiting for client",
+          waiting_government: "Waiting for the municipality",
+          review: "Final review",
+          approved: "Approved",
+          rejected: "Rejected",
+          completed: "Completed",
+          cancelled: "Cancelled"
+        },
+        taskStatus: {
+          pending: "Pending",
+          in_progress: "In progress",
+          completed: "Completed",
+          cancelled: "Cancelled"
+        },
+        priority: {
+          low: "Low",
+          normal: "Normal",
+          high: "High",
+          urgent: "Urgent"
+        },
+        clientStatus: {
+          active: "Active",
+          inactive: "Inactive",
+          pending: "Pending"
+        },
+        requestStatus: {
+          pending: "Pending",
+          reviewing: "Reviewing",
+          approved: "Approved",
+          converted: "Converted",
+          rejected: "Rejected"
+        },
+        urgency: {
+          normal: "Normal",
+          urgent: "Urgent"
+        },
+        leadStatus: {
+          new: "New",
+          contacted: "Contacted",
+          converted: "Converted",
+          closed: "Closed"
+        },
+        leadSource: {
+          quiz: "Quiz",
+          contact: "Contact form",
+          newsletter: "Newsletter"
+        },
+        role: {
+          employee: "Employee",
+          admin: "Admin"
+        },
+        docCategory: {
+          contract: "Contract",
+          permit: "Permit",
+          identification: "Identification",
+          financial: "Financial",
+          correspondence: "Correspondence",
+          bibob: "Bibob",
+          general: "General"
+        },
+        entityType: {
+          cases: "Cases",
+          clients: "Clients",
+          tasks: "Tasks",
+          documents: "Documents",
+          client_requests: "Requests",
+          profiles: "Users",
+          invoices: "Invoices",
+          leads: "Leads",
+          permit_types: "Permit types",
+          system_settings: "Settings"
+        }
+      },
+      requests: {
+        title: "Requests",
+        search: "Search requests...",
+        empty: "No requests found",
+        colRequest: "Request",
+        colClient: "Client",
+        colUrgency: "Urgency",
+        colSubmitted: "Submitted",
+        colActions: "Actions",
+        approve: "Approve",
+        reject: "Reject",
+        reopen: "Reopen",
+        reopenHint: "Put this request back in the queue",
+        viewCase: "View case",
+        confirmRejectTitle: "Reject this request?",
+        confirmRejectBody: "\"{title}\" will show as rejected to {client} in their portal. You can reopen it afterwards if this was a mistake.",
+        rejecting: "Rejecting..."
+      },
+      leads: {
+        title: "Leads",
+        empty: "No leads yet.",
+        allSources: "All sources"
+      },
+      users: {
+        title: "User management",
+        tabUsers: "Users",
+        tabClients: "Clients",
+        searchUsers: "Search users...",
+        searchClients: "Search clients...",
+        noUsers: "No users found",
+        noClients: "No clients found",
+        allRoles: "All roles",
+        colUser: "User",
+        colRole: "Role",
+        colCompany: "Company",
+        colContact: "Contact",
+        createUser: "Create new user",
+        addUser: "Add user"
+      },
+      settings: {
+        title: "System settings",
+        tabGeneral: "General",
+        tabContact: "Public contact details",
+        tabSocial: "Social proof",
+        descriptions: {
+          company_name: "Shown in emails and documents.",
+          notification_email: "Where system notifications are sent.",
+          default_deadline_days: "Default number of days for case deadlines.",
+          public_contact_email: "Shown in the website footer and contact page. Leave empty to keep the placeholder.",
+          public_contact_phone: "Shown in the footer and contact page (as a tel: link).",
+          public_contact_address: "Shown in the footer. Filling this in also enables LocalBusiness data for Google.",
+          public_whatsapp_number: "For the floating WhatsApp button, e.g. 31612345678.",
+          public_socialproof_mode: "Show trust facts, or a row of client company names.",
+          public_socialproof_companies: "One per line. Only shown when the style above is set to client company names. Only add clients who gave permission."
+        },
+        companyName: "Company name",
+        notificationEmail: "Notification email",
+        defaultDeadline: "Default deadline (days)",
+        publicEmail: "Public contact email",
+        publicPhone: "Public phone number",
+        publicAddress: "Public address",
+        whatsapp: "WhatsApp number (digits only)",
+        socialProofStyle: "Social proof style",
+        trustFacts: "Trust facts (recommended)",
+        clientCompanyNames: "Client company names"
+      },
+      permitTypes: {
+        title: "Permit types & pricing",
+        intro: "Edit the fee, names and required documents for each permit type. Fees are shown on the public pricing page.",
+        addType: "Add type",
+        active: "Active",
+        hidden: "Hidden",
+        hide: "Hide",
+        show: "Show",
+        customFee: "Custom / on request",
+        slug: "Slug (internal id, lowercase)",
+        descriptionNl: "Description (NL)",
+        descriptionEn: "Description (EN)",
+        fee: "Fee (€, one-time)",
+        sortOrder: "Sort order",
+        backToTypes: "Back to permit types",
+        details: "Details",
+        activePublic: "Active (shown publicly)",
+        requiredDocs: "Required documents (checklist)"
+      },
+      activity: {
+        title: "Activity log",
+        allUsers: "All users",
+        empty: "No activity found"
+      },
+      profile: {
+        title: "Profile information",
+        changePassword: "Change password",
+        newPasswordPlaceholder: "Enter new password",
+        confirmPasswordPlaceholder: "Confirm new password"
       }
     },
     clientPortal: {
@@ -556,6 +783,9 @@ export const translations = {
           contract: "Contract",
           permit: "Permit",
           correspondence: "Correspondence",
+          // Not offered in the portal's upload picker, but staff can file a
+          // document under it, so the customer must still see a label.
+          bibob: "Bibob",
           general: "General"
         }
       },
@@ -967,7 +1197,26 @@ export const translations = {
         loading: "Laden...",
         redirecting: "Doorsturen...",
         close: "Sluiten",
-        dangerZone: "Gevarenzone"
+        dangerZone: "Gevarenzone",
+        actions: "Acties",
+        description: "Omschrijving",
+        unassigned: "Niet toegewezen",
+        name: "Naam",
+        saveChanges: "Wijzigingen opslaan",
+        saved: "Opgeslagen!",
+        view: "Bekijken",
+        upload: "Uploaden",
+        download: "Downloaden",
+        backTo: "Terug naar {what}",
+        titleField: "Titel",
+        category: "Categorie",
+        dueDate: "Uiterste datum",
+        assignedTo: "Toegewezen aan",
+        relatedCase: "Gerelateerde zaak",
+        relatedClient: "Gerelateerde klant",
+        fullName: "Volledige naam",
+        role: "Rol",
+        notFound: "Niet gevonden"
       },
       clients: {
         companyName: "Bedrijf",
@@ -985,6 +1234,7 @@ export const translations = {
         newClient: "Nieuwe Klant",
         clientDetails: "Klantgegevens",
         noClients: "Geen klanten gevonden",
+        notFound: "Klant niet gevonden",
         deleteClient: "Klant Verwijderen",
         deleteConfirm: "Weet u zeker dat u deze klant wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
         statusActive: "Actief",
@@ -1003,18 +1253,225 @@ export const translations = {
         addCase: "Zaak Toevoegen",
         newCase: "Nieuwe Zaak",
         caseDetails: "Zaakgegevens",
-        noCases: "Geen zaken gevonden"
+        noCases: "Geen zaken gevonden",
+        noCasesYet: "Nog geen zaken",
+        backToCases: "Terug naar zaken",
+        notFound: "Zaak niet gevonden",
+        noTasksYet: "Nog geen taken",
+        noDocumentsYet: "Nog geen documenten",
+        deleteCase: "Zaak verwijderen",
+        governmentReference: "Referentie gemeente",
+        billing: "Facturatie"
       },
       tasks: {
         title: "Taken",
         addTask: "Taak Toevoegen",
         newTask: "Nieuwe Taak",
-        noTasks: "Geen taken gevonden"
+        noTasks: "Geen taken gevonden",
+        notFound: "Taak niet gevonden",
+        taskDetails: "Taakgegevens",
+        deleteTask: "Taak verwijderen",
+        backToTasks: "Terug naar taken",
+        search: "Taken zoeken...",
+        noCaseStandalone: "Geen zaak (losstaande taak)",
+        titlePlaceholder: "Wat moet er gebeuren?",
+        descriptionPlaceholder: "Aanvullende details..."
       },
       documents: {
         title: "Documenten",
         upload: "Uploaden",
-        noDocuments: "Geen documenten gevonden"
+        noDocuments: "Geen documenten gevonden",
+        allCategories: "Alle categorieën",
+        noCase: "Geen zaak",
+        noClient: "Geen klant",
+        search: "Documenten zoeken...",
+        uploadDocument: "Document uploaden",
+        deleteDocument: "Document verwijderen"
+      },
+      // Databasewaarden -> leesbare labels. De sleutels zijn exact de opgeslagen
+      // waarde, zodat een later toegevoegde status terugvalt op de enum zonder
+      // underscores in plaats van leeg te blijven. Zie lib/dashboard-labels.ts.
+      enums: {
+        caseType: {
+          exploitatievergunning: "Exploitatievergunning",
+          alcoholvergunning: "Alcoholvergunning",
+          terrasvergunning: "Terrasvergunning",
+          bibob: "Bibob-toets",
+          overname: "Overname",
+          verbouwing: "Verbouwing",
+          other: "Overig"
+        },
+        caseStatus: {
+          intake: "Intake",
+          in_progress: "In behandeling",
+          waiting_client: "Wacht op klant",
+          waiting_government: "Wacht op de gemeente",
+          review: "Laatste controle",
+          approved: "Goedgekeurd",
+          rejected: "Afgewezen",
+          completed: "Afgerond",
+          cancelled: "Geannuleerd"
+        },
+        taskStatus: {
+          pending: "Open",
+          in_progress: "In behandeling",
+          completed: "Afgerond",
+          cancelled: "Geannuleerd"
+        },
+        priority: {
+          low: "Laag",
+          normal: "Normaal",
+          high: "Hoog",
+          urgent: "Urgent"
+        },
+        clientStatus: {
+          active: "Actief",
+          inactive: "Inactief",
+          pending: "In afwachting"
+        },
+        requestStatus: {
+          pending: "In afwachting",
+          reviewing: "In beoordeling",
+          approved: "Goedgekeurd",
+          converted: "Omgezet naar zaak",
+          rejected: "Afgewezen"
+        },
+        urgency: {
+          normal: "Normaal",
+          urgent: "Urgent"
+        },
+        leadStatus: {
+          new: "Nieuw",
+          contacted: "Benaderd",
+          converted: "Omgezet",
+          closed: "Gesloten"
+        },
+        leadSource: {
+          quiz: "Quiz",
+          contact: "Contactformulier",
+          newsletter: "Nieuwsbrief"
+        },
+        role: {
+          employee: "Medewerker",
+          admin: "Beheerder"
+        },
+        docCategory: {
+          contract: "Contract",
+          permit: "Vergunning",
+          identification: "Identiteit",
+          financial: "Financieel",
+          correspondence: "Correspondentie",
+          bibob: "Bibob",
+          general: "Algemeen"
+        },
+        entityType: {
+          cases: "Zaken",
+          clients: "Klanten",
+          tasks: "Taken",
+          documents: "Documenten",
+          client_requests: "Aanvragen",
+          profiles: "Gebruikers",
+          invoices: "Facturen",
+          leads: "Leads",
+          permit_types: "Vergunningtypen",
+          system_settings: "Instellingen"
+        }
+      },
+      requests: {
+        title: "Aanvragen",
+        search: "Aanvragen zoeken...",
+        empty: "Geen aanvragen gevonden",
+        colRequest: "Aanvraag",
+        colClient: "Klant",
+        colUrgency: "Urgentie",
+        colSubmitted: "Ingediend",
+        colActions: "Acties",
+        approve: "Goedkeuren",
+        reject: "Afwijzen",
+        reopen: "Heropenen",
+        reopenHint: "Zet deze aanvraag terug in de wachtrij",
+        viewCase: "Bekijk zaak",
+        confirmRejectTitle: "Deze aanvraag afwijzen?",
+        confirmRejectBody: "\"{title}\" wordt bij {client} in het portaal getoond als afgewezen. U kunt de aanvraag daarna heropenen als dit een vergissing was.",
+        rejecting: "Bezig met afwijzen..."
+      },
+      leads: {
+        title: "Leads",
+        empty: "Nog geen leads.",
+        allSources: "Alle bronnen"
+      },
+      users: {
+        title: "Gebruikersbeheer",
+        tabUsers: "Gebruikers",
+        tabClients: "Klanten",
+        searchUsers: "Gebruikers zoeken...",
+        searchClients: "Klanten zoeken...",
+        noUsers: "Geen gebruikers gevonden",
+        noClients: "Geen klanten gevonden",
+        allRoles: "Alle rollen",
+        colUser: "Gebruiker",
+        colRole: "Rol",
+        colCompany: "Bedrijf",
+        colContact: "Contactpersoon",
+        createUser: "Nieuwe gebruiker aanmaken",
+        addUser: "Gebruiker toevoegen"
+      },
+      settings: {
+        title: "Systeeminstellingen",
+        tabGeneral: "Algemeen",
+        tabContact: "Openbare contactgegevens",
+        tabSocial: "Social proof",
+        descriptions: {
+          company_name: "Wordt getoond in e-mails en documenten.",
+          notification_email: "Hier komen systeemmeldingen binnen.",
+          default_deadline_days: "Standaard aantal dagen voor deadlines van zaken.",
+          public_contact_email: "Zichtbaar in de footer en op de contactpagina. Laat leeg om de placeholder te behouden.",
+          public_contact_phone: "Zichtbaar in de footer en op de contactpagina (als tel:-link).",
+          public_contact_address: "Zichtbaar in de footer. Invullen zet ook LocalBusiness-gegevens voor Google aan.",
+          public_whatsapp_number: "Voor de zwevende WhatsApp-knop, bijvoorbeeld 31612345678.",
+          public_socialproof_mode: "Toon trust facts of een rij met bedrijfsnamen van klanten.",
+          public_socialproof_companies: "Eén per regel. Alleen zichtbaar als hierboven voor bedrijfsnamen is gekozen. Voeg alleen klanten toe die daarvoor toestemming gaven."
+        },
+        companyName: "Bedrijfsnaam",
+        notificationEmail: "E-mail voor meldingen",
+        defaultDeadline: "Standaard deadline (dagen)",
+        publicEmail: "Openbaar e-mailadres",
+        publicPhone: "Openbaar telefoonnummer",
+        publicAddress: "Openbaar adres",
+        whatsapp: "WhatsApp-nummer (alleen cijfers)",
+        socialProofStyle: "Stijl van social proof",
+        trustFacts: "Trust facts (aanbevolen)",
+        clientCompanyNames: "Bedrijfsnamen van klanten"
+      },
+      permitTypes: {
+        title: "Vergunningtypen & tarieven",
+        intro: "Pas het tarief, de namen en de benodigde documenten per vergunningtype aan. De tarieven staan op de openbare tarievenpagina.",
+        addType: "Type toevoegen",
+        active: "Actief",
+        hidden: "Verborgen",
+        hide: "Verbergen",
+        show: "Tonen",
+        customFee: "Op aanvraag",
+        slug: "Slug (interne id, kleine letters)",
+        descriptionNl: "Omschrijving (NL)",
+        descriptionEn: "Omschrijving (EN)",
+        fee: "Tarief (€, eenmalig)",
+        sortOrder: "Sorteervolgorde",
+        backToTypes: "Terug naar vergunningtypen",
+        details: "Gegevens",
+        activePublic: "Actief (openbaar zichtbaar)",
+        requiredDocs: "Benodigde documenten (checklist)"
+      },
+      activity: {
+        title: "Activiteitenlog",
+        allUsers: "Alle gebruikers",
+        empty: "Geen activiteit gevonden"
+      },
+      profile: {
+        title: "Profielgegevens",
+        changePassword: "Wachtwoord wijzigen",
+        newPasswordPlaceholder: "Nieuw wachtwoord invoeren",
+        confirmPasswordPlaceholder: "Nieuw wachtwoord bevestigen"
       }
     },
     clientPortal: {
@@ -1182,6 +1639,9 @@ export const translations = {
           contract: "Contract",
           permit: "Vergunning",
           correspondence: "Correspondentie",
+          // Niet aanwezig in de uploadkeuze van het portaal, maar ons team kan
+          // een document er wel onder opslaan — dan hoort er een label te staan.
+          bibob: "Bibob",
           general: "Algemeen"
         }
       },

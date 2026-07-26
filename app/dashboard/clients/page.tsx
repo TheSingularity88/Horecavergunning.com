@@ -14,6 +14,7 @@ import { Input } from '@/app/components/ui/Input';
 import { Badge, getStatusBadgeVariant } from '@/app/components/ui/Badge';
 import { Table, Pagination } from '@/app/components/ui/Table';
 import type { Client } from '@/app/lib/types/database';
+import { clientStatusLabel } from '@/app/lib/dashboard-labels';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -113,7 +114,7 @@ export default function ClientsPage() {
       header: t.dashboard?.common?.status || 'Status',
       render: (client: Client) => (
         <Badge variant={getStatusBadgeVariant(client.status)}>
-          {client.status}
+          {clientStatusLabel(client.status, t)}
         </Badge>
       ),
     },

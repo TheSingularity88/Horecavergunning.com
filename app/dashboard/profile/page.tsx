@@ -130,10 +130,10 @@ export default function ProfilePage() {
           {/* Profile Card */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Profile Information</CardTitle>
+              <CardTitle>{t.dashboard?.profile?.title || 'Profile information'}</CardTitle>
               {!isEditing && (
                 <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                  Edit
+                  {t.dashboard?.common?.edit || 'Edit'}
                 </Button>
               )}
             </CardHeader>
@@ -141,14 +141,14 @@ export default function ProfilePage() {
               {isEditing ? (
                 <div className="space-y-4">
                   <Input
-                    label="Full Name"
+                    label={t.dashboard?.common?.fullName || 'Full name'}
                     name="full_name"
                     value={formData.full_name}
                     onChange={handleChange}
                     icon={<User className="w-4 h-4" />}
                   />
                   <Input
-                    label="Phone"
+                    label={t.dashboard?.clients?.phone || 'Phone'}
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
@@ -156,7 +156,7 @@ export default function ProfilePage() {
                   />
                   <div className="flex gap-3 justify-end pt-4">
                     <Button variant="outline" onClick={() => setIsEditing(false)}>
-                      Cancel
+                      {t.dashboard?.common?.cancel || 'Cancel'}
                     </Button>
                     <Button onClick={handleSave} disabled={isSaving}>
                       {isSaving ? (
@@ -167,7 +167,7 @@ export default function ProfilePage() {
                       ) : (
                         <>
                           <Save className="w-4 h-4 mr-2" />
-                          Save Changes
+                          {t.dashboard?.common?.saveChanges || 'Save changes'}
                         </>
                       )}
                     </Button>
@@ -215,26 +215,26 @@ export default function ProfilePage() {
                 <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
                   <Key className="w-5 h-5 text-slate-600" />
                 </div>
-                <CardTitle>Change Password</CardTitle>
+                <CardTitle>{t.dashboard?.profile?.changePassword || 'Change password'}</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <Input
-                  label="New Password"
+                  label={t.dashboard?.auth?.newPassword || 'New password'}
                   name="new"
                   type="password"
                   value={passwordData.new}
                   onChange={handlePasswordChange}
-                  placeholder="Enter new password"
+                  placeholder={t.dashboard?.profile?.newPasswordPlaceholder || 'Enter new password'}
                 />
                 <Input
-                  label="Confirm New Password"
+                  label={t.dashboard?.auth?.confirmPassword || 'Confirm new password'}
                   name="confirm"
                   type="password"
                   value={passwordData.confirm}
                   onChange={handlePasswordChange}
-                  placeholder="Confirm new password"
+                  placeholder={t.dashboard?.profile?.confirmPasswordPlaceholder || 'Confirm new password'}
                 />
                 <div className="flex justify-end">
                   <Button

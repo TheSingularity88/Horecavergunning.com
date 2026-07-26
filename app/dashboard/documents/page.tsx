@@ -22,9 +22,21 @@ import { Badge } from '@/app/components/ui/Badge';
 import { Modal, ConfirmModal } from '@/app/components/ui/Modal';
 import { Spinner } from '@/app/components/ui/Spinner';
 import type { Document } from '@/app/lib/types/database';
+import { docCategoryLabel, enumOptions } from '@/app/lib/dashboard-labels';
 
 type CaseOption = { id: string; title: string };
 type ClientOption = { id: string; company_name: string };
+
+/** Order only — labels come from the shared enum map. */
+const DOC_CATEGORY_ORDER = [
+  'contract',
+  'permit',
+  'identification',
+  'financial',
+  'correspondence',
+  'bibob',
+  'general',
+] as const;
 
 export default function DocumentsPage() {
   const searchParams = useSearchParams();
@@ -223,24 +235,20 @@ export default function DocumentsPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const categoryOptions = [
-    { value: '', label: 'All Categories' },
-    { value: 'contract', label: 'Contract' },
-    { value: 'permit', label: 'Permit' },
-    { value: 'identification', label: 'Identification' },
-    { value: 'financial', label: 'Financial' },
-    { value: 'correspondence', label: 'Correspondence' },
-    { value: 'bibob', label: 'Bibob' },
-    { value: 'general', label: 'General' },
-  ];
+  const categoryOptions = enumOptions(
+    'docCategory',
+    DOC_CATEGORY_ORDER,
+    t,
+    t.dashboard?.documents?.allCategories || 'All categories',
+  );
 
   const caseOptions = [
-    { value: '', label: 'No case' },
+    { value: '', label: t.dashboard?.documents?.noCase || 'No case' },
     ...cases.map((c) => ({ value: c.id, label: c.title })),
   ];
 
   const clientOptions = [
-    { value: '', label: 'No client' },
+    { value: '', label: t.dashboard?.documents?.noClient || 'No client' },
     ...clients.map((c) => ({ value: c.id, label: c.company_name })),
   ];
 
@@ -254,7 +262,7 @@ export default function DocumentsPage() {
         <div className="flex flex-col lg:flex-row gap-4 mb-6">
           <div className="flex-1">
             <Input
-              placeholder="Search documents..."
+              placeholder={t.dashboard?.documents?.search || 'Search documents...'}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               icon={<Search className="w-4 h-4" />}
@@ -269,7 +277,7 @@ export default function DocumentsPage() {
             />
             <Button onClick={() => setShowUploadModal(true)} className="gap-2">
               <Upload className="w-4 h-4" />
-              Upload
+              {t.dashboard?.common?.upload || 'Upload'}
             </Button>
           </div>
         </div>
@@ -282,7 +290,7 @@ export default function DocumentsPage() {
         ) : documents.length === 0 ? (
           <Card className="text-center py-12">
             <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-500">No documents found</p>
+            <p className="text-slate-500">{t.dashboard?.documents?.noDocuments || 'No documents found'}</p>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -297,7 +305,7 @@ export default function DocumentsPage() {
                     <p className="text-sm text-slate-500">
                       {formatFileSize(doc.file_size)}
                     </p>
-                    <Badge className="mt-2">{doc.category}</Badge>
+                    <Badge className="mt-2">{docCategoryLabel(doc.category, t)}</Badge>
                   </div>
                 </div>
                 <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100">
@@ -308,7 +316,7 @@ export default function DocumentsPage() {
                     className="flex-1"
                   >
                     <Download className="w-4 h-4 mr-1" />
-                    Download
+                    {t.dashboard?.common?.download || 'Download'}
                   </Button>
                   {(isAdmin || doc.uploaded_by === profile?.id) && (
                     <Button
@@ -334,7 +342,7 @@ export default function DocumentsPage() {
       <Modal
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
-        title="Upload Document"
+        title={t.dashboard?.documents?.uploadDocument || 'Upload document'}
         size="md"
       >
         <div className="space-y-4">
@@ -367,21 +375,21 @@ export default function DocumentsPage() {
           </div>
 
           <Select
-            label="Category"
-            value={uploadForm.category}
+            label={t.dashboard?.common?.category || 'Category'}
+            value={docCategoryLabel(uploadForm.category, t)}
             onChange={(e) => setUploadForm((prev) => ({ ...prev, category: e.target.value }))}
             options={categoryOptions.filter((o) => o.value !== '')}
           />
 
           <Select
-            label="Related Case (optional)"
+            label={t.dashboard?.common?.relatedCase || 'Related case'}
             value={uploadForm.case_id}
             onChange={(e) => setUploadForm((prev) => ({ ...prev, case_id: e.target.value }))}
             options={caseOptions}
           />
 
           <Select
-            label="Related Client (optional)"
+            label={t.dashboard?.common?.relatedClient || 'Related client'}
             value={uploadForm.client_id}
             onChange={(e) => setUploadForm((prev) => ({ ...prev, client_id: e.target.value }))}
             options={clientOptions}
@@ -389,7 +397,7 @@ export default function DocumentsPage() {
 
           <div className="flex gap-3 justify-end pt-4">
             <Button variant="outline" onClick={() => setShowUploadModal(false)}>
-              Cancel
+              {t.dashboard?.common?.cancel || 'Cancel'}
             </Button>
             <Button onClick={handleUpload} disabled={!uploadForm.file || isUploading}>
               {isUploading ? (
@@ -410,7 +418,7 @@ export default function DocumentsPage() {
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDelete}
-        title="Delete Document"
+        title={t.dashboard?.documents?.deleteDocument || 'Delete document'}
         message={`Are you sure you want to delete "${selectedDocument?.name}"?`}
         confirmText="Delete"
         variant="danger"

@@ -15,6 +15,7 @@ import { Badge, getStatusBadgeVariant } from '@/app/components/ui/Badge';
 import { Table, Pagination } from '@/app/components/ui/Table';
 import { getCaseStatusOptions, getCaseTypeOptions } from '@/app/lib/constants/dashboard';
 import type { Case } from '@/app/lib/types/database';
+import { caseStatusLabel, caseTypeLabel, priorityLabel } from '@/app/lib/dashboard-labels';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -96,7 +97,7 @@ export default function CasesPage() {
           </div>
           <div>
             <p className="font-medium text-slate-900">{caseItem.title}</p>
-            <p className="text-sm text-slate-500">{caseItem.case_type}</p>
+            <p className="text-sm text-slate-500">{caseTypeLabel(caseItem.case_type, t)}</p>
           </div>
         </div>
       ),
@@ -106,7 +107,7 @@ export default function CasesPage() {
       header: t.dashboard?.common?.status || 'Status',
       render: (caseItem: Case) => (
         <Badge variant={getStatusBadgeVariant(caseItem.status)}>
-          {caseItem.status.replace('_', ' ')}
+          {caseStatusLabel(caseItem.status, t)}
         </Badge>
       ),
     },
@@ -115,7 +116,7 @@ export default function CasesPage() {
       header: t.dashboard?.common?.priority || 'Priority',
       render: (caseItem: Case) => (
         <Badge variant={getStatusBadgeVariant(caseItem.priority)}>
-          {caseItem.priority}
+          {priorityLabel(caseItem.priority, t)}
         </Badge>
       ),
     },

@@ -14,6 +14,7 @@ import { Input } from '@/app/components/ui/Input';
 import { Textarea } from '@/app/components/ui/Textarea';
 import { Spinner } from '@/app/components/ui/Spinner';
 import type { PermitType, RequiredDocument } from '@/app/lib/types/database';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 interface DocRow {
   id?: string;
@@ -23,6 +24,7 @@ interface DocRow {
 }
 
 export default function EditPermitTypePage() {
+  const { t } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const isNew = params.id === 'new';
@@ -138,7 +140,7 @@ export default function EditPermitTypePage() {
         className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-4"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back to permit types
+        {t.dashboard?.permitTypes?.backToTypes || 'Back to permit types'}
       </button>
 
       {isLoading ? (
@@ -157,42 +159,42 @@ export default function EditPermitTypePage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Details</CardTitle>
+              <CardTitle>{t.dashboard?.permitTypes?.details || 'Details'}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <Input
-                label="Slug (internal id, lowercase)"
+                label={t.dashboard?.permitTypes?.slug || 'Slug (internal id, lowercase)'}
                 value={form.slug}
                 onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
                 placeholder="exploitatievergunning"
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
-                  label="Name (NL)"
+                  label={`${t.dashboard?.common?.name || 'Name'} (NL)`}
                   value={form.name_nl}
                   onChange={(e) => setForm((f) => ({ ...f, name_nl: e.target.value }))}
                 />
                 <Input
-                  label="Name (EN)"
+                  label={`${t.dashboard?.common?.name || 'Name'} (EN)`}
                   value={form.name_en}
                   onChange={(e) => setForm((f) => ({ ...f, name_en: e.target.value }))}
                 />
               </div>
               <Textarea
-                label="Description (NL)"
+                label={t.dashboard?.permitTypes?.descriptionNl || 'Description (NL)'}
                 value={form.description_nl}
                 onChange={(e) => setForm((f) => ({ ...f, description_nl: e.target.value }))}
                 rows={2}
               />
               <Textarea
-                label="Description (EN)"
+                label={t.dashboard?.permitTypes?.descriptionEn || 'Description (EN)'}
                 value={form.description_en}
                 onChange={(e) => setForm((f) => ({ ...f, description_en: e.target.value }))}
                 rows={2}
               />
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Input
-                  label="Fee (€, one-time)"
+                  label={t.dashboard?.permitTypes?.fee || 'Fee (€, one-time)'}
                   type="number"
                   min={0}
                   step="0.01"
@@ -200,7 +202,7 @@ export default function EditPermitTypePage() {
                   onChange={(e) => setForm((f) => ({ ...f, fee_euros: Number(e.target.value) }))}
                 />
                 <Input
-                  label="Sort order"
+                  label={t.dashboard?.permitTypes?.sortOrder || 'Sort order'}
                   type="number"
                   min={0}
                   value={form.sort_order}
@@ -213,7 +215,7 @@ export default function EditPermitTypePage() {
                     onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
                     className="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
                   />
-                  <span className="text-sm text-slate-700">Active (shown publicly)</span>
+                  <span className="text-sm text-slate-700">{t.dashboard?.permitTypes?.activePublic || 'Active (shown publicly)'}</span>
                 </label>
               </div>
               <p className="text-xs text-slate-400">
@@ -224,7 +226,7 @@ export default function EditPermitTypePage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Required documents (checklist)</CardTitle>
+              <CardTitle>{t.dashboard?.permitTypes?.requiredDocs || 'Required documents (checklist)'}</CardTitle>
               <Button
                 variant="outline"
                 size="sm"
@@ -249,7 +251,7 @@ export default function EditPermitTypePage() {
                     <div key={i} className="flex items-start gap-2">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
                         <Input
-                          placeholder="Naam (NL)"
+                          placeholder={`${t.dashboard?.common?.name || 'Name'} (NL)`}
                           value={doc.name_nl}
                           onChange={(e) =>
                             setDocs((prev) =>
@@ -260,7 +262,7 @@ export default function EditPermitTypePage() {
                           }
                         />
                         <Input
-                          placeholder="Name (EN)"
+                          placeholder={`${t.dashboard?.common?.name || 'Name'} (EN)`}
                           value={doc.name_en}
                           onChange={(e) =>
                             setDocs((prev) =>
@@ -303,7 +305,7 @@ export default function EditPermitTypePage() {
 
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => router.push('/dashboard/admin/permit-types')}>
-              Cancel
+              {t.dashboard?.common?.cancel || 'Cancel'}
             </Button>
             <Button onClick={handleSave} disabled={isSaving} className="gap-2">
               {isSaving ? <Spinner size="sm" className="text-slate-900" /> : <Save className="w-4 h-4" />}

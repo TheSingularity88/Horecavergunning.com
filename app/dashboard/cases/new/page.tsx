@@ -126,7 +126,7 @@ export default function NewCasePage() {
 
   const caseTypeOptions = getCaseTypeOptions(t.dashboard);
   const statusOptions = getCaseStatusOptions(t.dashboard, false, false);
-  const priorityOptions = getPriorityOptions();
+  const priorityOptions = getPriorityOptions(t.dashboard);
 
   return (
     <DashboardPage title={t.dashboard?.cases?.newCase || 'New Case'}>
@@ -232,7 +232,7 @@ export default function NewCasePage() {
                     name="reference_number"
                     value={formData.reference_number}
                     onChange={handleChange}
-                    placeholder="Government reference"
+                    placeholder={t.dashboard?.cases?.governmentReference || 'Government reference'}
                   />
                 </div>
 

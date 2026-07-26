@@ -19,9 +19,12 @@ import { Modal } from '@/app/components/ui/Modal';
 import { Spinner } from '@/app/components/ui/Spinner';
 import type { Client, Profile } from '@/app/lib/types/database';
 import { useToast } from '@/app/components/ui/Toast';
+import { useLanguage } from '@/app/context/LanguageContext';
+import { clientStatusLabel, roleLabel } from '@/app/lib/dashboard-labels';
 
 export default function UsersPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const { showError } = useToast();
   const { isAdmin } = useAuth();
   const [users, setUsers] = useState<Profile[]>([]);
@@ -163,15 +166,15 @@ export default function UsersPage() {
   };
 
   const roleOptions = [
-    { value: '', label: 'All Roles' },
-    { value: 'admin', label: 'Admin' },
-    { value: 'employee', label: 'Employee' },
+    { value: '', label: t.dashboard?.users?.allRoles || 'All roles' },
+    { value: 'admin', label: roleLabel('admin', t) },
+    { value: 'employee', label: roleLabel('employee', t) },
   ];
 
   const columns = [
     {
       key: 'user',
-      header: 'User',
+      header: t.dashboard?.users?.colUser || 'User',
       render: (user: Profile) => (
         <div className="flex items-center gap-3">
           <Avatar src={user.avatar_url} name={user.full_name} size="sm" />
@@ -187,14 +190,14 @@ export default function UsersPage() {
     },
     {
       key: 'role',
-      header: 'Role',
+      header: t.dashboard?.users?.colRole || 'Role',
       render: (user: Profile) => (
         <Select
           value={user.role}
           onChange={(e) => handleRoleChange(user.id, e.target.value)}
           options={[
-            { value: 'employee', label: 'Employee' },
-            { value: 'admin', label: 'Admin' },
+            { value: 'employee', label: roleLabel('employee', t) },
+            { value: 'admin', label: roleLabel('admin', t) },
           ]}
           className="w-32"
         />
@@ -202,16 +205,16 @@ export default function UsersPage() {
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t.dashboard?.common?.status || 'Status',
       render: (user: Profile) => (
         <Badge variant={user.is_active ? 'success' : 'default'}>
-          {user.is_active ? 'Active' : 'Inactive'}
+          {user.is_active ? clientStatusLabel('active', t) : clientStatusLabel('inactive', t)}
         </Badge>
       ),
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: t.dashboard?.common?.actions || 'Actions',
       render: (user: Profile) => (
         <Button
           variant={user.is_active ? 'outline' : 'primary'}
@@ -230,7 +233,7 @@ export default function UsersPage() {
   const clientColumns = [
     {
       key: 'company_name',
-      header: 'Company',
+      header: t.dashboard?.users?.colCompany || 'Company',
       render: (client: Client) => (
         <div className="flex items-center gap-3">
           <Avatar name={client.company_name} size="sm" />
@@ -243,7 +246,7 @@ export default function UsersPage() {
     },
     {
       key: 'email',
-      header: 'Contact',
+      header: t.dashboard?.users?.colContact || 'Contact',
       render: (client: Client) => (
         <div className="space-y-1">
           <div className="flex items-center gap-1.5 text-sm text-slate-600">
@@ -261,23 +264,23 @@ export default function UsersPage() {
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t.dashboard?.common?.status || 'Status',
       render: (client: Client) => (
         <Badge variant={getStatusBadgeVariant(client.status)}>
-          {client.status}
+          {clientStatusLabel(client.status, t)}
         </Badge>
       ),
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: t.dashboard?.common?.actions || 'Actions',
       render: (client: Client) => (
         <Button
           variant="outline"
           size="sm"
           onClick={() => router.push(`/dashboard/clients/${client.id}`)}
         >
-          View
+          {t.dashboard?.common?.view || 'View'}
         </Button>
       ),
     },
@@ -286,7 +289,7 @@ export default function UsersPage() {
   if (!isAdmin) return null;
 
   return (
-    <DashboardPage title="User Management">
+    <DashboardPage title={t.dashboard?.users?.title || 'User management'}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -295,7 +298,7 @@ export default function UsersPage() {
         <div className="flex flex-col lg:flex-row gap-4 mb-6">
           <div className="flex-1">
             <Input
-              placeholder="Search users..."
+              placeholder={t.dashboard?.users?.searchUsers || 'Search users...'}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               icon={<Search className="w-4 h-4" />}
@@ -310,7 +313,7 @@ export default function UsersPage() {
             />
             <Button onClick={() => setShowCreateModal(true)} className="gap-2">
               <Plus className="w-4 h-4" />
-              Add User
+              {t.dashboard?.users?.addUser || 'Add user'}
             </Button>
           </div>
         </div>
@@ -321,7 +324,7 @@ export default function UsersPage() {
             columns={columns}
             data={users}
             loading={isLoading}
-            emptyMessage="No users found"
+            emptyMessage={t.dashboard?.users?.noUsers || 'No users found'}
             keyExtractor={(user) => user.id}
           />
         </Card>
@@ -329,12 +332,12 @@ export default function UsersPage() {
         {/* Clients Section */}
         <div className="mt-8">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">
-            Clients
+            {t.dashboard?.nav?.clients || 'Clients'}
           </h2>
           <div className="flex flex-col lg:flex-row gap-4 mb-6">
             <div className="flex-1">
               <Input
-                placeholder="Search clients..."
+                placeholder={t.dashboard?.users?.searchClients || 'Search clients...'}
                 value={clientSearch}
                 onChange={(e) => setClientSearch(e.target.value)}
                 icon={<Search className="w-4 h-4" />}
@@ -347,7 +350,7 @@ export default function UsersPage() {
               columns={clientColumns}
               data={clients}
               loading={isLoadingClients}
-              emptyMessage="No clients found"
+              emptyMessage={t.dashboard?.users?.noClients || 'No clients found'}
               keyExtractor={(client) => client.id}
             />
           </Card>
@@ -358,7 +361,7 @@ export default function UsersPage() {
       <Modal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        title="Create New User"
+        title={t.dashboard?.users?.createUser || 'Create new user'}
         size="md"
       >
         <div className="space-y-4">
@@ -369,14 +372,14 @@ export default function UsersPage() {
           )}
 
           <Input
-            label="Full Name"
+            label={t.dashboard?.common?.fullName || 'Full name'}
             value={newUser.full_name}
             onChange={(e) => setNewUser((prev) => ({ ...prev, full_name: e.target.value }))}
             required
           />
 
           <Input
-            label="Email"
+            label={t.dashboard?.clients?.email || 'Email'}
             type="email"
             value={newUser.email}
             onChange={(e) => setNewUser((prev) => ({ ...prev, email: e.target.value }))}
@@ -384,7 +387,7 @@ export default function UsersPage() {
           />
 
           <Input
-            label="Password"
+            label={t.dashboard?.auth?.password || 'Password'}
             type="password"
             value={newUser.password}
             onChange={(e) => setNewUser((prev) => ({ ...prev, password: e.target.value }))}
@@ -392,18 +395,18 @@ export default function UsersPage() {
           />
 
           <Select
-            label="Role"
+            label={t.dashboard?.common?.role || 'Role'}
             value={newUser.role}
             onChange={(e) => setNewUser((prev) => ({ ...prev, role: e.target.value }))}
             options={[
-              { value: 'employee', label: 'Employee' },
-              { value: 'admin', label: 'Admin' },
+              { value: 'employee', label: roleLabel('employee', t) },
+              { value: 'admin', label: roleLabel('admin', t) },
             ]}
           />
 
           <div className="flex gap-3 justify-end pt-4">
             <Button variant="outline" onClick={() => setShowCreateModal(false)}>
-              Cancel
+              {t.dashboard?.common?.cancel || 'Cancel'}
             </Button>
             <Button onClick={handleCreateUser} disabled={isCreating}>
               {isCreating ? (

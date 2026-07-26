@@ -21,6 +21,12 @@ import { Table, Pagination } from '@/app/components/ui/Table';
 import { Spinner } from '@/app/components/ui/Spinner';
 import { ConfirmModal } from '@/app/components/ui/Modal';
 import { useToast } from '@/app/components/ui/Toast';
+import {
+  caseTypeLabel,
+  enumOptions,
+  requestStatusLabel,
+  urgencyLabel,
+} from '@/app/lib/dashboard-labels';
 import type {
   Client,
   ClientRequest,
@@ -29,6 +35,15 @@ import type {
 } from '@/app/lib/types/database';
 
 const ITEMS_PER_PAGE = 10;
+
+/** Filter order only — labels come from the shared enum map. */
+const REQUEST_STATUS_ORDER = [
+  'pending',
+  'reviewing',
+  'approved',
+  'converted',
+  'rejected',
+] as const;
 
 type RequestWithClient = ClientRequest & {
   clients?: Pick<Client, 'id' | 'company_name' | 'contact_name' | 'email'> | null;
@@ -187,29 +202,27 @@ export default function RequestsPage() {
     setRowLoading(request.id, false);
   };
 
-  const statusOptions = [
-    { value: '', label: 'All statuses' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'reviewing', label: 'Reviewing' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'converted', label: 'Converted' },
-    { value: 'rejected', label: 'Rejected' },
-  ];
+  const statusOptions = enumOptions(
+    'requestStatus',
+    REQUEST_STATUS_ORDER,
+    t,
+    t.dashboard?.common?.allStatuses || 'All statuses',
+  );
 
   const columns = [
     {
       key: 'request',
-      header: 'Request',
+      header: t.dashboard?.requests?.colRequest || 'Request',
       render: (request: RequestWithClient) => (
         <div>
           <p className="font-medium text-slate-900">{request.title}</p>
-          <p className="text-sm text-slate-500">{request.request_type.replace(/_/g, ' ')}</p>
+          <p className="text-sm text-slate-500">{caseTypeLabel(request.request_type, t)}</p>
         </div>
       ),
     },
     {
       key: 'client',
-      header: 'Client',
+      header: t.dashboard?.requests?.colClient || 'Client',
       render: (request: RequestWithClient) => (
         <div>
           <p className="font-medium text-slate-900">
@@ -223,30 +236,30 @@ export default function RequestsPage() {
     },
     {
       key: 'urgency',
-      header: 'Urgency',
+      header: t.dashboard?.requests?.colUrgency || 'Urgency',
       render: (request: RequestWithClient) => (
         <Badge variant={getUrgencyVariant(request.urgency)}>
-          {request.urgency}
+          {urgencyLabel(request.urgency, t)}
         </Badge>
       ),
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t.dashboard?.common?.status || 'Status',
       render: (request: RequestWithClient) => (
         <Badge variant={getStatusVariant(request.status)}>
-          {request.status}
+          {requestStatusLabel(request.status, t)}
         </Badge>
       ),
     },
     {
       key: 'created_at',
-      header: 'Submitted',
+      header: t.dashboard?.requests?.colSubmitted || 'Submitted',
       render: (request: RequestWithClient) => formatDate(request.created_at),
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: t.dashboard?.requests?.colActions || 'Actions',
       render: (request: RequestWithClient) => {
         const isProcessing = actionLoading[request.id];
         const canReview = request.status === 'pending' || request.status === 'reviewing';
@@ -257,7 +270,7 @@ export default function RequestsPage() {
               href={`/dashboard/cases/${request.converted_to_case_id}`}
               className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium"
             >
-              View case
+              {t.dashboard?.requests?.viewCase || 'View case'}
               <ArrowRight className="w-4 h-4" />
             </Link>
           );
@@ -273,10 +286,10 @@ export default function RequestsPage() {
               onClick={() => handleReopen(request)}
               disabled={isProcessing}
               className="gap-1"
-              title="Put this request back in the queue"
+              title={t.dashboard?.requests?.reopenHint || 'Put this request back in the queue'}
             >
               {isProcessing ? <Spinner size="sm" /> : <Undo2 className="w-4 h-4" />}
-              Reopen
+              {t.dashboard?.requests?.reopen || 'Reopen'}
             </Button>
           );
         }
@@ -290,7 +303,7 @@ export default function RequestsPage() {
               className="gap-1"
             >
               {isProcessing ? <Spinner size="sm" /> : <Check className="w-4 h-4" />}
-              Approve
+              {t.dashboard?.requests?.approve || 'Approve'}
             </Button>
             <Button
               size="sm"
@@ -300,7 +313,7 @@ export default function RequestsPage() {
               className="gap-1"
             >
               {isProcessing ? <Spinner size="sm" /> : <X className="w-4 h-4" />}
-              Reject
+              {t.dashboard?.requests?.reject || 'Reject'}
             </Button>
           </div>
         );
@@ -314,7 +327,7 @@ export default function RequestsPage() {
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
             <Input
-              placeholder="Search requests..."
+              placeholder={t.dashboard?.requests?.search || 'Search requests...'}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -338,7 +351,7 @@ export default function RequestsPage() {
             columns={columns}
             data={requests}
             loading={isLoading}
-            emptyMessage="No requests found"
+            emptyMessage={t.dashboard?.requests?.empty || 'No requests found'}
             keyExtractor={(request) => request.id}
           />
         </Card>
@@ -356,17 +369,24 @@ export default function RequestsPage() {
         onConfirm={() => pendingReject && handleReject(pendingReject)}
         isLoading={pendingReject ? !!actionLoading[pendingReject.id] : false}
         variant="danger"
-        title="Reject this request?"
+        title={t.dashboard?.requests?.confirmRejectTitle || 'Reject this request?'}
         message={
           pendingReject
-            ? `"${pendingReject.title}" will show as rejected to ${
-                pendingReject.clients?.company_name || 'the client'
-              } in their portal. You can reopen it afterwards if this was a mistake.`
+            ? (
+                t.dashboard?.requests?.confirmRejectBody ||
+                '"{title}" will show as rejected to {client} in their portal. You can reopen it afterwards if this was a mistake.'
+              )
+                .replace('{title}', pendingReject.title)
+                .replace(
+                  '{client}',
+                  pendingReject.clients?.company_name ||
+                    (t.dashboard?.requests?.colClient || 'the client').toLowerCase(),
+                )
             : ''
         }
-        confirmText="Reject"
-        cancelText="Cancel"
-        loadingText="Rejecting..."
+        confirmText={t.dashboard?.requests?.reject || 'Reject'}
+        cancelText={t.dashboard?.common?.cancel || 'Cancel'}
+        loadingText={t.dashboard?.requests?.rejecting || 'Rejecting...'}
       />
     </DashboardPage>
   );

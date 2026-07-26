@@ -16,58 +16,78 @@ import { Textarea } from '@/app/components/ui/Textarea';
 import { Spinner } from '@/app/components/ui/Spinner';
 import type { SystemSetting } from '@/app/lib/types/database';
 import { useToast } from '@/app/components/ui/Toast';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 type FieldType = 'text' | 'textarea' | 'select';
 
+/**
+ * `labelKey` rather than a literal label, because this array is module-level:
+ * `t` does not exist out here, and an earlier attempt to inline it produced a
+ * reference error at import time. The label is resolved at render.
+ *
+ * `description` deliberately stays a plain English string — handleSave writes
+ * it to system_settings.description, so it is stored data, not UI text, and
+ * translating it would change what lands in the database depending on the
+ * language the admin happened to be using.
+ */
 interface Setting {
   key: string;
   value: string;
-  label: string;
+  labelKey: string;
+  labelFallback: string;
   description: string;
   type?: FieldType;
-  options?: { value: string; label: string }[];
+  options?: { value: string; labelKey: string; labelFallback: string }[];
 }
 
 const DEFAULT_SETTINGS: Setting[] = [
   // General
-  { key: 'company_name', value: 'HorecaVergunning', label: 'Company name', description: 'Shown in emails and documents.' },
-  { key: 'notification_email', value: '', label: 'Notification email', description: 'Where system notifications are sent.' },
-  { key: 'default_deadline_days', value: '30', label: 'Default deadline (days)', description: 'Default number of days for case deadlines.' },
+  { key: 'company_name', value: 'HorecaVergunning', labelKey: 'companyName', labelFallback: 'Company name', description: 'Shown in emails and documents.' },
+  { key: 'notification_email', value: '', labelKey: 'notificationEmail', labelFallback: 'Notification email', description: 'Where system notifications are sent.' },
+  { key: 'default_deadline_days', value: '30', labelKey: 'defaultDeadline', labelFallback: 'Default deadline (days)', description: 'Default number of days for case deadlines.' },
   // Public contact (shown on the website — key must stay public_*)
-  { key: 'public_contact_email', value: '', label: 'Public contact email', description: 'Shown in the website footer and contact page. Leave empty to keep the placeholder.' },
-  { key: 'public_contact_phone', value: '', label: 'Public phone number', description: 'Shown in the footer and contact page (as a tel: link).' },
-  { key: 'public_contact_address', value: '', label: 'Public address', description: 'Shown in the footer. Filling this in also enables LocalBusiness data for Google.' },
-  { key: 'public_whatsapp_number', value: '', label: 'WhatsApp number (digits only)', description: 'For the floating WhatsApp button, e.g. 31612345678.' },
+  { key: 'public_contact_email', value: '', labelKey: 'publicEmail', labelFallback: 'Public contact email', description: 'Shown in the website footer and contact page. Leave empty to keep the placeholder.' },
+  { key: 'public_contact_phone', value: '', labelKey: 'publicPhone', labelFallback: 'Public phone number', description: 'Shown in the footer and contact page (as a tel: link).' },
+  { key: 'public_contact_address', value: '', labelKey: 'publicAddress', labelFallback: 'Public address', description: 'Shown in the footer. Filling this in also enables LocalBusiness data for Google.' },
+  { key: 'public_whatsapp_number', value: '', labelKey: 'whatsapp', labelFallback: 'WhatsApp number (digits only)', description: 'For the floating WhatsApp button, e.g. 31612345678.' },
   // Social proof
   {
     key: 'public_socialproof_mode',
     value: 'facts',
-    label: 'Social proof style',
+    labelKey: 'socialProofStyle',
+    labelFallback: 'Social proof style',
     description: 'Show trust facts, or a row of client company names.',
     type: 'select',
     options: [
-      { value: 'facts', label: 'Trust facts (recommended)' },
-      { value: 'companies', label: 'Client company names' },
+      { value: 'facts', labelKey: 'trustFacts', labelFallback: 'Trust facts (recommended)' },
+      { value: 'companies', labelKey: 'clientCompanyNames', labelFallback: 'Client company names' },
     ],
   },
   {
     key: 'public_socialproof_companies',
     value: '',
-    label: 'Client company names',
+    labelKey: 'clientCompanyNames',
+    labelFallback: 'Client company names',
     description: 'One per line. Only shown when the style above is set to "Client company names". Only add clients who gave permission.',
     type: 'textarea',
   },
 ];
 
-const SECTIONS: { title: string; icon: typeof Settings; keys: string[] }[] = [
-  { title: 'General', icon: Settings, keys: ['company_name', 'notification_email', 'default_deadline_days'] },
-  { title: 'Public contact details', icon: Phone, keys: ['public_contact_email', 'public_contact_phone', 'public_contact_address', 'public_whatsapp_number'] },
-  { title: 'Social proof', icon: Users, keys: ['public_socialproof_mode', 'public_socialproof_companies'] },
+const SECTIONS: {
+  titleKey: string;
+  titleFallback: string;
+  icon: typeof Settings;
+  keys: string[];
+}[] = [
+  { titleKey: 'tabGeneral', titleFallback: 'General', icon: Settings, keys: ['company_name', 'notification_email', 'default_deadline_days'] },
+  { titleKey: 'tabContact', titleFallback: 'Public contact details', icon: Phone, keys: ['public_contact_email', 'public_contact_phone', 'public_contact_address', 'public_whatsapp_number'] },
+  { titleKey: 'tabSocial', titleFallback: 'Social proof', icon: Users, keys: ['public_socialproof_mode', 'public_socialproof_companies'] },
 ];
 
 export default function SettingsPage() {
   const router = useRouter();
   const { showError } = useToast();
+  const { t } = useLanguage();
   const { isAdmin } = useAuth();
   const [settings, setSettings] = useState<Setting[]>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
@@ -125,8 +145,20 @@ export default function SettingsPage() {
 
   const byKey = (key: string) => settings.find((s) => s.key === key);
 
+  // Resolve a settings label/section title from its key, falling back to the
+  // English text carried alongside it.
+  const label = (key: string, fallback: string) =>
+    (t.dashboard?.settings as unknown as Record<string, string> | undefined)?.[key] ?? fallback;
+
+  // The helper line under each field. `setting.description` is what gets
+  // WRITTEN to the database, so it stays English and stable; this is only what
+  // the admin reads.
+  const describe = (setting: Setting) =>
+    (t.dashboard?.settings?.descriptions as Record<string, string> | undefined)?.[setting.key] ??
+    setting.description;
+
   return (
-    <DashboardPage title="System Settings">
+    <DashboardPage title={t.dashboard?.settings?.title || 'System settings'}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -143,26 +175,26 @@ export default function SettingsPage() {
                 {isSaving ? (
                   <>
                     <Spinner size="sm" className="text-slate-900" />
-                    Saving...
+                    {t.dashboard?.common?.saving || 'Saving...'}
                   </>
                 ) : saved ? (
-                  'Saved!'
+                  t.dashboard?.common?.saved || 'Saved!'
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    Save Changes
+                    {t.dashboard?.common?.saveChanges || 'Save changes'}
                   </>
                 )}
               </Button>
             </div>
 
             {SECTIONS.map((section) => (
-              <Card key={section.title}>
+              <Card key={section.titleKey}>
                 <CardHeader className="flex flex-row items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
                     <section.icon className="w-5 h-5 text-slate-600" />
                   </div>
-                  <CardTitle>{section.title}</CardTitle>
+                  <CardTitle>{label(section.titleKey, section.titleFallback)}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
@@ -177,26 +209,26 @@ export default function SettingsPage() {
                         <div key={key}>
                           {setting.type === 'select' ? (
                             <Select
-                              label={setting.label}
+                              label={label(setting.labelKey, setting.labelFallback)}
                               value={setting.value}
                               onChange={(e) => handleChange(key, e.target.value)}
-                              options={setting.options || []}
+                              options={(setting.options || []).map((o) => ({ value: o.value, label: label(o.labelKey, o.labelFallback) }))}
                             />
                           ) : setting.type === 'textarea' ? (
                             <Textarea
-                              label={setting.label}
+                              label={label(setting.labelKey, setting.labelFallback)}
                               value={setting.value}
                               onChange={(e) => handleChange(key, e.target.value)}
                               rows={4}
                             />
                           ) : (
                             <Input
-                              label={setting.label}
+                              label={label(setting.labelKey, setting.labelFallback)}
                               value={setting.value}
                               onChange={(e) => handleChange(key, e.target.value)}
                             />
                           )}
-                          <p className="mt-1 text-sm text-slate-500">{setting.description}</p>
+                          <p className="mt-1 text-sm text-slate-500">{describe(setting)}</p>
                         </div>
                       );
                     })}
