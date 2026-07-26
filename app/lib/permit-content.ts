@@ -1,3 +1,6 @@
+import type { Language } from './translations';
+import { PERMIT_CONTENT_EN } from './permit-content-en';
+
 // ============================================================================
 // SEO content for the per-permit landing pages (app/[slug]/page.tsx).
 // Keyed by the permit_types.slug. Long-form Dutch copy lives here (code-
@@ -15,8 +18,8 @@ export interface PermitFaq {
   a: string;
 }
 
-export interface PermitContent {
-  slug: string;
+/** The translatable copy for one permit page. */
+export interface PermitCopy {
   metaTitle: string;
   metaDescription: string;
   h1: string;
@@ -29,6 +32,10 @@ export interface PermitContent {
   kostenIntro: string;
   kostenNote: string;
   faqs: PermitFaq[];
+}
+
+export interface PermitContent extends PermitCopy {
+  slug: string;
   related: string[];
 }
 
@@ -351,3 +358,28 @@ export const PERMIT_SLUGS = Object.keys(PERMIT_CONTENT);
 export function getPermitContent(slug: string): PermitContent | null {
   return PERMIT_CONTENT[slug] ?? null;
 }
+
+/**
+ * The permit page copy for a given locale.
+ *
+ * Returns null when that language has no real copy for the slug, and callers
+ * turn that into a 404. That is deliberate: an English URL serving Dutch prose
+ * is worse than no English URL at all — it is a thin, language-mismatched page
+ * on our highest commercial-intent surface. Adding a slug to
+ * PERMIT_CONTENT_EN is what publishes its English page.
+ */
+export function getPermitCopy(
+  slug: string,
+  locale: Language
+): (PermitCopy & { slug: string; related: string[] }) | null {
+  const dutch = PERMIT_CONTENT[slug];
+  if (!dutch) return null;
+  if (locale === 'nl') return dutch;
+
+  const english = PERMIT_CONTENT_EN[slug];
+  if (!english) return null;
+  return { ...english, slug: dutch.slug, related: dutch.related };
+}
+
+/** Slugs that actually have English copy — drives the English static params. */
+export const PERMIT_SLUGS_EN = PERMIT_SLUGS.filter((s) => s in PERMIT_CONTENT_EN);

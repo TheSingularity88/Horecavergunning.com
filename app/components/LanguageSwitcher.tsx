@@ -1,6 +1,9 @@
 'use client';
 import { useRef } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useLanguage } from '../context/LanguageContext';
+import { localePath, toBasePath } from '../lib/i18n-routes';
+import type { Language } from '../lib/translations';
 
 type FlagProps = {
   className?: string;
@@ -32,6 +35,8 @@ function FlagUK({ className }: FlagProps) {
 
 export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   const { language, setLanguage } = useLanguage();
+  const pathname = usePathname();
+  const router = useRouter();
   const detailsRef = useRef<HTMLDetailsElement | null>(null);
   const options = {
     nl: { label: 'Nederlands', Flag: FlagNL },
@@ -43,9 +48,19 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
     ? 'h-4 w-6 rounded-[3px] ring-1 ring-black/10'
     : 'h-4 w-6 rounded-[3px] ring-1 ring-black/10';
 
-  const handleSelect = (next: keyof typeof options) => {
+  const handleSelect = (next: Language) => {
+    // NAVIGATE, don't just flip a cookie.
+    //
+    // Each language now has its own URL, so the URL is what decides the
+    // language. On /en the cookie is ignored entirely, so the old
+    // setLanguage-only behaviour left the visitor stranded on an English page
+    // having asked for Dutch. Still writing the cookie so the preference
+    // survives a later visit to a page that has no translated counterpart.
     setLanguage(next);
     detailsRef.current?.removeAttribute('open');
+
+    const target = localePath(toBasePath(pathname || '/'), next);
+    if (target !== pathname) router.push(target);
   };
 
   return (

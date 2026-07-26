@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 import { blogPosts } from "./lib/blog-data";
 import { SITE_URL } from "./lib/site";
-import { PERMIT_SLUGS } from "./lib/permit-content";
+import { PERMIT_SLUGS, PERMIT_SLUGS_EN } from "./lib/permit-content";
 import { createPublicClient } from "./lib/supabase/public";
 
 const toIsoDate = (value: string) => {
@@ -53,12 +53,34 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     CONTENT_LAST_UPDATED
   );
 
-  const permitEntries = (await activePermitSlugs()).map((slug) => ({
+  const active = await activePermitSlugs();
+
+  const permitEntries = active.map((slug) => ({
     url: `${base}/${slug}`,
     lastModified: CONTENT_LAST_UPDATED,
     changeFrequency: "monthly" as const,
     priority: 0.9,
   }));
+
+  // English pages, listed only for slugs that actually have English copy.
+  // Advertising an English URL we do not serve would just generate 404s in
+  // Search Console.
+  const englishEntries = [
+    {
+      url: `${base}/en`,
+      lastModified: CONTENT_LAST_UPDATED,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    },
+    ...active
+      .filter((slug) => PERMIT_SLUGS_EN.includes(slug))
+      .map((slug) => ({
+        url: `${base}/en/${slug}`,
+        lastModified: CONTENT_LAST_UPDATED,
+        changeFrequency: "monthly" as const,
+        priority: 0.7,
+      })),
+  ];
 
   return [
     {
@@ -88,5 +110,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     ...blogEntries,
+    ...englishEntries,
   ];
 }

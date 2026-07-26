@@ -1,3 +1,5 @@
+import { alternatesFor, localePath, shortPermitLabel } from '@/app/lib/i18n-routes';
+import type { Language } from '@/app/lib/translations';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -16,7 +18,8 @@ import { SITE_URL, SITE_NAME } from '@/app/lib/site';
 import {
   PERMIT_SLUGS,
   getPermitContent,
-  PERMIT_CONTENT,
+  getPermitCopy,
+
 } from '@/app/lib/permit-content';
 import type { PermitType, RequiredDocument } from '@/app/lib/types/database';
 
@@ -75,7 +78,9 @@ export async function generateMetadata({
     // part that carries the intent.
     title: { absolute: content.metaTitle },
     description: content.metaDescription,
-    alternates: { canonical: `/${slug}` },
+    // Self-referencing canonical plus hreflang pairs. English is only
+    // advertised when English copy actually exists for this slug.
+    alternates: alternatesFor(`/${slug}`, 'nl'),
     openGraph: {
       title: content.metaTitle,
       description: content.metaDescription,
@@ -95,13 +100,23 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * Shared body for both the Dutch page (/slug) and the English one
+ * (/en/slug). The locale is passed EXPLICITLY rather than read from the
+ * language context, because this is a server component and that context is
+ * client-side — a server component that guessed the locale would render Dutch
+ * into the English page's HTML, which is precisely what separate URLs exist to
+ * prevent.
+ */
 export default async function PermitPage({
   params,
+  locale = 'nl',
 }: {
   params: Promise<{ slug: string }>;
+  locale?: Language;
 }) {
   const { slug } = await params;
-  const content = getPermitContent(slug);
+  const content = getPermitCopy(slug, locale);
   if (!content) notFound();
 
   const { permit, requiredDocs } = await getPermitType(slug);
@@ -109,11 +124,15 @@ export default async function PermitPage({
 
   // Prefer DB-managed required documents; fall back to the content checklist.
   const requirements =
-    requiredDocs.length > 0 ? requiredDocs.map((d) => d.name_nl) : content.requirements;
+    requiredDocs.length > 0
+      ? requiredDocs.map((d) => (locale === 'en' ? d.name_en || d.name_nl : d.name_nl))
+      : content.requirements;
 
   const related = content.related
-    .map((s) => ({ slug: s, content: PERMIT_CONTENT[s] }))
-    .filter((r) => r.content);
+    .map((s) => ({ slug: s, content: getPermitCopy(s, locale) }))
+    .filter((r): r is { slug: string; content: NonNullable<typeof r.content> } =>
+      r.content !== null
+    );
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -304,12 +323,12 @@ export default async function PermitPage({
               {related.map((r) => (
                 <Link
                   key={r.slug}
-                  href={`/${r.slug}`}
+                  href={localePath(`/${r.slug}`, locale)}
                   className="group rounded-xl border border-slate-200 bg-white p-4 hover:border-amber-300 hover:shadow-md transition-all"
                 >
                   <FileText className="w-5 h-5 text-amber-500 mb-2" />
                   <p className="font-semibold text-slate-900 text-sm group-hover:text-amber-600">
-                    {r.content.h1.replace(' aanvragen', '').replace(' in Amsterdam', '')}
+                    {shortPermitLabel(r.content.h1, locale)}
                   </p>
                 </Link>
               ))}
