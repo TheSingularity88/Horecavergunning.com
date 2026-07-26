@@ -4,11 +4,12 @@ import Link from 'next/link';
 import { Button } from './ui/Button';
 import { ShieldCheck, ChevronDown, Menu, User, X } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { localePath } from '../lib/i18n-routes';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export function Navbar() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
@@ -18,16 +19,16 @@ export function Navbar() {
         {/* Desktop Navbar */}
         <div className="hidden md:flex container mx-auto px-4 h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href={localePath('/', language)} className="flex items-center gap-2">
               <ShieldCheck className="w-8 h-8 text-amber-500" />
               <span className="text-xl font-bold text-slate-900">HorecaVergunning</span>
             </Link>
           </div>
         
         <div className="flex items-center gap-2">
-          <Link href="/vergunningen" className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">{t.navbar.services}</Link>
-          <Link href="/#pricing" className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">{t.navbar.pricing}</Link>
-          <Link href="/#faq" className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">{t.navbar.faq}</Link>
+          <Link href={localePath('/vergunningen', language)} className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">{t.navbar.services}</Link>
+          <Link href={localePath('/#pricing', language)} className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">{t.navbar.pricing}</Link>
+          <Link href={localePath('/#faq', language)} className="px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">{t.navbar.faq}</Link>
           
           <div className="relative group">
             <button className="flex items-center gap-1 px-4 py-2 rounded-full text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200">
@@ -36,9 +37,9 @@ export function Navbar() {
             </button>
             <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-100 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top translate-y-2 group-hover:translate-y-0">
               <div className="py-2">
-                <Link href="/#about" className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">{t.navbar.mission}</Link>
-                <Link href="/blog" className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">{t.navbar.blogNews}</Link>
-                <Link href="/contact" className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">Contact</Link>
+                <Link href={localePath('/#about', language)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">{t.navbar.mission}</Link>
+                <Link href={localePath('/blog', language)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">{t.navbar.blogNews}</Link>
+                <Link href={localePath('/contact', language)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">Contact</Link>
               </div>
             </div>
           </div>
@@ -52,7 +53,7 @@ export function Navbar() {
           >
             {t.navbar.login}
           </Link>
-          <Link href="/contact">
+          <Link href={localePath('/contact', language)}>
             <Button>{t.navbar.book}</Button>
           </Link>
         </div>
@@ -71,7 +72,7 @@ export function Navbar() {
 
           {/* Center: Logo */}
           <div className="flex items-center justify-center min-w-0 justify-self-center">
-            <Link href="/" className="flex items-center gap-2 min-w-0" onClick={() => setIsMobileMenuOpen(false)}>
+            <Link href={localePath('/', language)} className="flex items-center gap-2 min-w-0" onClick={() => setIsMobileMenuOpen(false)}>
               <ShieldCheck className="w-8 h-8 text-amber-500" />
               <span className="text-lg font-bold text-slate-900 truncate">HorecaVergunning</span>
             </Link>
@@ -111,7 +112,7 @@ export function Navbar() {
                           {t.navbar.login}
                         </Link>
                         <Link 
-                          href="/contact" 
+                          href={localePath('/contact', language)} 
                           onClick={() => setIsUserMenuOpen(false)}
                           className="flex items-center justify-center rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600"
                         >
@@ -160,17 +161,17 @@ export function Navbar() {
               
               <div className="flex-1 overflow-y-auto py-4">
                 <div className="flex flex-col gap-2 px-4">
-                  <Link href="/vergunningen" onClick={() => setIsMobileMenuOpen(false)} className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-slate-700 font-semibold hover:bg-slate-50 hover:text-amber-600 transition-colors">{t.navbar.services}</Link>
-                  <Link href="/#pricing" onClick={() => setIsMobileMenuOpen(false)} className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-slate-700 font-semibold hover:bg-slate-50 hover:text-amber-600 transition-colors">{t.navbar.pricing}</Link>
-                  <Link href="/#faq" onClick={() => setIsMobileMenuOpen(false)} className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-slate-700 font-semibold hover:bg-slate-50 hover:text-amber-600 transition-colors">{t.navbar.faq}</Link>
+                  <Link href={localePath('/vergunningen', language)} onClick={() => setIsMobileMenuOpen(false)} className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-slate-700 font-semibold hover:bg-slate-50 hover:text-amber-600 transition-colors">{t.navbar.services}</Link>
+                  <Link href={localePath('/#pricing', language)} onClick={() => setIsMobileMenuOpen(false)} className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-slate-700 font-semibold hover:bg-slate-50 hover:text-amber-600 transition-colors">{t.navbar.pricing}</Link>
+                  <Link href={localePath('/#faq', language)} onClick={() => setIsMobileMenuOpen(false)} className="rounded-xl border border-slate-100 bg-white px-4 py-3 text-slate-700 font-semibold hover:bg-slate-50 hover:text-amber-600 transition-colors">{t.navbar.faq}</Link>
                 </div>
 
                 <div className="px-4 pt-5">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-3">{t.navbar.about}</span>
                   <div className="flex flex-col gap-2">
-                    <Link href="/#about" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-2 text-slate-600 font-semibold hover:text-amber-600 hover:bg-amber-50 transition-colors">{t.navbar.mission}</Link>
-                    <Link href="/blog" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-2 text-slate-600 font-semibold hover:text-amber-600 hover:bg-amber-50 transition-colors">{t.navbar.blogNews}</Link>
-                    <Link href="/#pricing" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-2 text-slate-600 font-semibold hover:text-amber-600 hover:bg-amber-50 transition-colors">{t.navbar.pricing}</Link>
+                    <Link href={localePath('/#about', language)} onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-2 text-slate-600 font-semibold hover:text-amber-600 hover:bg-amber-50 transition-colors">{t.navbar.mission}</Link>
+                    <Link href={localePath('/blog', language)} onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-2 text-slate-600 font-semibold hover:text-amber-600 hover:bg-amber-50 transition-colors">{t.navbar.blogNews}</Link>
+                    <Link href={localePath('/#pricing', language)} onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-2 text-slate-600 font-semibold hover:text-amber-600 hover:bg-amber-50 transition-colors">{t.navbar.pricing}</Link>
                   </div>
                 </div>
               </div>

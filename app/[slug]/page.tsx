@@ -1,5 +1,5 @@
 import { alternatesFor, localePath, shortPermitLabel } from '@/app/lib/i18n-routes';
-import type { Language } from '@/app/lib/translations';
+import { translations, type Language } from '@/app/lib/translations';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -120,6 +120,11 @@ export default async function PermitPage({
   if (!content) notFound();
 
   const { permit, requiredDocs } = await getPermitType(slug);
+  const pageCopy = translations[locale].permitPage;
+  // Permit names live in the DB in both languages.
+  const permitLabel = permit
+    ? (locale === 'en' ? permit.name_en || permit.name_nl : permit.name_nl).toLowerCase()
+    : content.h1;
   const feeCents = permit?.base_fee_cents ?? 0;
 
   // Prefer DB-managed required documents; fall back to the content checklist.
@@ -200,7 +205,7 @@ export default async function PermitPage({
             <ChevronRight className="w-3.5 h-3.5" />
             <Link href="/vergunningen" className="hover:text-white">Vergunningen</Link>
             <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-slate-300">{permit ? permit.name_nl : content.h1}</span>
+            <span className="text-slate-300">{permitLabel}</span>
           </nav>
           <h1 className="text-3xl md:text-5xl font-bold leading-tight text-balance">
             {content.h1}
@@ -242,7 +247,7 @@ export default async function PermitPage({
 
         {/* Requirements */}
         <section>
-          <h2 className="text-2xl font-bold mb-4">Welke documenten heeft u nodig?</h2>
+          <h2 className="text-2xl font-bold mb-4">{pageCopy.documentsTitle}</h2>
           <ul className="space-y-2.5">
             {requirements.map((r, i) => (
               <li key={i} className="flex gap-3 text-slate-700">
@@ -258,7 +263,7 @@ export default async function PermitPage({
 
         {/* Process */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">Zo verloopt het proces</h2>
+          <h2 className="text-2xl font-bold mb-6">{pageCopy.processTitle}</h2>
           <ol className="space-y-4">
             {content.process.map((step, i) => (
               <li key={i} className="flex gap-4">
@@ -277,7 +282,7 @@ export default async function PermitPage({
         {/* Kosten */}
         <section id="kosten" className="rounded-2xl border border-slate-200 bg-white p-7">
           <h2 className="text-2xl font-bold mb-3">
-            Wat kost een {permit ? permit.name_nl.toLowerCase() : slug}?
+            {pageCopy.costTitle.replace('{permit}', permitLabel)}
           </h2>
           <p className="text-slate-700 leading-relaxed">{content.kostenIntro}</p>
           <div className="my-5 flex items-baseline gap-2">
@@ -287,7 +292,7 @@ export default async function PermitPage({
                 <span className="text-slate-500">eenmalig servicetarief</span>
               </>
             ) : (
-              <span className="text-3xl font-bold">Op aanvraag</span>
+              <span className="text-3xl font-bold">{pageCopy.onRequest}</span>
             )}
           </div>
           <p className="text-sm text-slate-500">{content.kostenNote}</p>
@@ -301,7 +306,7 @@ export default async function PermitPage({
 
         {/* FAQ */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">Veelgestelde vragen</h2>
+          <h2 className="text-2xl font-bold mb-6">{pageCopy.faqTitle}</h2>
           <dl className="space-y-5">
             {content.faqs.map((f, i) => (
               <div key={i} className="rounded-xl border border-slate-200 bg-white p-5">
@@ -318,7 +323,7 @@ export default async function PermitPage({
         {/* Related */}
         {related.length > 0 && (
           <section>
-            <h2 className="text-2xl font-bold mb-4">Gerelateerde vergunningen</h2>
+            <h2 className="text-2xl font-bold mb-4">{pageCopy.relatedTitle}</h2>
             <div className="grid sm:grid-cols-3 gap-4">
               {related.map((r) => (
                 <Link
@@ -338,15 +343,15 @@ export default async function PermitPage({
 
         {/* Bottom CTA */}
         <section className="rounded-2xl bg-slate-900 text-white p-8 text-center">
-          <h2 className="text-2xl font-bold mb-2">Laat uw {permit ? permit.name_nl.toLowerCase() : 'vergunning'} door ons regelen</h2>
+          <h2 className="text-2xl font-bold mb-2">{pageCopy.ctaTitle.replace('{permit}', permitLabel)}</h2>
           <p className="text-slate-300 mb-6 max-w-xl mx-auto">
-            Vaste prijs, geen verrassingen. Wij verzorgen de volledige aanvraag zodat u zich op uw zaak kunt richten.
+            {pageCopy.ctaBody}
           </p>
           <Link
             href="/contact"
             className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-amber-500 px-8 font-semibold text-slate-900 hover:bg-amber-400 transition-colors"
           >
-            Gratis intake aanvragen <ArrowRight className="w-4 h-4" />
+            {pageCopy.ctaButton} <ArrowRight className="w-4 h-4" />
           </Link>
         </section>
       </article>

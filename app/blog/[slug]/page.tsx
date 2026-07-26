@@ -1,3 +1,5 @@
+import type { Language } from '@/app/lib/translations';
+import { alternatesFor, localePath } from '@/app/lib/i18n-routes';
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { blogPosts } from "@/app/lib/blog-data";
@@ -20,8 +22,10 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({
   params,
+  locale = 'nl',
 }: {
   params: Promise<{ slug: string }>;
+  locale?: Language;
 }): Promise<Metadata> {
   const { slug } = await params;
   const post = blogPosts.find((p) => p.slug === slug);
@@ -36,17 +40,15 @@ export async function generateMetadata({
     };
   }
 
-  const content = post.content.nl;
+  const content = post.content[locale];
   const publishedTime = toIsoDate(post.date);
-  const url = `/blog/${post.slug}`;
+  const url = localePath(`/blog/${post.slug}`, locale);
 
   return {
     title: content.title,
     description: content.excerpt,
     authors: [{ name: post.author }],
-    alternates: {
-      canonical: url,
-    },
+    alternates: alternatesFor(`/blog/${post.slug}`, locale),
     openGraph: {
       type: "article",
       title: content.title,
@@ -68,7 +70,13 @@ export async function generateMetadata({
   };
 }
 
-export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function BlogPostPage({
+  params,
+  locale = 'nl',
+}: {
+  params: Promise<{ slug: string }>;
+  locale?: Language;
+}) {
   const { slug } = await params;
   const post = blogPosts.find((p) => p.slug === slug);
 
@@ -77,7 +85,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   }
 
   const relatedPosts = blogPosts.filter(p => p.slug !== slug).slice(0, 2);
-  const content = post.content.nl;
+  const content = post.content[locale];
   const publishedTime = toIsoDate(post.date);
   const jsonLd = {
     "@context": "https://schema.org",

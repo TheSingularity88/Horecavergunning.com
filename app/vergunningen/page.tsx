@@ -1,3 +1,5 @@
+import { alternatesFor, localePath } from '@/app/lib/i18n-routes';
+import { translations, type Language } from '@/app/lib/translations';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, ChevronRight } from 'lucide-react';
@@ -15,7 +17,7 @@ export const metadata: Metadata = {
   title: 'Horecavergunningen aanvragen in Amsterdam | Alle vergunningen & tarieven',
   description:
     'Overzicht van alle horecavergunningen die wij voor u aanvragen: exploitatievergunning, alcoholvergunning, terrasvergunning, Bibob en meer. Vaste tarieven per vergunning.',
-  alternates: { canonical: '/vergunningen' },
+  alternates: alternatesFor('/vergunningen', 'nl'),
 };
 
 async function getPermitTypes(): Promise<PermitType[]> {
@@ -40,20 +42,28 @@ const euro = (cents: number) =>
     maximumFractionDigits: 0,
   }).format(cents / 100);
 
-export default async function VergunningenHub() {
+export default async function VergunningenHub({
+  locale = 'nl',
+}: {
+  locale?: Language;
+} = {}) {
   const permitTypes = await getPermitTypes();
+  const copy = translations[locale].permitsHub;
+  // Permit names come from the DB, which carries both languages.
+  const permitName = (p: PermitType) =>
+    locale === 'en' ? p.name_en || p.name_nl : p.name_nl;
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 font-sans">
       <JsonLd
         graph={[
-          breadcrumb([{ name: 'Vergunningen', path: '/vergunningen' }]),
+          breadcrumb([{ name: copy.breadcrumb, path: localePath('/vergunningen', locale) }]),
           permitCollection(
             permitTypes.map((p) => ({
               slug: p.slug,
-              name: p.name_nl,
+              name: permitName(p),
               description:
-                PERMIT_CONTENT[p.slug]?.metaDescription ?? p.name_nl,
+                PERMIT_CONTENT[p.slug]?.metaDescription ?? permitName(p),
               priceCents: p.base_fee_cents,
             }))
           ),
@@ -66,14 +76,13 @@ export default async function VergunningenHub() {
           <nav className="flex items-center gap-1.5 text-sm text-slate-400 mb-6" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-white">Home</Link>
             <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-slate-300">Vergunningen</span>
+            <span className="text-slate-300">{copy.breadcrumb}</span>
           </nav>
           <h1 className="text-3xl md:text-5xl font-bold leading-tight text-balance">
-            Horecavergunningen aanvragen in Amsterdam
+            {copy.h1}
           </h1>
           <p className="mt-5 text-lg text-slate-300 max-w-2xl">
-            Wij verzorgen de volledige aanvraag van al uw horecavergunningen — tegen een vaste prijs
-            per vergunning. Kies uw vergunning voor de voorwaarden, het proces en de kosten.
+            {copy.intro}
           </p>
         </div>
       </section>
@@ -83,11 +92,11 @@ export default async function VergunningenHub() {
           {permitTypes.map((pt) => (
             <Link
               key={pt.id}
-              href={`/${pt.slug}`}
+              href={localePath(`/${pt.slug}`, locale)}
               className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-6 hover:border-amber-300 hover:shadow-lg transition-all"
             >
               <h2 className="text-lg font-semibold text-slate-900 group-hover:text-amber-600">
-                {pt.name_nl}
+                {permitName(pt)}
               </h2>
               {pt.description_nl && (
                 <p className="mt-2 text-sm text-slate-600 leading-relaxed flex-1">
@@ -107,15 +116,15 @@ export default async function VergunningenHub() {
         </div>
 
         <div className="mt-12 rounded-2xl bg-slate-900 text-white p-8 text-center">
-          <h2 className="text-2xl font-bold mb-2">Niet zeker welke vergunning u nodig heeft?</h2>
+          <h2 className="text-2xl font-bold mb-2">{copy.ctaTitle}</h2>
           <p className="text-slate-300 mb-6 max-w-xl mx-auto">
-            Vertel ons over uw zaak en wij bepalen kosteloos welke vergunningen u precies nodig heeft.
+            {copy.ctaBody}
           </p>
           <Link
-            href="/contact"
+            href={localePath('/contact', locale)}
             className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-amber-500 px-8 font-semibold text-slate-900 hover:bg-amber-400 transition-colors"
           >
-            Gratis intake aanvragen <ArrowRight className="w-4 h-4" />
+            {copy.ctaButton} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>

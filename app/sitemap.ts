@@ -72,6 +72,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.8,
     },
+    {
+      url: `${base}/en/vergunningen`,
+      lastModified: CONTENT_LAST_UPDATED,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    },
+    {
+      url: `${base}/en/contact`,
+      lastModified: CONTENT_LAST_UPDATED,
+      changeFrequency: "yearly" as const,
+      priority: 0.5,
+    },
+    {
+      url: `${base}/en/blog`,
+      lastModified: newestPostDate,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    },
     ...active
       .filter((slug) => PERMIT_SLUGS_EN.includes(slug))
       .map((slug) => ({
@@ -79,6 +97,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: CONTENT_LAST_UPDATED,
         changeFrequency: "monthly" as const,
         priority: 0.7,
+      })),
+    // Only posts that actually have an English body.
+    ...blogPosts
+      .filter((post) => (post.content.en?.body ?? "").trim().length > 0)
+      .map((post) => ({
+        url: `${base}/en/blog/${post.slug}`,
+        lastModified: toIsoDate(post.date),
+        changeFrequency: "monthly" as const,
+        priority: 0.5,
       })),
   ];
 

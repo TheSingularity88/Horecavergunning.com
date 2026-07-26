@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ShieldCheck } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { localePath } from '../lib/i18n-routes';
 import { fetchPublicSettings, DEFAULT_PUBLIC_SETTINGS, type PublicSettings } from '../lib/public-settings';
 import { CookiePreferencesLink } from './CookieConsent';
 
@@ -14,7 +15,7 @@ const PERMIT_LINKS = [
 ];
 
 export function Footer() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [settings, setSettings] = useState<PublicSettings>(DEFAULT_PUBLIC_SETTINGS);
 
   useEffect(() => {
@@ -40,13 +41,13 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               {PERMIT_LINKS.map((l) => (
                 <li key={l.href}>
-                  <Link href={l.href} className="hover:text-amber-500 transition-colors">
+                  <Link href={localePath(l.href, language)} className="hover:text-amber-500 transition-colors">
                     {l.label}
                   </Link>
                 </li>
               ))}
               <li>
-                <Link href="/vergunningen" className="hover:text-amber-500 transition-colors">
+                <Link href={localePath('/vergunningen', language)} className="hover:text-amber-500 transition-colors">
                   {t.services.viewAll || 'Alle vergunningen'}
                 </Link>
               </li>
@@ -56,10 +57,10 @@ export function Footer() {
           <div>
             <h4 className="text-white font-bold mb-4">{t.footer.company}</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/#services" className="hover:text-amber-500 transition-colors">{t.navbar.services}</Link></li>
-              <li><Link href="/#faq" className="hover:text-amber-500 transition-colors">{t.navbar.faq}</Link></li>
-              <li><Link href="/blog" className="hover:text-amber-500 transition-colors">Blog</Link></li>
-              <li><Link href="/contact" className="hover:text-amber-500 transition-colors">{t.footer.contact}</Link></li>
+              <li><Link href={localePath('/#services', language)} className="hover:text-amber-500 transition-colors">{t.navbar.services}</Link></li>
+              <li><Link href={localePath('/#faq', language)} className="hover:text-amber-500 transition-colors">{t.navbar.faq}</Link></li>
+              <li><Link href={localePath('/blog', language)} className="hover:text-amber-500 transition-colors">Blog</Link></li>
+              <li><Link href={localePath('/contact', language)} className="hover:text-amber-500 transition-colors">{t.footer.contact}</Link></li>
             </ul>
           </div>
 
@@ -84,7 +85,7 @@ export function Footer() {
                 </li>
               )}
               <li className={settings.contactAddress || settings.contactPhone || settings.contactEmail ? 'pt-2' : ''}>
-                <Link href="/contact" className="hover:text-amber-500 transition-colors">
+                <Link href={localePath('/contact', language)} className="hover:text-amber-500 transition-colors">
                   {t.footer.contact}
                 </Link>
               </li>
