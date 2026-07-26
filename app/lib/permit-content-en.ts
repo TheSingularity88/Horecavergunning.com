@@ -354,8 +354,8 @@ export const PERMIT_CONTENT_EN: Record<string, PermitCopy> = {
         "body": "You can reopen safely and with the right permits in place."
       }
     ],
-    kostenIntro: "For arranging the permits around your renovation, we charge a fixed service fee.",
-    kostenNote: "Depending on the procedure, the gemeente (municipality) charges its own fees (leges). Construction costs and third-party costs are separate from our service fee.",
+    kostenIntro: "For arranging the permits around your renovation, we charge a fixed service fee. This covers the standard process: the intake, the drawings and supporting documentation, the fire-safe use notifications, and any amendment to your exploitatievergunning.",
+    kostenNote: "If your renovation requires a full omgevingsvergunning including a building activity — for structural work, for example — that is a considerably heavier process. We quote for that separately and in advance, so you still know exactly where you stand. The gemeente also charges its own leges; for a building activity these are a percentage of the construction cost and mount up quickly. Construction costs and third-party costs are separate from our service fee.",
     faqs: [
       {
         "q": "Do I always need a permit for a renovation?",
