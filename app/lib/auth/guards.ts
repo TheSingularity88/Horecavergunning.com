@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createClient } from '@/app/lib/supabase/server';
+import { ConfigurationError } from '@/app/lib/errors';
 import type { ActionErrorCode } from '@/app/lib/actions/error-codes';
 import type { Profile, UserRole } from '@/app/lib/types/database';
 import type { User } from '@supabase/supabase-js';
@@ -96,6 +97,20 @@ export function toActionError(err: unknown): {
 } {
   if (err instanceof AuthError) {
     return { success: false, error: err.message, code: 'not_authorised' };
+  }
+  // A missing environment variable is not a transient fault. "Please try
+  // again" would send the user into a loop that cannot succeed, so this says
+  // plainly that it is a setup problem on our side. The specific variable name
+  // stays in the server log — never in the response.
+  if (err instanceof ConfigurationError) {
+    console.error('[action] configuration error:', err.message);
+    return {
+      success: false,
+      error:
+        'The server is not configured correctly, so this could not be saved. ' +
+        'This is a problem on our side — retrying will not help.',
+      code: 'server_misconfigured',
+    };
   }
   console.error('[action]', err);
   return {

@@ -27,4 +27,6 @@ export type ActionErrorCode =
   | 'request_not_rejected'
   | 'request_reopen_failed'
   | 'not_authorised'
+  /** A required environment variable is missing/empty. Retrying cannot help. */
+  | 'server_misconfigured'
   | 'unknown';
