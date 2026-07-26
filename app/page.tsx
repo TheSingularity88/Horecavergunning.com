@@ -50,7 +50,7 @@ export default async function Home() {
     <main className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-amber-500 selection:text-white">
       <HomeJsonLd nap={nap} />
       <Navbar />
-      <Hero />
+      <Hero sampleFeeCents={permitTypes.find((p) => p.slug === 'exploitatievergunning')?.base_fee_cents ?? null} />
       <SocialProof mode={settings.socialProofMode} companies={settings.socialProofCompanies} />
       <ProblemSolution />
       <AiReview />

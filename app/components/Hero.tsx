@@ -5,7 +5,14 @@ import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, Circle, Clock, Sparkles } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
-export function Hero() {
+/**
+ * `sampleFeeCents` comes from the database so the headline price cannot drift
+ * from the real one. It used to be hardcoded as €495, so the first price a
+ * visitor saw was maintained in a completely different place from the price
+ * they were later quoted — a contradiction waiting to happen the moment the
+ * fee changed, which it now has.
+ */
+export function Hero({ sampleFeeCents }: { sampleFeeCents?: number | null } = {}) {
   const { language, t } = useLanguage();
   const nl = language !== 'en';
 
@@ -136,7 +143,17 @@ export function Hero() {
                   <span className="text-sm text-slate-500">
                     {nl ? 'Vaste prijs' : 'Fixed price'}
                   </span>
-                  <span className="font-bold text-slate-900">€&thinsp;495</span>
+                  <span className="font-bold text-slate-900">
+                    {sampleFeeCents
+                      ? new Intl.NumberFormat(nl ? 'nl-NL' : 'en-GB', {
+                          style: 'currency',
+                          currency: 'EUR',
+                          maximumFractionDigits: 0,
+                        }).format(sampleFeeCents / 100)
+                      : nl
+                        ? 'Op aanvraag'
+                        : 'On request'}
+                  </span>
                 </div>
               </div>
             </div>
