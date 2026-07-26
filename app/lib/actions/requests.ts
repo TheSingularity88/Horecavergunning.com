@@ -276,3 +276,88 @@ export async function rejectClientRequest(input: { requestId: string }): Promise
     return toActionError(err);
   }
 }
+
+/**
+ * Undo a rejection: put the request back in the staff queue.
+ *
+ * Rejecting was a one-way door. Both review buttons disable themselves once a
+ * request leaves pending/reviewing, so a misclick on Reject permanently parked
+ * a real customer's request with no way back — and because rejection is
+ * customer-visible in the portal, the mistake was visible to them too.
+ *
+ * Reversing it is safe precisely because rejecting does so little: it sets a
+ * status and writes an audit row. Nothing is emailed, no case is created, no
+ * invoice is raised, and the only database trigger on the table touches
+ * updated_at. So the whole of a rejection is undone by restoring the two
+ * columns it wrote.
+ *
+ * ONLY a rejected request can be reopened. A converted one has a case (and
+ * usually an invoice and a checklist) hanging off it; unwinding that is a
+ * different and far more destructive operation, and is deliberately not
+ * offered here.
+ *
+ * The target state — pending with reviewed_by cleared — is the same one
+ * releaseClaim() above restores when an approval fails halfway. Who rejected
+ * it, and who undid that, both stay in activity_log.
+ */
+export async function reopenClientRequest(input: {
+  requestId: string;
+}): Promise<ActionResult> {
+  try {
+    const { profile } = await requireStaff();
+    const parsed = reviewRequestSchema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: 'Invalid request id' };
+    }
+
+    const admin = createAdminClient();
+
+    // Conditional UPDATE rather than read-then-write, for the same reason the
+    // approval claims atomically: the database decides whether the row is
+    // still rejected, so a reopen racing an approval cannot resurrect a
+    // request that has just become a case.
+    const { data: reopened, error } = await admin
+      .from('client_requests')
+      .update({ status: 'pending', reviewed_by: null })
+      .eq('id', parsed.data.requestId)
+      .eq('status', 'rejected')
+      .select('id')
+      .maybeSingle();
+
+    if (error) {
+      return {
+        success: false,
+        error: 'Could not reopen this request. Please try again.',
+        code: 'request_reopen_failed',
+      };
+    }
+
+    if (!reopened) {
+      // Zero rows: either it is gone, or it is not rejected any more.
+      const { data: exists } = await admin
+        .from('client_requests')
+        .select('id')
+        .eq('id', parsed.data.requestId)
+        .maybeSingle();
+      return exists
+        ? {
+            success: false,
+            error: 'Only a rejected request can be reopened.',
+            code: 'request_not_rejected',
+          }
+        : { success: false, error: 'Request not found.', code: 'request_not_found' };
+    }
+
+    await admin.from('activity_log').insert({
+      user_id: profile.id,
+      action: 'request_reopened',
+      entity_type: 'client_requests',
+      entity_id: reopened.id,
+      details: {},
+    });
+
+    return { success: true };
+  } catch (err) {
+    return toActionError(err);
+  }
+}

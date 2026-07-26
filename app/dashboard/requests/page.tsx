@@ -2,11 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Check, X, ArrowRight } from 'lucide-react';
+import { Check, X, ArrowRight, Undo2 } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
-import { approveClientRequest, rejectClientRequest } from '@/app/lib/actions/requests';
+import {
+  approveClientRequest,
+  rejectClientRequest,
+  reopenClientRequest,
+} from '@/app/lib/actions/requests';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -15,6 +19,7 @@ import { Select } from '@/app/components/ui/Select';
 import { Badge } from '@/app/components/ui/Badge';
 import { Table, Pagination } from '@/app/components/ui/Table';
 import { Spinner } from '@/app/components/ui/Spinner';
+import { ConfirmModal } from '@/app/components/ui/Modal';
 import { useToast } from '@/app/components/ui/Toast';
 import type {
   Client,
@@ -40,6 +45,9 @@ export default function RequestsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  // Reject asks first. It is the one action here that is immediately visible to
+  // the customer, so a stray click should not be able to land it.
+  const [pendingReject, setPendingReject] = useState<RequestWithClient | null>(null);
   const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
@@ -154,6 +162,29 @@ export default function RequestsPage() {
       );
     }
     setRowLoading(request.id, false);
+    setPendingReject(null);
+  };
+
+  /**
+   * Undo a rejection. Returns the request to the queue so it can be approved
+   * or rejected again — rejecting used to be a dead end, with both buttons
+   * disabled and nothing else on offer.
+   */
+  const handleReopen = async (request: RequestWithClient) => {
+    setRowLoading(request.id, true);
+    const result = await reopenClientRequest({ requestId: request.id });
+    if (!result.success) {
+      showError(result.error);
+    } else {
+      setRequests((prev) =>
+        prev.map((item) =>
+          item.id === request.id
+            ? { ...item, status: 'pending', reviewed_by: null }
+            : item
+        )
+      );
+    }
+    setRowLoading(request.id, false);
   };
 
   const statusOptions = [
@@ -232,6 +263,24 @@ export default function RequestsPage() {
           );
         }
 
+        // A rejected request is not a dead end any more: offer the way back
+        // instead of two buttons that are both disabled.
+        if (request.status === 'rejected') {
+          return (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleReopen(request)}
+              disabled={isProcessing}
+              className="gap-1"
+              title="Put this request back in the queue"
+            >
+              {isProcessing ? <Spinner size="sm" /> : <Undo2 className="w-4 h-4" />}
+              Reopen
+            </Button>
+          );
+        }
+
         return (
           <div className="flex items-center gap-2">
             <Button
@@ -246,7 +295,7 @@ export default function RequestsPage() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => handleReject(request)}
+              onClick={() => setPendingReject(request)}
               disabled={!canReview || isProcessing}
               className="gap-1"
             >
@@ -300,6 +349,25 @@ export default function RequestsPage() {
           onPageChange={setCurrentPage}
         />
       </div>
+
+      <ConfirmModal
+        isOpen={pendingReject !== null}
+        onClose={() => setPendingReject(null)}
+        onConfirm={() => pendingReject && handleReject(pendingReject)}
+        isLoading={pendingReject ? !!actionLoading[pendingReject.id] : false}
+        variant="danger"
+        title="Reject this request?"
+        message={
+          pendingReject
+            ? `"${pendingReject.title}" will show as rejected to ${
+                pendingReject.clients?.company_name || 'the client'
+              } in their portal. You can reopen it afterwards if this was a mistake.`
+            : ''
+        }
+        confirmText="Reject"
+        cancelText="Cancel"
+        loadingText="Rejecting..."
+      />
     </DashboardPage>
   );
 }

@@ -24,5 +24,7 @@ export type ActionErrorCode =
   | 'request_already_reviewed'
   | 'request_not_found'
   | 'request_submit_failed'
+  | 'request_not_rejected'
+  | 'request_reopen_failed'
   | 'not_authorised'
   | 'unknown';
