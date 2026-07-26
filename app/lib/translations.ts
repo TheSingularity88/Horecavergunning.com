@@ -165,6 +165,26 @@ export const translations = {
       rights: "© 2026 HorecaVergunning BV. All rights reserved."
     },
     whatsapp: "WhatsApp Us",
+    permitPage: {
+      breadcrumb: "Permits",
+      documentsTitle: "Which documents do you need?",
+      processTitle: "How the process works",
+      onRequest: "On request",
+      faqTitle: "Frequently asked questions",
+      relatedTitle: "Related permits",
+      costTitle: "What does a {permit} cost?",
+      ctaTitle: "Let us arrange your {permit}",
+      ctaBody: "A fixed price, no surprises. We handle the whole application so you can focus on your business.",
+      ctaButton: "Request a free intake",
+    },
+    permitsHub: {
+      breadcrumb: "Permits",
+      h1: "Hospitality permits in Amsterdam",
+      intro: "We handle the complete application for all your hospitality permits — for a fixed fee per permit. Choose your permit for the conditions, the process and the costs.",
+      ctaTitle: "Not sure which permit you need?",
+      ctaBody: "Tell us about your venue and we will determine, free of charge, exactly which permits you need.",
+      ctaButton: "Request a free intake",
+    },
     blog: {
       title: "Hospitality Knowledge & News",
       subtitle: "Stay up to date with the latest legislation, trends, and tips for the hospitality industry.",
@@ -713,6 +733,26 @@ export const translations = {
       rights: "© 2026 HorecaVergunning BV. Alle rechten voorbehouden."
     },
     whatsapp: "App Ons",
+    permitPage: {
+      breadcrumb: "Vergunningen",
+      documentsTitle: "Welke documenten heeft u nodig?",
+      processTitle: "Zo verloopt het proces",
+      onRequest: "Op aanvraag",
+      faqTitle: "Veelgestelde vragen",
+      relatedTitle: "Gerelateerde vergunningen",
+      costTitle: "Wat kost een {permit}?",
+      ctaTitle: "Laat uw {permit} door ons regelen",
+      ctaBody: "Vaste prijs, geen verrassingen. Wij verzorgen de volledige aanvraag zodat u zich op uw zaak kunt richten.",
+      ctaButton: "Gratis intake aanvragen",
+    },
+    permitsHub: {
+      breadcrumb: "Vergunningen",
+      h1: "Horecavergunningen aanvragen in Amsterdam",
+      intro: "Wij verzorgen de volledige aanvraag van al uw horecavergunningen — tegen een vaste prijs per vergunning. Kies uw vergunning voor de voorwaarden, het proces en de kosten.",
+      ctaTitle: "Niet zeker welke vergunning u nodig heeft?",
+      ctaBody: "Vertel ons over uw zaak en wij bepalen kosteloos welke vergunningen u precies nodig heeft.",
+      ctaButton: "Gratis intake aanvragen",
+    },
     blog: {
       title: "HorecaKennis & Nieuws",
       subtitle: "Blijf op de hoogte van de laatste wetgeving, trends en tips voor de horeca.",

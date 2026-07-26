@@ -1,3 +1,4 @@
+import { alternatesFor } from '@/app/lib/i18n-routes';
 import type { Metadata } from 'next';
 import { SITE_NAME, SITE_URL } from '../lib/site';
 import { JsonLd, breadcrumb, ORGANIZATION_REF } from '@/app/components/seo/JsonLd';
@@ -10,7 +11,7 @@ const description =
 export const metadata: Metadata = {
   title,
   description,
-  alternates: { canonical: '/contact' },
+  alternates: alternatesFor('/contact', 'nl'),
   openGraph: {
     title,
     description,
