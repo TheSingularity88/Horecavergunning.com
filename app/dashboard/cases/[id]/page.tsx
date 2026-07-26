@@ -34,6 +34,7 @@ import {
 } from '@/app/lib/constants/dashboard';
 import Link from 'next/link';
 import type { Case, Task, Document, Client } from '@/app/lib/types/database';
+import { caseStatusLabel, caseTypeLabel, docCategoryLabel, priorityLabel, taskStatusLabel } from '@/app/lib/dashboard-labels';
 
 export default function CaseDetailPage() {
   const router = useRouter();
@@ -237,7 +238,7 @@ export default function CaseDetailPage() {
 
   const caseTypeOptions = getCaseTypeOptions(t.dashboard);
   const statusOptions = getCaseStatusOptions(t.dashboard);
-  const priorityOptions = getPriorityOptions();
+  const priorityOptions = getPriorityOptions(t.dashboard);
 
   if (isLoading) {
     return (
@@ -250,7 +251,7 @@ export default function CaseDetailPage() {
   if (!caseData) {
     return (
       <DashboardPage contentClassName="flex items-center justify-center p-0 lg:p-0">
-        <p className="text-slate-600">Case not found</p>
+        <p className="text-slate-600">{t.dashboard?.cases?.notFound || 'Case not found'}</p>
       </DashboardPage>
     );
   }
@@ -267,7 +268,7 @@ export default function CaseDetailPage() {
             className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to cases
+            {t.dashboard?.cases?.backToCases || 'Back to cases'}
           </Link>
 
           {error && (
@@ -287,12 +288,12 @@ export default function CaseDetailPage() {
               {/* Case Details */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Case Details</CardTitle>
+                  <CardTitle>{t.dashboard?.cases?.caseDetails || 'Case details'}</CardTitle>
                   <div className="flex gap-2">
                     {isEditing ? (
                       <>
                         <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
-                          Cancel
+                          {t.dashboard?.common?.cancel || 'Cancel'}
                         </Button>
                         <Button size="sm" onClick={handleSave} disabled={isSaving}>
                           {isSaving ? 'Saving...' : 'Save'}
@@ -300,7 +301,7 @@ export default function CaseDetailPage() {
                       </>
                     ) : (
                       <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                        Edit
+                        {t.dashboard?.common?.edit || 'Edit'}
                       </Button>
                     )}
                   </div>
@@ -309,14 +310,14 @@ export default function CaseDetailPage() {
                   {isEditing ? (
                     <div className="space-y-4">
                       <Input
-                        label="Title"
+                        label={t.dashboard?.common?.titleField || 'Title'}
                         name="title"
                         value={formData.title}
                         onChange={handleChange}
                         required
                       />
                       <Textarea
-                        label="Description"
+                        label={t.dashboard?.common?.description || 'Description'}
                         name="description"
                         value={formData.description}
                         onChange={handleChange}
@@ -324,14 +325,14 @@ export default function CaseDetailPage() {
                       />
                       <div className="grid grid-cols-2 gap-4">
                         <Select
-                          label="Case Type"
+                          label={t.dashboard?.cases?.caseType || 'Case type'}
                           name="case_type"
-                          value={formData.case_type}
+                          value={caseTypeLabel(formData.case_type, t)}
                           onChange={handleChange}
                           options={caseTypeOptions}
                         />
                         <Select
-                          label="Status"
+                          label={t.dashboard?.common?.status || 'Status'}
                           name="status"
                           value={formData.status}
                           onChange={handleChange}
@@ -340,14 +341,14 @@ export default function CaseDetailPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <Select
-                          label="Priority"
+                          label={t.dashboard?.common?.priority || 'Priority'}
                           name="priority"
-                          value={formData.priority}
+                          value={priorityLabel(formData.priority, t)}
                           onChange={handleChange}
                           options={priorityOptions}
                         />
                         <Input
-                          label="Deadline"
+                          label={t.dashboard?.cases?.deadline || 'Deadline'}
                           name="deadline"
                           type="date"
                           value={formData.deadline}
@@ -356,13 +357,13 @@ export default function CaseDetailPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <Input
-                          label="Municipality"
+                          label={t.dashboard?.cases?.municipality || 'Municipality'}
                           name="municipality"
                           value={formData.municipality}
                           onChange={handleChange}
                         />
                         <Input
-                          label="Reference Number"
+                          label={t.dashboard?.cases?.referenceNumber || 'Reference number'}
                           name="reference_number"
                           value={formData.reference_number}
                           onChange={handleChange}
@@ -379,13 +380,13 @@ export default function CaseDetailPage() {
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-semibold text-slate-900">{caseData.title}</h3>
                           </div>
-                          <p className="text-slate-600">{caseData.case_type}</p>
+                          <p className="text-slate-600">{caseTypeLabel(caseData.case_type, t)}</p>
                           <div className="flex gap-2 mt-2">
                             <Badge variant={getStatusBadgeVariant(caseData.status)}>
-                              {caseData.status.replace('_', ' ')}
+                              {caseStatusLabel(caseData.status, t)}
                             </Badge>
                             <Badge variant={getStatusBadgeVariant(caseData.priority)}>
-                              {caseData.priority}
+                              {priorityLabel(caseData.priority, t)}
                             </Badge>
                           </div>
                         </div>
@@ -393,7 +394,7 @@ export default function CaseDetailPage() {
 
                       {caseData.description && (
                         <div className="pt-4 border-t border-slate-100">
-                          <p className="text-sm text-slate-500 mb-1">Description</p>
+                          <p className="text-sm text-slate-500 mb-1">{t.dashboard?.common?.description || 'Description'}</p>
                           <p className="text-slate-600 whitespace-pre-wrap">{caseData.description}</p>
                         </div>
                       )}
@@ -429,12 +430,12 @@ export default function CaseDetailPage() {
                     size="sm"
                     onClick={() => router.push(`/dashboard/tasks/new?case=${caseId}`)}
                   >
-                    Add Task
+                    {t.dashboard?.tasks?.addTask || 'Add task'}
                   </Button>
                 </CardHeader>
                 <CardContent>
                   {tasks.length === 0 ? (
-                    <p className="text-slate-500 text-sm text-center py-4">No tasks yet</p>
+                    <p className="text-slate-500 text-sm text-center py-4">{t.dashboard?.cases?.noTasksYet || 'No tasks yet'}</p>
                   ) : (
                     <div className="space-y-3">
                       {tasks.map((task) => (
@@ -448,7 +449,7 @@ export default function CaseDetailPage() {
                             <span className="font-medium text-slate-900">{task.title}</span>
                           </div>
                           <Badge variant={getStatusBadgeVariant(task.status)}>
-                            {task.status}
+                            {taskStatusLabel(task.status, t)}
                           </Badge>
                         </Link>
                       ))}
@@ -465,12 +466,12 @@ export default function CaseDetailPage() {
                     size="sm"
                     onClick={() => router.push(`/dashboard/documents?case=${caseId}`)}
                   >
-                    Upload
+                    {t.dashboard?.common?.upload || 'Upload'}
                   </Button>
                 </CardHeader>
                 <CardContent>
                   {documents.length === 0 ? (
-                    <p className="text-slate-500 text-sm text-center py-4">No documents yet</p>
+                    <p className="text-slate-500 text-sm text-center py-4">{t.dashboard?.cases?.noDocumentsYet || 'No documents yet'}</p>
                   ) : (
                     <div className="space-y-3">
                       {documents.map((doc) => (
@@ -482,7 +483,7 @@ export default function CaseDetailPage() {
                             <FileText className="w-5 h-5 text-slate-400" />
                             <div>
                               <p className="font-medium text-slate-900">{doc.name}</p>
-                              <p className="text-sm text-slate-500">{doc.category}</p>
+                              <p className="text-sm text-slate-500">{docCategoryLabel(doc.category, t)}</p>
                             </div>
                           </div>
                         </div>
@@ -499,7 +500,7 @@ export default function CaseDetailPage() {
               {client && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Client</CardTitle>
+                    <CardTitle>{t.dashboard?.cases?.client || 'Client'}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Link
@@ -517,7 +518,7 @@ export default function CaseDetailPage() {
                   in through the request-approval flow (phone/email customers). */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Facturatie</CardTitle>
+                  <CardTitle>{t.dashboard?.cases?.billing || 'Billing'}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {billingMessage && (
@@ -555,7 +556,7 @@ export default function CaseDetailPage() {
               {isAdmin && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-red-600">Danger Zone</CardTitle>
+                    <CardTitle className="text-red-600">{t.dashboard?.common?.dangerZone || 'Danger zone'}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Button
@@ -564,7 +565,7 @@ export default function CaseDetailPage() {
                       onClick={() => setShowDeleteModal(true)}
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Case
+                      {t.dashboard?.cases?.deleteCase || 'Delete case'}
                     </Button>
                   </CardContent>
                 </Card>
@@ -577,7 +578,7 @@ export default function CaseDetailPage() {
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDelete}
-        title="Delete Case"
+        title={t.dashboard?.cases?.deleteCase || 'Delete case'}
         message="Are you sure you want to delete this case? This action cannot be undone."
         confirmText="Delete"
         variant="danger"

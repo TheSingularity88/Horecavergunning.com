@@ -20,6 +20,7 @@ import { Badge, getStatusBadgeVariant } from '@/app/components/ui/Badge';
 import { Spinner } from '@/app/components/ui/Spinner';
 import Link from 'next/link';
 import type { Case, Task } from '@/app/lib/types/database';
+import { caseStatusLabel, caseTypeLabel, priorityLabel } from '@/app/lib/dashboard-labels';
 
 interface DashboardStats {
   totalClients: number;
@@ -210,11 +211,11 @@ export default function EmployeeDashboardPage() {
                               {caseItem.title}
                             </p>
                             <p className="text-sm text-slate-500">
-                              {caseItem.case_type}
+                              {caseTypeLabel(caseItem.case_type, t)}
                             </p>
                           </div>
                           <Badge variant={getStatusBadgeVariant(caseItem.status)}>
-                            {caseItem.status.replace('_', ' ')}
+                            {caseStatusLabel(caseItem.status, t)}
                           </Badge>
                         </Link>
                       ))}
@@ -268,7 +269,7 @@ export default function EmployeeDashboardPage() {
                             )}
                           </div>
                           <Badge variant={getStatusBadgeVariant(task.priority)}>
-                            {task.priority}
+                            {priorityLabel(task.priority, t)}
                           </Badge>
                         </Link>
                       ))}

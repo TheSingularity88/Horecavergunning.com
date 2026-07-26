@@ -18,11 +18,14 @@ import { ConfirmModal } from '@/app/components/ui/Modal';
 import { getPriorityOptions, getTaskStatusOptions } from '@/app/lib/constants/dashboard';
 import Link from 'next/link';
 import type { Task, Case, Profile } from '@/app/lib/types/database';
+import { priorityLabel, taskStatusLabel } from '@/app/lib/dashboard-labels';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 type EmployeeOption = { id: string; full_name: string };
 
 export default function TaskDetailPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const params = useParams();
   const taskId = params.id as string;
   const { isAdmin, profile } = useAuth();
@@ -161,11 +164,11 @@ export default function TaskDetailPage() {
     });
   };
 
-  const statusOptions = getTaskStatusOptions();
-  const priorityOptions = getPriorityOptions();
+  const statusOptions = getTaskStatusOptions(t.dashboard);
+  const priorityOptions = getPriorityOptions(t.dashboard);
 
   const employeeOptions = [
-    { value: '', label: 'Unassigned' },
+    { value: '', label: t.dashboard?.common?.unassigned || 'Unassigned' },
     ...employees.map((e) => ({ value: e.id, label: e.full_name })),
   ];
 
@@ -183,7 +186,7 @@ export default function TaskDetailPage() {
   if (!task) {
     return (
       <DashboardPage contentClassName="flex items-center justify-center p-0 lg:p-0">
-        <p className="text-slate-600">Task not found</p>
+        <p className="text-slate-600">{t.dashboard?.tasks?.notFound || 'Task not found'}</p>
       </DashboardPage>
     );
   }
@@ -200,7 +203,7 @@ export default function TaskDetailPage() {
             className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to tasks
+            {t.dashboard?.tasks?.backToTasks || 'Back to tasks'}
           </Link>
 
           {error && (
@@ -211,13 +214,13 @@ export default function TaskDetailPage() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Task Details</CardTitle>
+              <CardTitle>{t.dashboard?.tasks?.taskDetails || 'Task details'}</CardTitle>
               {canEdit && (
                 <div className="flex gap-2">
                   {isEditing ? (
                     <>
                       <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
-                        Cancel
+                        {t.dashboard?.common?.cancel || 'Cancel'}
                       </Button>
                       <Button size="sm" onClick={handleSave} disabled={isSaving}>
                         {isSaving ? 'Saving...' : 'Save'}
@@ -225,7 +228,7 @@ export default function TaskDetailPage() {
                     </>
                   ) : (
                     <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                      Edit
+                      {t.dashboard?.common?.edit || 'Edit'}
                     </Button>
                   )}
                 </div>
@@ -235,14 +238,14 @@ export default function TaskDetailPage() {
               {isEditing ? (
                 <div className="space-y-4">
                   <Input
-                    label="Title"
+                    label={t.dashboard?.common?.titleField || 'Title'}
                     name="title"
                     value={formData.title}
                     onChange={handleChange}
                     required
                   />
                   <Textarea
-                    label="Description"
+                    label={t.dashboard?.common?.description || 'Description'}
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
@@ -250,30 +253,30 @@ export default function TaskDetailPage() {
                   />
                   <div className="grid grid-cols-2 gap-4">
                     <Select
-                      label="Status"
+                      label={t.dashboard?.common?.status || 'Status'}
                       name="status"
                       value={formData.status}
                       onChange={handleChange}
                       options={statusOptions}
                     />
                     <Select
-                      label="Priority"
+                      label={t.dashboard?.common?.priority || 'Priority'}
                       name="priority"
-                      value={formData.priority}
+                      value={priorityLabel(formData.priority, t)}
                       onChange={handleChange}
                       options={priorityOptions}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <Select
-                      label="Assigned To"
+                      label={t.dashboard?.common?.assignedTo || 'Assigned to'}
                       name="assigned_to"
                       value={formData.assigned_to}
                       onChange={handleChange}
                       options={employeeOptions}
                     />
                     <Input
-                      label="Due Date"
+                      label={t.dashboard?.common?.dueDate || 'Due date'}
                       name="due_date"
                       type="date"
                       value={formData.due_date}
@@ -291,10 +294,10 @@ export default function TaskDetailPage() {
                       <h3 className="font-semibold text-slate-900">{task.title}</h3>
                       <div className="flex gap-2 mt-2">
                         <Badge variant={getStatusBadgeVariant(task.status)}>
-                          {task.status.replace('_', ' ')}
+                          {taskStatusLabel(task.status, t)}
                         </Badge>
                         <Badge variant={getStatusBadgeVariant(task.priority)}>
-                          {task.priority}
+                          {priorityLabel(task.priority, t)}
                         </Badge>
                       </div>
                     </div>
@@ -302,7 +305,7 @@ export default function TaskDetailPage() {
 
                   {task.description && (
                     <div className="pt-4 border-t border-slate-100">
-                      <p className="text-sm text-slate-500 mb-1">Description</p>
+                      <p className="text-sm text-slate-500 mb-1">{t.dashboard?.common?.description || 'Description'}</p>
                       <p className="text-slate-600 whitespace-pre-wrap">{task.description}</p>
                     </div>
                   )}
@@ -336,7 +339,7 @@ export default function TaskDetailPage() {
           {canDelete && (
             <Card className="mt-6">
               <CardHeader>
-                <CardTitle className="text-red-600">Danger Zone</CardTitle>
+                <CardTitle className="text-red-600">{t.dashboard?.common?.dangerZone || 'Danger zone'}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Button
@@ -345,7 +348,7 @@ export default function TaskDetailPage() {
                   onClick={() => setShowDeleteModal(true)}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Task
+                  {t.dashboard?.tasks?.deleteTask || 'Delete task'}
                 </Button>
               </CardContent>
             </Card>
@@ -356,7 +359,7 @@ export default function TaskDetailPage() {
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDelete}
-        title="Delete Task"
+        title={t.dashboard?.tasks?.deleteTask || 'Delete task'}
         message="Are you sure you want to delete this task?"
         confirmText="Delete"
         variant="danger"

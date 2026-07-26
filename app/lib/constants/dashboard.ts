@@ -7,14 +7,32 @@ import type {
   Priority,
 } from '@/app/lib/types/database';
 
-type DashboardTranslations = typeof translations['en']['dashboard'];
+type DashboardTranslations = (typeof translations)['en']['dashboard'];
 
 export type SelectOption<T extends string = string> = {
   value: T | '';
   label: string;
 };
 
-const caseStatusOrder: CaseStatus[] = [
+/**
+ * Select option builders shared by eight dashboard pages.
+ *
+ * These used to carry their own hardcoded English label maps —
+ * caseStatusLabels, taskStatusLabels, priorityLabels — so every status
+ * dropdown in the dashboard read "Waiting for Government" whatever the
+ * language, and those labels also disagreed with the badge rendered next to
+ * them ("Review" here, "Final review" there). Only client status was ever
+ * translated.
+ *
+ * Labels now come from dashboard.enums, the same map lib/dashboard-labels.ts
+ * reads, so a dropdown and the badge beside it cannot say different things.
+ *
+ * ORDER stays here: it is presentation rather than translation, and the
+ * sequence a status filter offers is a deliberate workflow order, not the
+ * arbitrary key order of an object literal.
+ */
+
+const CASE_STATUS_ORDER: CaseStatus[] = [
   'intake',
   'in_progress',
   'waiting_client',
@@ -26,131 +44,91 @@ const caseStatusOrder: CaseStatus[] = [
   'cancelled',
 ];
 
-const caseStatusLabels: Record<CaseStatus, string> = {
-  intake: 'Intake',
-  in_progress: 'In Progress',
-  waiting_client: 'Waiting for Client',
-  waiting_government: 'Waiting for Government',
-  review: 'Review',
-  approved: 'Approved',
-  rejected: 'Rejected',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-};
+/** The statuses that mean a case is still being worked on. */
+const CASE_STATUS_LIVE: CaseStatus[] = [
+  'intake',
+  'in_progress',
+  'waiting_client',
+  'waiting_government',
+  'review',
+];
 
-const caseTypeLabels: Record<CaseType, string> = {
-  exploitatievergunning: 'Exploitatievergunning',
-  alcoholvergunning: 'Alcoholvergunning',
-  terrasvergunning: 'Terrasvergunning',
-  bibob: 'Bibob',
-  overname: 'Overname',
-  verbouwing: 'Verbouwing',
-  other: 'Other',
-};
+const CASE_TYPE_ORDER: CaseType[] = [
+  'exploitatievergunning',
+  'alcoholvergunning',
+  'terrasvergunning',
+  'bibob',
+  'overname',
+  'verbouwing',
+  'other',
+];
 
-const taskStatusLabels: Record<TaskStatus, string> = {
-  pending: 'Pending',
-  in_progress: 'In Progress',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-};
+const TASK_STATUS_ORDER: TaskStatus[] = ['pending', 'in_progress', 'completed', 'cancelled'];
 
-const priorityLabels: Record<Priority, string> = {
-  low: 'Low',
-  normal: 'Normal',
-  high: 'High',
-  urgent: 'Urgent',
-};
+const PRIORITY_ORDER: Priority[] = ['low', 'normal', 'high', 'urgent'];
 
-const toOptions = <T extends string>(
-  labels: Record<T, string>
-): SelectOption<T>[] => {
-  const entries = Object.entries(labels) as Array<[T, string]>;
-  return entries.map(([value, label]) => ({
-    value,
-    label,
+const CLIENT_STATUS_ORDER: ClientStatus[] = ['active', 'inactive', 'pending'];
+
+/** Look a value up in dashboard.enums, falling back to the de-underscored enum. */
+function label(
+  dashboard: DashboardTranslations | undefined,
+  group: string,
+  value: string
+): string {
+  const groups = dashboard?.enums as
+    | Record<string, Record<string, string> | undefined>
+    | undefined;
+  return groups?.[group]?.[value] ?? value.replace(/_/g, ' ');
+}
+
+function build<T extends string>(
+  dashboard: DashboardTranslations | undefined,
+  group: string,
+  order: readonly T[],
+  includeAll: boolean,
+  allLabel: string
+): SelectOption<T>[] {
+  const options = order.map((value) => ({
+    value: value as T | '',
+    label: label(dashboard, group, value),
   }));
-};
+  return includeAll ? [{ value: '', label: allLabel }, ...options] : options;
+}
+
+const allStatuses = (d?: DashboardTranslations) => d?.common?.allStatuses || 'All statuses';
+const allTypes = (d?: DashboardTranslations) => d?.common?.allTypes || 'All types';
 
 export const getCaseStatusOptions = (
   dashboard?: DashboardTranslations,
   includeAll = false,
   includeFinal = true
-): SelectOption<CaseStatus>[] => {
-  const allowed = includeFinal
-    ? caseStatusOrder
-    : caseStatusOrder.filter((status) =>
-        ['intake', 'in_progress', 'waiting_client', 'waiting_government', 'review'].includes(
-          status
-        )
-      );
-  const options = allowed.map((status) => ({
-    value: status,
-    label: caseStatusLabels[status],
-  }));
-  if (!includeAll) return options;
-
-  return [
-    {
-      value: '',
-      label: dashboard?.common?.allStatuses || 'All Statuses',
-    },
-    ...options,
-  ];
-};
+): SelectOption<CaseStatus>[] =>
+  build(
+    dashboard,
+    'caseStatus',
+    includeFinal ? CASE_STATUS_ORDER : CASE_STATUS_LIVE,
+    includeAll,
+    allStatuses(dashboard)
+  );
 
 export const getCaseTypeOptions = (
   dashboard?: DashboardTranslations,
   includeAll = false
-): SelectOption<CaseType>[] => {
-  const options = toOptions(caseTypeLabels);
-  if (!includeAll) return options;
-
-  return [
-    {
-      value: '',
-      label: dashboard?.common?.allTypes || 'All Types',
-    },
-    ...options,
-  ];
-};
+): SelectOption<CaseType>[] =>
+  build(dashboard, 'caseType', CASE_TYPE_ORDER, includeAll, allTypes(dashboard));
 
 export const getTaskStatusOptions = (
   dashboard?: DashboardTranslations,
   includeAll = false
-): SelectOption<TaskStatus>[] => {
-  const options = toOptions(taskStatusLabels);
-  if (!includeAll) return options;
-
-  return [
-    {
-      value: '',
-      label: dashboard?.common?.allStatuses || 'All Statuses',
-    },
-    ...options,
-  ];
-};
+): SelectOption<TaskStatus>[] =>
+  build(dashboard, 'taskStatus', TASK_STATUS_ORDER, includeAll, allStatuses(dashboard));
 
 export const getClientStatusOptions = (
   dashboard?: DashboardTranslations,
   includeAll = false
-): SelectOption<ClientStatus>[] => {
-  const labels: Record<ClientStatus, string> = {
-    active: dashboard?.clients?.statusActive || 'Active',
-    inactive: dashboard?.clients?.statusInactive || 'Inactive',
-    pending: dashboard?.clients?.statusPending || 'Pending',
-  };
-  const options = toOptions(labels);
-  if (!includeAll) return options;
+): SelectOption<ClientStatus>[] =>
+  build(dashboard, 'clientStatus', CLIENT_STATUS_ORDER, includeAll, allStatuses(dashboard));
 
-  return [
-    {
-      value: '',
-      label: dashboard?.common?.allStatuses || 'All Statuses',
-    },
-    ...options,
-  ];
-};
-
-export const getPriorityOptions = (): SelectOption<Priority>[] =>
-  toOptions(priorityLabels);
+export const getPriorityOptions = (
+  dashboard?: DashboardTranslations
+): SelectOption<Priority>[] => build(dashboard, 'priority', PRIORITY_ORDER, false, '');

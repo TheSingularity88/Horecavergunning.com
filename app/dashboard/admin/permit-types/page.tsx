@@ -14,9 +14,11 @@ import { Badge } from '@/app/components/ui/Badge';
 import { Spinner } from '@/app/components/ui/Spinner';
 import type { PermitType } from '@/app/lib/types/database';
 import { useToast } from '@/app/components/ui/Toast';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 export default function PermitTypesPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const { showError } = useToast();
   const { isAdmin } = useAuth();
   const [permitTypes, setPermitTypes] = useState<PermitType[]>([]);
@@ -58,19 +60,19 @@ export default function PermitTypesPage() {
   if (!isAdmin) return null;
 
   return (
-    <DashboardPage title="Permit Types & Pricing">
+    <DashboardPage title={t.dashboard?.permitTypes?.title || 'Permit types & pricing'}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex justify-between items-center mb-6">
           <p className="text-slate-600 text-sm max-w-xl">
-            Edit the fee, names and required documents for each permit type. Fees and
-            active types are shown live on the public pricing section.
+            {t.dashboard?.permitTypes?.intro ||
+              'Edit the fee, names and required documents for each permit type.'}
           </p>
           <Button
             onClick={() => router.push('/dashboard/admin/permit-types/new')}
             className="gap-2 flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
-            Add type
+            {t.dashboard?.permitTypes?.addType || 'Add type'}
           </Button>
         </div>
 
@@ -96,12 +98,12 @@ export default function PermitTypesPage() {
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-slate-900 truncate">{pt.name_nl}</h3>
                         <Badge variant={pt.is_active ? 'success' : 'default'}>
-                          {pt.is_active ? 'Active' : 'Hidden'}
+                          {pt.is_active ? (t.dashboard?.permitTypes?.active || 'Active') : (t.dashboard?.permitTypes?.hidden || 'Hidden')}
                         </Badge>
                       </div>
                       <p className="text-sm text-slate-500 truncate">{pt.slug}</p>
                       <p className="text-lg font-semibold text-slate-900 mt-1">
-                        {pt.base_fee_cents > 0 ? euro(pt.base_fee_cents) : 'Custom / on request'}
+                        {pt.base_fee_cents > 0 ? euro(pt.base_fee_cents) : (t.dashboard?.permitTypes?.customFee || 'Custom / on request')}
                       </p>
                     </div>
                   </div>
@@ -113,14 +115,14 @@ export default function PermitTypesPage() {
                       className="gap-1 flex-1"
                     >
                       <Pencil className="w-4 h-4" />
-                      Edit
+                      {t.dashboard?.common?.edit || 'Edit'}
                     </Button>
                     <Button
                       variant={pt.is_active ? 'ghost' : 'primary'}
                       size="sm"
                       onClick={() => handleToggle(pt)}
                     >
-                      {pt.is_active ? 'Hide' : 'Show'}
+                      {pt.is_active ? (t.dashboard?.permitTypes?.hide || 'Hide') : (t.dashboard?.permitTypes?.show || 'Show')}
                     </Button>
                   </div>
                 </Card>

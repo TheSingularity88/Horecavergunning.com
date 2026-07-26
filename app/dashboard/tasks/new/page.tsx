@@ -98,16 +98,16 @@ export default function NewTaskPage() {
   };
 
   const caseOptions = [
-    { value: '', label: 'No case (standalone task)' },
+    { value: '', label: t.dashboard?.tasks?.noCaseStandalone || 'No case (standalone task)' },
     ...cases.map((c) => ({ value: c.id, label: c.title })),
   ];
 
   const employeeOptions = [
-    { value: '', label: 'Unassigned' },
+    { value: '', label: t.dashboard?.common?.unassigned || 'Unassigned' },
     ...employees.map((e) => ({ value: e.id, label: e.full_name })),
   ];
 
-  const priorityOptions = getPriorityOptions();
+  const priorityOptions = getPriorityOptions(t.dashboard);
 
   return (
     <DashboardPage title={t.dashboard?.tasks?.newTask || 'New Task'}>
@@ -121,12 +121,12 @@ export default function NewTaskPage() {
             className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to tasks
+            {t.dashboard?.tasks?.backToTasks || 'Back to tasks'}
           </Link>
 
           <Card>
             <CardHeader>
-              <CardTitle>Task Details</CardTitle>
+              <CardTitle>{t.dashboard?.tasks?.taskDetails || 'Task details'}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -137,25 +137,25 @@ export default function NewTaskPage() {
                 )}
 
                 <Input
-                  label="Title"
+                  label={t.dashboard?.common?.titleField || 'Title'}
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  placeholder="What needs to be done?"
+                  placeholder={t.dashboard?.tasks?.titlePlaceholder || 'What needs to be done?'}
                   required
                 />
 
                 <Textarea
-                  label="Description"
+                  label={t.dashboard?.common?.description || 'Description'}
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
                   rows={4}
-                  placeholder="Additional details..."
+                  placeholder={t.dashboard?.tasks?.descriptionPlaceholder || 'Additional details...'}
                 />
 
                 <Select
-                  label="Related Case"
+                  label={t.dashboard?.common?.relatedCase || 'Related case'}
                   name="case_id"
                   value={formData.case_id}
                   onChange={handleChange}
@@ -164,14 +164,14 @@ export default function NewTaskPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Select
-                    label="Assign To"
+                    label={t.dashboard?.common?.assignedTo || 'Assign to'}
                     name="assigned_to"
                     value={formData.assigned_to}
                     onChange={handleChange}
                     options={employeeOptions}
                   />
                   <Input
-                    label="Due Date"
+                    label={t.dashboard?.common?.dueDate || 'Due date'}
                     name="due_date"
                     type="date"
                     value={formData.due_date}
@@ -180,7 +180,7 @@ export default function NewTaskPage() {
                 </div>
 
                 <Select
-                  label="Priority"
+                  label={t.dashboard?.common?.priority || 'Priority'}
                   name="priority"
                   value={formData.priority}
                   onChange={handleChange}
@@ -193,7 +193,7 @@ export default function NewTaskPage() {
                     variant="outline"
                     onClick={() => router.push('/dashboard/tasks')}
                   >
-                    Cancel
+                    {t.dashboard?.common?.cancel || 'Cancel'}
                   </Button>
                   <Button type="submit" disabled={isLoading}>
                     {isLoading ? (

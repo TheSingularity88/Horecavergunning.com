@@ -16,6 +16,7 @@ import { Spinner } from '@/app/components/ui/Spinner';
 import { cn } from '@/app/lib/utils/cn';
 import { getTaskStatusOptions } from '@/app/lib/constants/dashboard';
 import type { Task } from '@/app/lib/types/database';
+import { priorityLabel, taskStatusLabel } from '@/app/lib/dashboard-labels';
 
 type ViewMode = 'list' | 'board';
 
@@ -103,7 +104,7 @@ export default function TasksPage() {
       <div className="flex items-start justify-between mb-2">
         <h4 className="font-medium text-slate-900 line-clamp-2">{task.title}</h4>
         <Badge variant={getStatusBadgeVariant(task.priority)} className="ml-2 flex-shrink-0">
-          {task.priority}
+          {priorityLabel(task.priority, t)}
         </Badge>
       </div>
       {task.due_date && (
@@ -132,7 +133,7 @@ export default function TasksPage() {
           <TaskCard key={task.id} task={task} />
         ))}
         {tasks.length === 0 && (
-          <p className="text-sm text-slate-400 text-center py-8">No tasks</p>
+          <p className="text-sm text-slate-400 text-center py-8">{t.dashboard?.tasks?.noTasks || 'No tasks'}</p>
         )}
       </div>
     </div>
@@ -148,7 +149,7 @@ export default function TasksPage() {
         <div className="flex flex-col lg:flex-row gap-4 mb-6">
           <div className="flex-1">
             <Input
-              placeholder="Search tasks..."
+              placeholder={t.dashboard?.tasks?.search || 'Search tasks...'}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               icon={<Search className="w-4 h-4" />}
@@ -192,7 +193,7 @@ export default function TasksPage() {
               className="gap-2"
             >
               <Plus className="w-4 h-4" />
-              Add Task
+              {t.dashboard?.tasks?.addTask || 'Add task'}
             </Button>
           </div>
         </div>
@@ -204,16 +205,16 @@ export default function TasksPage() {
         ) : viewMode === 'board' ? (
           /* Board View */
           <div className="flex gap-6 overflow-x-auto pb-4">
-            <BoardColumn title="Pending" tasks={tasksByStatus.pending} />
-            <BoardColumn title="In Progress" tasks={tasksByStatus.in_progress} />
-            <BoardColumn title="Completed" tasks={tasksByStatus.completed} />
+            <BoardColumn title={taskStatusLabel('pending', t)} tasks={tasksByStatus.pending} />
+            <BoardColumn title={taskStatusLabel('in_progress', t)} tasks={tasksByStatus.in_progress} />
+            <BoardColumn title={taskStatusLabel('completed', t)} tasks={tasksByStatus.completed} />
           </div>
         ) : (
           /* List View */
           <Card padding="none">
             <div className="divide-y divide-slate-100">
               {tasks.length === 0 ? (
-                <p className="text-slate-500 text-sm text-center py-12">No tasks found</p>
+                <p className="text-slate-500 text-sm text-center py-12">{t.dashboard?.tasks?.noTasks || 'No tasks found'}</p>
               ) : (
                 tasks.map((task) => (
                   <div
@@ -262,10 +263,10 @@ export default function TasksPage() {
                       </div>
                     )}
                     <Badge variant={getStatusBadgeVariant(task.priority)}>
-                      {task.priority}
+                      {priorityLabel(task.priority, t)}
                     </Badge>
                     <Badge variant={getStatusBadgeVariant(task.status)}>
-                      {task.status.replace('_', ' ')}
+                      {taskStatusLabel(task.status, t)}
                     </Badge>
                   </div>
                 ))

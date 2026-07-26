@@ -14,6 +14,8 @@ import { Avatar } from '@/app/components/ui/Avatar';
 import { Spinner } from '@/app/components/ui/Spinner';
 import { Pagination } from '@/app/components/ui/Table';
 import type { ActivityLog, Profile } from '@/app/lib/types/database';
+import { entityTypeLabel } from '@/app/lib/dashboard-labels';
+import { useLanguage } from '@/app/context/LanguageContext';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -24,6 +26,7 @@ interface ActivityWithUser extends ActivityLog {
 export default function ActivityPage() {
   const router = useRouter();
   const { isAdmin } = useAuth();
+  const { t } = useLanguage();
   const [activities, setActivities] = useState<ActivityWithUser[]>([]);
   const [users, setUsers] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -122,22 +125,22 @@ export default function ActivityPage() {
   };
 
   const userOptions = [
-    { value: '', label: 'All Users' },
+    { value: '', label: t.dashboard?.activity?.allUsers || 'All users' },
     ...users.map((u) => ({ value: u.id, label: u.full_name })),
   ];
 
   const entityOptions = [
-    { value: '', label: 'All Types' },
-    { value: 'case', label: 'Cases' },
-    { value: 'client', label: 'Clients' },
-    { value: 'task', label: 'Tasks' },
-    { value: 'document', label: 'Documents' },
+    { value: '', label: t.dashboard?.common?.allTypes || 'All types' },
+    { value: 'case', label: t.dashboard?.nav?.cases || 'Cases' },
+    { value: 'client', label: t.dashboard?.nav?.clients || 'Clients' },
+    { value: 'task', label: t.dashboard?.nav?.tasks || 'Tasks' },
+    { value: 'document', label: t.dashboard?.nav?.documents || 'Documents' },
   ];
 
   if (!isAdmin) return null;
 
   return (
-    <DashboardPage title="Activity Log">
+    <DashboardPage title={t.dashboard?.activity?.title || 'Activity log'}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -172,7 +175,7 @@ export default function ActivityPage() {
           ) : activities.length === 0 ? (
             <Card className="text-center py-12">
               <Activity className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500">No activity found</p>
+              <p className="text-slate-500">{t.dashboard?.activity?.empty || 'No activity found'}</p>
             </Card>
           ) : (
             <Card padding="none">
@@ -198,7 +201,7 @@ export default function ActivityPage() {
                       </div>
                       <div className="flex items-center gap-2 text-sm text-slate-500">
                         {getEntityIcon(activity.entity_type)}
-                        <span className="capitalize">{activity.entity_type}</span>
+                        <span className="capitalize">{entityTypeLabel(activity.entity_type, t)}</span>
                         <span>•</span>
                         <span>{formatDate(activity.created_at)}</span>
                       </div>

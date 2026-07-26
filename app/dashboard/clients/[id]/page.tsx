@@ -19,6 +19,7 @@ import { ConfirmModal } from '@/app/components/ui/Modal';
 import { getClientStatusOptions } from '@/app/lib/constants/dashboard';
 import Link from 'next/link';
 import type { Client, Case } from '@/app/lib/types/database';
+import { caseTypeLabel, clientStatusLabel } from '@/app/lib/dashboard-labels';
 
 export default function ClientDetailPage() {
   const router = useRouter();
@@ -153,7 +154,7 @@ export default function ClientDetailPage() {
   if (!client) {
     return (
       <DashboardPage contentClassName="flex items-center justify-center p-0 lg:p-0">
-        <p className="text-slate-600">Client not found</p>
+        <p className="text-slate-600">{t.dashboard?.clients?.notFound || 'Client not found'}</p>
       </DashboardPage>
     );
   }
@@ -218,14 +219,14 @@ export default function ClientDetailPage() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Input
-                          label="Company Name"
+                          label={t.dashboard?.clients?.companyName || 'Company name'}
                           name="company_name"
                           value={formData.company_name}
                           onChange={handleChange}
                           required
                         />
                         <Input
-                          label="Contact Name"
+                          label={t.dashboard?.clients?.contactName || 'Contact name'}
                           name="contact_name"
                           value={formData.contact_name}
                           onChange={handleChange}
@@ -234,7 +235,7 @@ export default function ClientDetailPage() {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Input
-                          label="Email"
+                          label={t.dashboard?.clients?.email || 'Email'}
                           name="email"
                           type="email"
                           value={formData.email}
@@ -242,47 +243,47 @@ export default function ClientDetailPage() {
                           required
                         />
                         <Input
-                          label="Phone"
+                          label={t.dashboard?.clients?.phone || 'Phone'}
                           name="phone"
                           value={formData.phone}
                           onChange={handleChange}
                         />
                       </div>
                       <Input
-                        label="Address"
+                        label={t.dashboard?.clients?.address || 'Address'}
                         name="address"
                         value={formData.address}
                         onChange={handleChange}
                       />
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <Input
-                          label="City"
+                          label={t.dashboard?.clients?.city || 'City'}
                           name="city"
                           value={formData.city}
                           onChange={handleChange}
                         />
                         <Input
-                          label="Postal Code"
+                          label={t.dashboard?.clients?.postalCode || 'Postal code'}
                           name="postal_code"
                           value={formData.postal_code}
                           onChange={handleChange}
                         />
                         <Input
-                          label="KVK Number"
+                          label={t.dashboard?.clients?.kvkNumber || 'KVK number'}
                           name="kvk_number"
                           value={formData.kvk_number}
                           onChange={handleChange}
                         />
                       </div>
                       <Select
-                        label="Status"
+                        label={t.dashboard?.common?.status || 'Status'}
                         name="status"
                         value={formData.status}
                         onChange={handleChange}
                         options={statusOptions}
                       />
                       <Textarea
-                        label="Notes"
+                        label={t.dashboard?.clients?.notes || 'Notes'}
                         name="notes"
                         value={formData.notes}
                         onChange={handleChange}
@@ -304,7 +305,7 @@ export default function ClientDetailPage() {
                             variant={getStatusBadgeVariant(client.status)}
                             className="mt-2"
                           >
-                            {client.status}
+                            {clientStatusLabel(client.status, t)}
                           </Badge>
                         </div>
                       </div>
@@ -332,14 +333,14 @@ export default function ClientDetailPage() {
 
                       {client.kvk_number && (
                         <div className="pt-4 border-t border-slate-100">
-                          <p className="text-sm text-slate-500">KVK Number</p>
+                          <p className="text-sm text-slate-500">{t.dashboard?.clients?.kvkNumber || 'KVK number'}</p>
                           <p className="font-medium text-slate-900">{client.kvk_number}</p>
                         </div>
                       )}
 
                       {client.notes && (
                         <div className="pt-4 border-t border-slate-100">
-                          <p className="text-sm text-slate-500 mb-1">Notes</p>
+                          <p className="text-sm text-slate-500 mb-1">{t.dashboard?.clients?.notes || 'Notes'}</p>
                           <p className="text-slate-600 whitespace-pre-wrap">
                             {client.notes}
                           </p>
@@ -368,7 +369,7 @@ export default function ClientDetailPage() {
                 <CardContent>
                   {cases.length === 0 ? (
                     <p className="text-slate-500 text-sm text-center py-4">
-                      No cases yet
+                      {t.dashboard?.cases?.noCasesYet || 'No cases yet'}
                     </p>
                   ) : (
                     <div className="space-y-3">
@@ -385,12 +386,12 @@ export default function ClientDetailPage() {
                                 {caseItem.title}
                               </p>
                               <p className="text-sm text-slate-500">
-                                {caseItem.case_type}
+                                {caseTypeLabel(caseItem.case_type, t)}
                               </p>
                             </div>
                           </div>
                           <Badge variant={getStatusBadgeVariant(caseItem.status)}>
-                            {caseItem.status.replace('_', ' ')}
+                            {clientStatusLabel(caseItem.status, t)}
                           </Badge>
                         </Link>
                       ))}
