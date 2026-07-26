@@ -250,3 +250,45 @@ export interface Payment {
   raw: import('./supabase').Json | null;
   created_at: string;
 }
+
+// ---------------------------------------------------------------------------
+// Knowledge base (admin-only confidential documents + versioned AI rulebook)
+// ---------------------------------------------------------------------------
+
+export type KbVersionStatus = 'draft' | 'active' | 'archived';
+
+export interface KbDocument {
+  id: string;
+  filename: string;
+  storage_path: string;
+  mime_type: string;
+  file_size: number;
+  sha256: string;
+  notes: string | null;
+  contains_pii: boolean;
+  redaction_terms: string[];
+  include_images: boolean;
+  uploaded_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface KbVersion {
+  id: string;
+  version: number;
+  status: KbVersionStatus;
+  rules: import('./supabase').Json;
+  rendered_markdown: string;
+  provider: string;
+  model: string;
+  prompt_version: string;
+  source_documents: import('./supabase').Json;
+  redactions_applied: import('./supabase').Json | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  latency_ms: number | null;
+  created_by: string | null;
+  created_at: string;
+  activated_at: string | null;
+  activated_by: string | null;
+}
