@@ -1,7 +1,25 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { translations, Language } from '../lib/translations';
+
+/**
+ * Paths where the cookie still decides the language, because they have no
+ * localized URL counterpart. The client portal and auth screens are noindex,
+ * so giving them their own /en routes would buy nothing.
+ */
+const COOKIE_DRIVEN_PREFIXES = ['/dashboard', '/client', '/login', '/forgot-password', '/reset-password'];
+
+function localeFromPath(pathname: string | null): Language | null {
+  if (!pathname) return null;
+  if (pathname === '/en' || pathname.startsWith('/en/')) return 'en';
+  if (COOKIE_DRIVEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+    return null; // let the cookie decide
+  }
+  // Every other public path is the Dutch version by definition.
+  return 'nl';
+}
 
 interface LanguageContextType {
   language: Language;
@@ -37,18 +55,32 @@ export function LanguageProvider({
   children: ReactNode;
   locale?: Language;
 }) {
-  // SSR renders the default ('nl') to match hydration; the stored preference is
-  // applied on mount below. A route-provided locale wins over both.
-  const [language, setLanguageState] = useState<Language>(locale ?? 'nl');
+  // The URL is the source of truth for public pages.
+  //
+  // Deriving it here rather than only in the /en layout matters because
+  // components rendered by the ROOT layout — the cookie banner, analytics —
+  // sit outside that nested provider. Before this they always read Dutch, so
+  // an English page showed a Dutch consent banner, and the root provider's
+  // <html lang> effect overwrote the nested one's value with 'nl'.
+  const pathname = usePathname();
+  const routeLocale = locale ?? localeFromPath(pathname);
+
+  const [language, setLanguageState] = useState<Language>(routeLocale ?? 'nl');
+
+  // Keep in step when the route changes (client-side navigation).
+  useEffect(() => {
+    if (routeLocale && routeLocale !== language) setLanguageState(routeLocale);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeLocale]);
 
   useEffect(() => {
-    if (locale) return; // URL is authoritative — never let the cookie override it.
+    if (routeLocale) return; // URL is authoritative — never let the cookie override it.
     const stored = readStoredLanguage();
     if (stored && stored !== language) {
       setLanguageState(stored);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locale]);
+  }, [routeLocale]);
 
   // Keep <html lang> honest.
   //
