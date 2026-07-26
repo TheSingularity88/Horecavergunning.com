@@ -54,7 +54,9 @@ export default function InvoiceDetailPage() {
     try {
       const result = await payMyInvoice(invoiceId);
       if (result.success && result.data?.checkoutUrl) {
-        window.location.href = result.data.checkoutUrl;
+        // assign() rather than `location.href =`: identical behaviour, but the
+        // React Compiler lint reads the assignment as mutating outside state.
+        window.location.assign(result.data.checkoutUrl);
         return; // keep the spinner while the browser navigates away
       }
       alert(result.success ? 'Payment is not available.' : result.error);
@@ -67,13 +69,15 @@ export default function InvoiceDetailPage() {
     setPaying(false);
   };
 
-  const statusUi: Record<InvoiceStatus, { icon: typeof CheckCircle; color: string; label: string }> = {
-    paid: { icon: CheckCircle, color: 'text-green-600', label: t.clientPortal?.invoices?.paid || 'Paid' },
-    open: { icon: Clock, color: 'text-amber-600', label: t.clientPortal?.invoices?.open || 'Awaiting payment' },
-    draft: { icon: Clock, color: 'text-slate-400', label: 'Draft' },
-    failed: { icon: XCircle, color: 'text-red-600', label: t.clientPortal?.invoices?.failed || 'Failed' },
-    expired: { icon: XCircle, color: 'text-red-600', label: 'Expired' },
-    canceled: { icon: XCircle, color: 'text-red-600', label: 'Canceled' },
+  // Icon and colour per status; the label always comes from the shared map so
+  // draft/expired/canceled can't stay English while the rest is translated.
+  const statusUi: Record<InvoiceStatus, { icon: typeof CheckCircle; color: string }> = {
+    paid: { icon: CheckCircle, color: 'text-green-600' },
+    open: { icon: Clock, color: 'text-amber-600' },
+    draft: { icon: Clock, color: 'text-slate-400' },
+    failed: { icon: XCircle, color: 'text-red-600' },
+    expired: { icon: XCircle, color: 'text-red-600' },
+    canceled: { icon: XCircle, color: 'text-red-600' },
   };
 
   return (
@@ -102,7 +106,9 @@ export default function InvoiceDetailPage() {
                 <div className="flex items-center gap-3 mb-6">
                   <Icon className={`w-8 h-8 ${ui.color}`} />
                   <div>
-                    <p className="font-semibold text-slate-900">{ui.label}</p>
+                    <p className="font-semibold text-slate-900">
+                      {invoiceStatusLabel(invoice.status, t)}
+                    </p>
                     <p className="text-sm text-slate-500">{invoice.invoice_number}</p>
                   </div>
                   <Badge

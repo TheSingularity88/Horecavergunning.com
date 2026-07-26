@@ -17,16 +17,20 @@ import Link from 'next/link';
 import { dashboardRoutes } from '@/app/lib/routes/dashboard';
 import type { Case, CaseStatus } from '@/app/lib/types/database';
 
-const CASE_STATUSES: { value: CaseStatus | ''; label: string }[] = [
-  { value: '', label: 'All Statuses' },
-  { value: 'intake', label: 'Intake' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'waiting_client', label: 'Waiting for You' },
-  { value: 'waiting_government', label: 'Waiting for Government' },
-  { value: 'review', label: 'Under Review' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'completed', label: 'Completed' },
+/**
+ * The order the filter offers, not the labels — those come from the same
+ * translation map the badges use, so the dropdown can never drift back into
+ * English on a Dutch portal (which is exactly what it had done).
+ */
+const CASE_STATUS_ORDER: CaseStatus[] = [
+  'intake',
+  'in_progress',
+  'waiting_client',
+  'waiting_government',
+  'review',
+  'approved',
+  'rejected',
+  'completed',
 ];
 
 export default function ClientCasesPage() {
@@ -37,6 +41,14 @@ export default function ClientCasesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const supabase = useMemo(() => createClient(), []);
+
+  const statusOptions = useMemo(
+    () => [
+      { value: '', label: t.dashboard?.common?.allStatuses || 'All statuses' },
+      ...CASE_STATUS_ORDER.map((s) => ({ value: s, label: caseStatusLabel(s, t) })),
+    ],
+    [t],
+  );
 
   useEffect(() => {
     const fetchCases = async () => {
@@ -113,7 +125,7 @@ export default function ClientCasesPage() {
         </div>
         <div className="w-full sm:w-48">
           <Select
-            options={CASE_STATUSES.map(s => ({ value: s.value, label: s.label }))}
+            options={statusOptions}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           />

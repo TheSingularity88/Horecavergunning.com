@@ -64,7 +64,9 @@ export default function ClientInvoicesPage() {
     try {
       const result = await payMyInvoice(invoiceId);
       if (result.success && result.data?.checkoutUrl) {
-        window.location.href = result.data.checkoutUrl;
+        // assign() rather than `location.href =`: identical behaviour, but the
+        // React Compiler lint reads the assignment as mutating outside state.
+        window.location.assign(result.data.checkoutUrl);
         return; // keep the spinner while the browser navigates away
       }
       alert(result.success ? 'Payment is not available for this invoice.' : result.error);
