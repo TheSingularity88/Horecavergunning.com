@@ -185,6 +185,8 @@ export const translations = {
       ctaTitle: "Let us arrange your {permit}",
       ctaBody: "A fixed price, no surprises. We handle the whole application so you can focus on your business.",
       ctaButton: "Request a free intake",
+      oneOffServiceFee: "one-off service fee",
+      legesTitle: "What the gemeente charges on top",
     },
     permitsHub: {
       breadcrumb: "Permits",
@@ -762,6 +764,8 @@ export const translations = {
       ctaTitle: "Laat uw {permit} door ons regelen",
       ctaBody: "Vaste prijs, geen verrassingen. Wij verzorgen de volledige aanvraag zodat u zich op uw zaak kunt richten.",
       ctaButton: "Gratis intake aanvragen",
+      oneOffServiceFee: "eenmalig servicetarief",
+      legesTitle: "Wat de gemeente daarnaast rekent",
     },
     permitsHub: {
       breadcrumb: "Vergunningen",
