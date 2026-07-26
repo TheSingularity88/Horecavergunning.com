@@ -7,6 +7,8 @@ export const translations = {
       pricing: "Pricing",
       faq: "FAQ",
       about: "About",
+      mission: "Our Mission",
+      blogNews: "Blog & News",
       login: "Login",
       book: "Book Intake"
     },
@@ -553,6 +555,8 @@ export const translations = {
       pricing: "Tarieven",
       faq: "Veelgestelde Vragen",
       about: "Over Ons",
+      mission: "Onze Missie",
+      blogNews: "Blog & Nieuws",
       login: "Login",
       book: "Intake Boeken"
     },

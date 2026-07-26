@@ -21,18 +21,34 @@ function readStoredLanguage(): Language | null {
   return ls === 'nl' || ls === 'en' ? ls : null;
 }
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
+export function LanguageProvider({
+  children,
+  /**
+   * When set, the URL decides the language and the cookie is ignored.
+   *
+   * The /en routes wrap their subtree in a provider with locale="en", so an
+   * English page is English on the server too — which is the whole point of
+   * having separate URLs. Without this the page would render Dutch on the
+   * server and only flip after hydration, and a crawler would only ever see
+   * the Dutch version.
+   */
+  locale,
+}: {
+  children: ReactNode;
+  locale?: Language;
+}) {
   // SSR renders the default ('nl') to match hydration; the stored preference is
-  // applied on mount below.
-  const [language, setLanguageState] = useState<Language>('nl');
+  // applied on mount below. A route-provided locale wins over both.
+  const [language, setLanguageState] = useState<Language>(locale ?? 'nl');
 
   useEffect(() => {
+    if (locale) return; // URL is authoritative — never let the cookie override it.
     const stored = readStoredLanguage();
     if (stored && stored !== language) {
       setLanguageState(stored);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [locale]);
 
   // Keep <html lang> honest.
   //

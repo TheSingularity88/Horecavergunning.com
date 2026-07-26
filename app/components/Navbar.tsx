@@ -36,8 +36,8 @@ export function Navbar() {
             </button>
             <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-100 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top translate-y-2 group-hover:translate-y-0">
               <div className="py-2">
-                <Link href="/#about" className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">Onze Missie</Link>
-                <Link href="/blog" className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">Blog & Nieuws</Link>
+                <Link href="/#about" className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">{t.navbar.mission}</Link>
+                <Link href="/blog" className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">{t.navbar.blogNews}</Link>
                 <Link href="/contact" className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-amber-600">Contact</Link>
               </div>
             </div>
@@ -168,8 +168,8 @@ export function Navbar() {
                 <div className="px-4 pt-5">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-3">{t.navbar.about}</span>
                   <div className="flex flex-col gap-2">
-                    <Link href="/#about" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-2 text-slate-600 font-semibold hover:text-amber-600 hover:bg-amber-50 transition-colors">Onze Missie</Link>
-                    <Link href="/blog" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-2 text-slate-600 font-semibold hover:text-amber-600 hover:bg-amber-50 transition-colors">Blog & Nieuws</Link>
+                    <Link href="/#about" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-2 text-slate-600 font-semibold hover:text-amber-600 hover:bg-amber-50 transition-colors">{t.navbar.mission}</Link>
+                    <Link href="/blog" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-2 text-slate-600 font-semibold hover:text-amber-600 hover:bg-amber-50 transition-colors">{t.navbar.blogNews}</Link>
                     <Link href="/#pricing" onClick={() => setIsMobileMenuOpen(false)} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-2 text-slate-600 font-semibold hover:text-amber-600 hover:bg-amber-50 transition-colors">{t.navbar.pricing}</Link>
                   </div>
                 </div>
