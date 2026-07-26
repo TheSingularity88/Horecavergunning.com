@@ -65,3 +65,5 @@ export const updateKbDocumentFlagsSchema = z.object({
 export type UpdateKbDocumentFlagsInput = z.infer<typeof updateKbDocumentFlagsSchema>;
 
 export const kbDocumentIdSchema = z.object({ id: z.string().uuid() });
+
+export const kbVersionIdSchema = z.object({ id: z.string().uuid() });

@@ -56,6 +56,7 @@ See `.env.example`. Summary:
 | `NEXT_PUBLIC_SITE_URL` | Base URL for Mollie redirect/webhook + email links |
 | `RESEND_API_KEY` / `RESEND_FROM_EMAIL` / `OWNER_NOTIFICATION_EMAIL` | Email |
 | `MOLLIE_API_KEY` | Payments (use a `test_` key first) |
+| `ANTHROPIC_API_KEY` | AI analysis (knowledge base). Pay-per-use key from console.anthropic.com |
 
 Email and payments **degrade gracefully** when their keys are absent, so the app
 runs locally without them.
