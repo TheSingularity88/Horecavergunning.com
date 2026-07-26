@@ -1,5 +1,6 @@
 'use client';
 
+import { docCategoryLabel } from '@/app/lib/status-labels';
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -33,13 +34,14 @@ import { Spinner } from '@/app/components/ui/Spinner';
 import { dashboardRoutes } from '@/app/lib/routes/dashboard';
 import type { Document, Case, DocumentCategory } from '@/app/lib/types/database';
 
-const DOCUMENT_CATEGORIES: { value: DocumentCategory; label: string }[] = [
-  { value: 'identification', label: 'Identification' },
-  { value: 'financial', label: 'Financial' },
-  { value: 'contract', label: 'Contract' },
-  { value: 'permit', label: 'Permit' },
-  { value: 'correspondence', label: 'Correspondence' },
-  { value: 'general', label: 'General' },
+/** Order only — the labels come from the translation map. */
+const DOCUMENT_CATEGORY_ORDER: DocumentCategory[] = [
+  'identification',
+  'financial',
+  'contract',
+  'permit',
+  'correspondence',
+  'general',
 ];
 
 export default function ClientDocumentsPage() {
@@ -65,6 +67,11 @@ export default function ClientDocumentsPage() {
   // Outstanding checklist items for the case selected in the upload form.
   const [checklistItems, setChecklistItems] = useState<{ id: string; name: string }[]>([]);
   const supabase = useMemo(() => createClient(), []);
+
+  const categoryOptions = useMemo(
+    () => DOCUMENT_CATEGORY_ORDER.map((c) => ({ value: c, label: docCategoryLabel(c, t) })),
+    [t],
+  );
 
   // When arriving from a case ("View all"), show only that case's documents.
   const visibleDocuments = useMemo(
@@ -508,7 +515,7 @@ export default function ClientDocumentsPage() {
           {/* Category */}
           <Select
             label={t.clientPortal?.documents?.category || 'Category'}
-            options={DOCUMENT_CATEGORIES}
+            options={categoryOptions}
             value={uploadForm.category}
             onChange={(e) =>
               setUploadForm((prev) => ({
@@ -523,7 +530,7 @@ export default function ClientDocumentsPage() {
             <Select
               label={t.clientPortal?.documents?.relatedCase || 'Related Case (optional)'}
               options={[
-                { value: '', label: 'None' },
+                { value: '', label: t.clientPortal?.documents?.noCase || 'None' },
                 ...cases.map((c) => ({ value: c.id, label: c.title })),
               ]}
               value={uploadForm.case_id}

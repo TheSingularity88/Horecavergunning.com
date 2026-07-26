@@ -58,3 +58,9 @@ export function invoiceStatusLabel(status: string, t: T): string {
   const map = t.clientPortal?.invoices as Record<string, string> | undefined;
   return map?.[status] ?? status.replace(/_/g, ' ');
 }
+
+/** Document category (identification, financial, …) in the upload picker. */
+export function docCategoryLabel(category: string, t: T): string {
+  const map = t.clientPortal?.documents?.categories as Record<string, string> | undefined;
+  return map?.[category] ?? category.replace(/_/g, ' ');
+}

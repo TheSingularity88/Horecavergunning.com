@@ -526,7 +526,17 @@ export const translations = {
         filteredByCase: "Showing documents for: {case}",
         showAll: "Show all documents",
         answersRequirement: "Which required document is this? (optional)",
-        notInChecklist: "Not on the list"
+        notInChecklist: "Not on the list",
+        noCase: "None",
+        // Upload category picker. Keys are the document_category enum.
+        categories: {
+          identification: "Identification",
+          financial: "Financial",
+          contract: "Contract",
+          permit: "Permit",
+          correspondence: "Correspondence",
+          general: "General"
+        }
       },
       profile: {
         title: "My Profile",
@@ -1121,7 +1131,17 @@ export const translations = {
         filteredByCase: "Documenten voor: {case}",
         showAll: "Toon alle documenten",
         answersRequirement: "Welk benodigd document is dit? (optioneel)",
-        notInChecklist: "Staat niet op de lijst"
+        notInChecklist: "Staat niet op de lijst",
+        noCase: "Geen",
+        // Categoriekeuze bij uploaden. Sleutels zijn de document_category enum.
+        categories: {
+          identification: "Identiteit",
+          financial: "Financieel",
+          contract: "Contract",
+          permit: "Vergunning",
+          correspondence: "Correspondentie",
+          general: "Algemeen"
+        }
       },
       profile: {
         title: "Mijn Profiel",
