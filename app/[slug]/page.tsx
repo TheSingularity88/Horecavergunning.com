@@ -1,3 +1,5 @@
+import { LegesTable } from '@/app/components/LegesTable';
+import { getLeges } from '@/app/lib/leges-content';
 import { alternatesFor, localePath, shortPermitLabel } from '@/app/lib/i18n-routes';
 import { translations, type Language } from '@/app/lib/translations';
 import type { Metadata } from 'next';
@@ -121,6 +123,7 @@ export default async function PermitPage({
 
   const { permit, requiredDocs } = await getPermitType(slug);
   const pageCopy = translations[locale].permitPage;
+  const legesEntries = getLeges(slug);
   // Permit names live in the DB in both languages.
   const permitLabel = permit
     ? (locale === 'en' ? permit.name_en || permit.name_nl : permit.name_nl).toLowerCase()
@@ -289,13 +292,24 @@ export default async function PermitPage({
             {feeCents > 0 ? (
               <>
                 <span className="text-4xl font-bold tracking-tight">{euro(feeCents)}</span>
-                <span className="text-slate-500">eenmalig servicetarief</span>
+                <span className="text-slate-500">{pageCopy.oneOffServiceFee}</span>
               </>
             ) : (
               <span className="text-3xl font-bold">{pageCopy.onRequest}</span>
             )}
           </div>
           <p className="text-sm text-slate-500">{content.kostenNote}</p>
+
+          {/* The gemeente's own fees, with amounts. These pages previously said
+              "the gemeente charges its own leges" without ever saying how much,
+              which is the single least useful way to answer "wat kost een
+              horecavergunning" — the question people actually search. */}
+          {legesEntries.length > 0 && (
+            <div className="mt-7">
+              <h3 className="font-bold text-slate-900 mb-3">{pageCopy.legesTitle}</h3>
+              <LegesTable entries={legesEntries} locale={locale} />
+            </div>
+          )}
           <Link
             href="/contact"
             className="mt-5 inline-flex items-center gap-2 font-semibold text-amber-600 hover:text-amber-700"

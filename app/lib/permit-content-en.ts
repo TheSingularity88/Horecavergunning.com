@@ -145,16 +145,16 @@ export const PERMIT_CONTENT_EN: Record<string, PermitCopy> = {
     metaTitle: "Apply for a terrasvergunning in Amsterdam | Fixed fee",
     metaDescription: "Need a terrasvergunning (terrace permit) for your venue? We arrange the application, including terrace plan and conditions. Fixed fee — see costs and process.",
     h1: "Apply for a terrasvergunning (terrace permit)",
-    intro: "For many hospitality businesses a terrace is worth its weight in gold, but it requires a separate terrasvergunning from the gemeente (municipality). We take care of the application, including the right drawings and supporting documentation, for a fixed price.",
+    intro: "For many hospitality businesses a terrace is worth its weight in gold. In Amsterdam you do NOT apply for a separate terrace permit: the terrace is covered by your exploitatievergunning (operating permit). If you already hold one, the terrace is arranged by amending it. We take care of that process, including the right drawings and supporting documentation, for a fixed price.",
     what: {
-      "title": "What is a terrasvergunning?",
+      "title": "How do you arrange a terrace in Amsterdam?",
       "paragraphs": [
-        "The terrasvergunning gives you permission to operate a terrace at your hospitality business, either on the public highway or on your own land. Among other things, the gemeente assesses the dimensions, the clearance for pedestrians and emergency services, and the appearance of the terrace in relation to its surroundings.",
-        "The permit sets out exactly how large your terrace may be, where it may be placed and which opening hours apply."
+        "In Amsterdam the terrace forms part of the exploitatievergunning. For a new venue you apply for that permit \"with terrace\"; for an existing venue you amend the permit you already hold. Among other things, the gemeente assesses the dimensions, the clearance for pedestrians and emergency services, and the appearance of the terrace in relation to its surroundings.",
+        "The permit sets out exactly how large your terrace may be, where it may be placed and which opening hours apply. Note: some websites refer to a separate \"terrasvergunning Amsterdam\" with its own tariff — that is the amendment fee for the operating permit."
       ]
     },
     when: {
-      "title": "When do you need a terrasvergunning?",
+      "title": "When do you need permission for a terrace?",
       "paragraphs": [
         "You need a terrasvergunning as soon as you want to place chairs and tables outside for your guests — whether that is on the pavement, on a square or on your own land. Extending or altering an existing terrace also requires a new application.",
         "Terrace rules differ from area to area and from season to season. We know the Amsterdam rules and make sure your application fits them."

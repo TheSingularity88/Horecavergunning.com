@@ -157,18 +157,18 @@ export const PERMIT_CONTENT: Record<string, PermitContent> = {
       'Terrasvergunning aanvragen voor uw horecazaak? Wij regelen de aanvraag inclusief terrasplattegrond en voorwaarden. Vaste prijs — bekijk de kosten en het proces.',
     h1: 'Terrasvergunning aanvragen',
     intro:
-      'Een terras is voor veel horecazaken goud waard, maar vereist een aparte terrasvergunning van de gemeente. Wij verzorgen de aanvraag inclusief de juiste tekeningen en onderbouwing, tegen een vaste prijs.',
+      'Een terras is voor veel horecazaken goud waard. In Amsterdam vraagt u daarvoor géén losse terrasvergunning aan: het terras wordt meegenomen in uw exploitatievergunning. Heeft u die al, dan regelt u het terras via een wijziging van die vergunning. Wij verzorgen dat traject inclusief de juiste tekeningen en onderbouwing, tegen een vaste prijs.',
     what: {
-      title: 'Wat is een terrasvergunning?',
+      title: 'Hoe regelt u een terras in Amsterdam?',
       paragraphs: [
-        'De terrasvergunning geeft u toestemming om op de openbare weg of op eigen terrein een terras te exploiteren bij uw horecazaak. De gemeente toetst onder meer de afmetingen, de doorgang voor voetgangers en hulpdiensten, en de uitstraling in relatie tot de omgeving.',
-        'De vergunning bepaalt precies hoe groot uw terras mag zijn, waar het mag staan en welke openingstijden gelden.',
+        'Het terras is in Amsterdam onderdeel van de exploitatievergunning. Bij een nieuwe zaak vraagt u die vergunning "met terras" aan; bij een bestaande zaak wijzigt u de vergunning die u al heeft. De gemeente toetst onder meer de afmetingen, de doorgang voor voetgangers en hulpdiensten, en de uitstraling in relatie tot de omgeving.',
+        'De vergunning bepaalt precies hoe groot uw terras mag zijn, waar het mag staan en welke openingstijden gelden. Let op: sommige websites spreken over een aparte "terrasvergunning Amsterdam" met een eigen tarief — dat is het wijzigingstarief van de exploitatievergunning.',
       ],
     },
     when: {
-      title: 'Wanneer heeft u een terrasvergunning nodig?',
+      title: 'Wanneer heeft u toestemming nodig voor een terras?',
       paragraphs: [
-        'U heeft een terrasvergunning nodig zodra u stoelen en tafels buiten wilt plaatsen voor uw gasten — of dat nu op de stoep, een plein of eigen terrein is. Ook een uitbreiding of wijziging van een bestaand terras vereist een nieuwe aanvraag.',
+        'U heeft toestemming nodig zodra u stoelen en tafels buiten wilt plaatsen voor uw gasten — of dat nu op de stoep, een plein of eigen terrein is. Start u een nieuwe zaak, dan neemt u het terras direct mee in de exploitatievergunning. Heeft u al een vergunning, dan vraagt u een wijziging aan; ook het uitbreiden of verplaatsen van een bestaand terras valt daaronder.',
         'Terrasregels verschillen per gebied en per seizoen. Wij kennen de Amsterdamse regels en zorgen dat uw aanvraag daarop aansluit.',
       ],
     },
