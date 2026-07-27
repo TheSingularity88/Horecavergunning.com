@@ -8,6 +8,7 @@ import { bibleSchema } from '@/app/lib/ai/bible-schema';
 import { renderBibleDigest } from '@/app/lib/ai/render-bible';
 import { buildChatSystem, chatDigestPreface } from '@/app/lib/ai/prompts/chat';
 import { estimateCostCents } from '@/app/lib/ai/pricing';
+import { describeProviderError } from '@/app/lib/ai/provider-errors';
 import { sendChatMessageSchema, chatHistoryQuerySchema } from '@/app/lib/validation/ai-chat';
 import type { AiMessage } from '@/app/lib/types/database';
 import type { AiContentBlock } from '@/app/lib/ai/provider';
@@ -293,12 +294,15 @@ export async function sendAiChatMessage(
         maxTokens: MAX_REPLY_TOKENS,
       });
     } catch (err) {
-      console.error('[ai-chat] provider call failed:', err);
       await recordChatRun(admin, aiProfileId, provider.providerName, provider.model, {
         status: 'error',
         error: err instanceof Error ? err.message : 'provider error',
       });
-      return { success: false, error: 'The AI could not reply. Try again.', code: 'ai_unavailable' };
+      return {
+        success: false,
+        error: describeProviderError('ai-chat', err),
+        code: 'ai_unavailable',
+      };
     }
 
     if (result.stopReason === 'refusal') {

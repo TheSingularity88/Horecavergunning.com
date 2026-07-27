@@ -14,6 +14,7 @@ import {
   relevantRulesets,
 } from '@/app/lib/ai/prompts/case-assessment';
 import { estimateCostCents } from '@/app/lib/ai/pricing';
+import { describeProviderError } from '@/app/lib/ai/provider-errors';
 
 export type RunResult =
   | { ok: true; proposalId: string }
@@ -166,7 +167,11 @@ export async function runCaseAssessment(
       status: 'error',
       error: err instanceof Error ? err.message : 'provider error',
     });
-    return { ok: false, code: 'ai_unavailable', message: 'The AI provider call failed.' };
+    return {
+      ok: false,
+      code: 'ai_unavailable',
+      message: describeProviderError('ai-run', err),
+    };
   }
 
   if (result.stopReason === 'refusal' || result.stopReason === 'max_tokens') {
