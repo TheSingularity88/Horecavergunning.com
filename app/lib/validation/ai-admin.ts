@@ -5,8 +5,19 @@ import { z } from 'zod';
 // Messages name their field: a bare "Too small" tells the user nothing about
 // WHICH input to fix, and these errors surface as a toast with no field
 // highlighting.
+/**
+ * Providers with a working client. The DB CHECK and the AiProviderId union both
+ * list openai and google, but app/lib/ai/provider.ts throws for them — so
+ * accepting one here let an admin store a key, bind an employee to it, and
+ * discover the truth only on that employee's first paid run. Keep this list in
+ * step with app/lib/ai/providers/.
+ */
+export const IMPLEMENTED_PROVIDERS = ['anthropic'] as const;
+
 export const saveProviderSchema = z.object({
-  provider: z.enum(['anthropic', 'openai', 'google']),
+  provider: z.enum(IMPLEMENTED_PROVIDERS, {
+    message: 'Provider: only Anthropic (Claude) is supported right now.',
+  }),
   label: z.string().trim().min(2, 'Label: enter at least 2 characters.').max(80),
   // Provider keys are long; a hard cap keeps a paste accident out of the DB.
   api_key: z

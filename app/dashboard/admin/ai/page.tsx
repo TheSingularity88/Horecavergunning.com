@@ -348,11 +348,10 @@ export default function AiAdminPage() {
             onChange={(e) =>
               setProviderForm((f) => ({ ...f, provider: e.target.value as 'anthropic' }))
             }
-            options={[
-              { value: 'anthropic', label: 'Anthropic (Claude)' },
-              { value: 'openai', label: 'OpenAI (binnenkort / soon)' },
-              { value: 'google', label: 'Google (binnenkort / soon)' },
-            ]}
+            // Only providers with a real client are offered. OpenAI and Google
+            // were selectable and saved fine, then failed on the employee's
+            // first run — the exact "looks finished, is not" trap.
+            options={[{ value: 'anthropic', label: 'Anthropic (Claude)' }]}
           />
           <Input
             label={ai?.providerLabel || 'Label'}

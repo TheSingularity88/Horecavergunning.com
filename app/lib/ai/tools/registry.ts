@@ -12,14 +12,16 @@ import type { AiToolDefinition } from '@/app/lib/ai/provider';
  *
  *   'read'     — look at internal data. Free.
  *   'write'    — reversible internal work a colleague does without asking:
- *                create a task, tick a checklist item. Attributed to the AI,
- *                visible in the activity log, undoable by hand.
+ *                creating a task. Attributed to the AI, visible in the activity
+ *                log, undoable by hand.
  *   'propose'  — anything customer-visible or consequential. Produces a
  *                PENDING PROPOSAL, never a change. A human approves it in the
  *                review queue, exactly as before.
  *
  * The dividing line is "can a customer see it, or is it hard to undo". A task
- * is neither. A status change emails the client, so it is.
+ * is neither. A status change emails the client, so it is — and so is a
+ * checklist note, which the client portal prints on the customer's own case
+ * page. Check where a field is RENDERED before calling it internal.
  *
  * NOTHING here can email, message, or otherwise reach a customer. There is no
  * such tool, which is a stronger guarantee than a rule saying not to.
@@ -272,43 +274,139 @@ const createTask: AiTool = {
   },
 };
 
-const updateChecklistItem: AiTool = {
-  name: 'update_checklist_item',
-  access: 'write',
+/**
+ * Checklist changes are PROPOSED, not written.
+ *
+ * This was a direct 'write' tool, on the reasoning that a checklist is internal
+ * bookkeeping. It is not: `case_documents.review_note` is rendered verbatim, in
+ * red, on the customer's own case page in the client portal. A direct write
+ * therefore put unreviewed model prose in front of a customer — the one thing
+ * this system is not allowed to do.
+ *
+ * Filing a proposal instead fixes three things at once, using machinery that
+ * already existed for exactly this and had never been reachable:
+ *   - a human reads the note before the customer can;
+ *   - approveProposal binds every update to the proposal's OWN case, so a wrong
+ *     id cannot touch another customer's checklist;
+ *   - approval stamps reviewed_by with the APPROVER, not with whoever happened
+ *     to be chatting when the AI acted.
+ */
+const proposeChecklistUpdate: AiTool = {
+  name: 'propose_checklist_update',
+  access: 'propose',
   description:
-    'Set the status of one document-checklist item on a case (pending, uploaded, in_review, approved or rejected), with a short Dutch note. Call this when the colleague confirms what has or has not been received. Use get_case first to get the item id.',
+    "Propose marking one or more of a case's document-checklist items as in_review, approved or rejected, each with a short Dutch note. This does NOT change anything — it files a proposal for a human to approve, because the note is shown to the customer in their portal. Use get_case first to get the item ids.",
   inputSchema: {
     type: 'object',
     properties: {
-      case_document_id: { type: 'string', description: 'Checklist item id from get_case.' },
-      status: {
-        type: 'string',
-        enum: ['pending', 'uploaded', 'in_review', 'approved', 'rejected'],
+      case_id: { type: 'string', description: 'The case the items belong to.' },
+      title: { type: 'string', description: 'Short Dutch summary for the review queue.' },
+      rationale: { type: 'string', description: 'Why these statuses, grounded in the case.' },
+      updates: {
+        type: 'array',
+        description: 'One entry per checklist item to change.',
+        items: {
+          type: 'object',
+          properties: {
+            case_document_id: { type: 'string', description: 'Item id from get_case.' },
+            status: { type: 'string', enum: ['in_review', 'approved', 'rejected'] },
+            note_nl: {
+              type: 'string',
+              description: 'One line in Dutch. The CUSTOMER reads this — write it for them.',
+            },
+          },
+          required: ['case_document_id', 'status'],
+        },
       },
-      note: { type: 'string', description: 'One line in Dutch explaining the change.' },
     },
-    required: ['case_document_id', 'status'],
+    required: ['case_id', 'title', 'rationale', 'updates'],
   },
   async run(input, ctx) {
-    const id = str(input.case_document_id);
-    const status = str(input.status);
-    if (!id || !status) throw new Error('case_document_id and status are required');
+    const caseId = str(input.case_id);
+    const title = str(input.title);
+    const rationale = str(input.rationale);
+    if (!caseId || !title || !rationale) {
+      throw new Error('case_id, title and rationale are required');
+    }
+    const raw = Array.isArray(input.updates) ? input.updates : [];
+    if (raw.length === 0) throw new Error('updates must contain at least one item');
+
+    const updates = raw.map((entry) => {
+      const item = (entry ?? {}) as Record<string, unknown>;
+      const id = str(item.case_document_id);
+      const status = str(item.status);
+      if (!id || !status) throw new Error('each update needs case_document_id and status');
+      return { case_document_id: id, status, note_nl: str(item.note_nl) };
+    });
 
     const { data, error } = await ctx.admin
-      .from('case_documents')
-      .update({
-        status,
-        review_note: str(input.note),
-        reviewed_by: ctx.staffId,
-        reviewed_at: new Date().toISOString(),
+      .from('ai_proposals')
+      .insert({
+        ai_profile_id: ctx.aiProfileId,
+        case_id: caseId,
+        proposal_type: 'checklist_update',
+        title,
+        payload: { updates } as never,
+        rationale,
+        status: 'pending',
       })
-      .eq('id', id)
-      .select('id, name, status')
-      .maybeSingle();
+      .select('id')
+      .single();
 
-    if (error) throw new Error(`could not update the checklist: ${error.message}`);
-    if (!data) throw new Error('checklist item not found');
-    return { updated: data };
+    if (error) throw new Error(`could not file the proposal: ${error.message}`);
+    return {
+      proposed: data,
+      note: 'Filed as a PENDING proposal. The checklist is unchanged until a human approves it.',
+    };
+  },
+};
+
+/**
+ * The escalation path. Without this the AI's only options were to act inside
+ * its own tools or guess — the `question` proposal type, its payload schema,
+ * the review UI and answerQuestion() all existed, but nothing could ever create
+ * one, so the queue was permanently empty and the Answer button never rendered.
+ */
+const askHuman: AiTool = {
+  name: 'ask_human',
+  access: 'propose',
+  description:
+    "Ask a human colleague a question and wait for an answer. Call this instead of guessing whenever the rulebook is silent or ambiguous, a case is missing information you need, or you are about to do something you are not confident is right. The question appears in the review queue; a colleague answers it there and you will see the answer on a later turn. Asking is always better than inventing an answer about permit policy.",
+  inputSchema: {
+    type: 'object',
+    properties: {
+      question_nl: { type: 'string', description: 'The question, in Dutch, specific and answerable.' },
+      context_nl: {
+        type: 'string',
+        description: 'What you already established and why you are stuck. Helps the colleague answer quickly.',
+      },
+      case_id: { type: 'string', description: 'The case this concerns, when it concerns one.' },
+    },
+    required: ['question_nl'],
+  },
+  async run(input, ctx) {
+    const question = str(input.question_nl);
+    if (!question) throw new Error('question_nl is required');
+
+    const { data, error } = await ctx.admin
+      .from('ai_proposals')
+      .insert({
+        ai_profile_id: ctx.aiProfileId,
+        case_id: str(input.case_id),
+        proposal_type: 'question',
+        title: question.length > 120 ? `${question.slice(0, 117)}…` : question,
+        payload: { question_nl: question, context_nl: str(input.context_nl) } as never,
+        rationale: str(input.context_nl),
+        status: 'pending',
+      })
+      .select('id')
+      .single();
+
+    if (error) throw new Error(`could not file the question: ${error.message}`);
+    return {
+      asked: data,
+      note: 'Question filed for a human colleague. Continue with what you CAN do, and say plainly that you are waiting on an answer.',
+    };
   },
 };
 
@@ -356,7 +454,7 @@ const proposeCaseAction: AiTool = {
     const payload =
       kind === 'status_change'
         ? { to_status: str(input.to_status), reason_nl: rationale }
-        : { subject_nl: title, body_nl: str(input.reply_nl) ?? '', channel: 'email' as const };
+        : { subject_nl: title, body_nl: str(input.reply_nl) ?? '' };
 
     if (kind === 'status_change' && !str(input.to_status)) {
       throw new Error('to_status is required for a status_change proposal');
@@ -394,8 +492,9 @@ export const AI_TOOLS: AiTool[] = [
   listTasks,
   listRequests,
   createTask,
-  updateChecklistItem,
+  proposeChecklistUpdate,
   proposeCaseAction,
+  askHuman,
 ];
 
 export const toolByName = new Map(AI_TOOLS.map((tool) => [tool.name, tool]));
