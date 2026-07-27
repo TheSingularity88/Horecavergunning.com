@@ -43,10 +43,17 @@ const USD_TO_EUR = 1.0;
  * returns null rather than guessing a price; the dashboard counts unpriced runs
  * separately so an incomplete total is never shown as a complete one.
  */
+// Provider cache economics: writing a prefix to the cache costs a 25%
+// surcharge on those tokens; reading it back costs a tenth.
+const CACHE_WRITE_FACTOR = 1.25;
+const CACHE_READ_FACTOR = 0.1;
+
 export function estimateCostCents(
   model: string,
   inputTokens: number,
   outputTokens: number,
+  cacheWriteTokens = 0,
+  cacheReadTokens = 0,
 ): number | null {
   const price = PRICES[model] ?? PRICES[longestPrefixKey(model)];
   if (!price) {
@@ -55,6 +62,8 @@ export function estimateCostCents(
   }
   const usd =
     (inputTokens / 1_000_000) * price.inputPerMTokUsd +
+    (cacheWriteTokens / 1_000_000) * price.inputPerMTokUsd * CACHE_WRITE_FACTOR +
+    (cacheReadTokens / 1_000_000) * price.inputPerMTokUsd * CACHE_READ_FACTOR +
     (outputTokens / 1_000_000) * price.outputPerMTokUsd;
   return Math.round(usd * USD_TO_EUR * 100 * 10000) / 10000; // 4dp cents
 }

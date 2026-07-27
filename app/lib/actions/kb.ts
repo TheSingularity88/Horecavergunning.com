@@ -342,6 +342,8 @@ export async function runKbAnalysis(): Promise<ActionResult<{ versionId: string 
     // Accumulated across every call in the pipeline, so the version row and the
     // cost ledger report the whole analysis rather than its last step.
     let totalInput = 0;
+    let totalCacheWrite = 0;
+    let totalCacheRead = 0;
     let totalOutput = 0;
     let totalLatency = 0;
     let lastModel = KB_ANALYSIS_MODEL;
@@ -376,6 +378,8 @@ export async function runKbAnalysis(): Promise<ActionResult<{ versionId: string 
         jsonSchema: { name, schema: jsonSchema },
       });
       totalInput += res.inputTokens;
+      totalCacheWrite += res.cacheWriteTokens;
+      totalCacheRead += res.cacheReadTokens;
       totalOutput += res.outputTokens;
       totalLatency += res.latencyMs;
       lastModel = res.model;
@@ -394,7 +398,14 @@ export async function runKbAnalysis(): Promise<ActionResult<{ versionId: string 
       await recordKbRun(
         admin,
         client.id,
-        { model: lastModel, inputTokens: totalInput, outputTokens: totalOutput, latencyMs: totalLatency },
+        {
+          model: lastModel,
+          inputTokens: totalInput,
+          cacheWriteTokens: totalCacheWrite,
+          cacheReadTokens: totalCacheRead,
+          outputTokens: totalOutput,
+          latencyMs: totalLatency,
+        },
         { status: 'error', error: reason.slice(0, 500) },
       );
       return { success: false as const, error: message, code: 'ai_unavailable' as const };
@@ -510,6 +521,8 @@ export async function runKbAnalysis(): Promise<ActionResult<{ versionId: string 
     const kbUsage = {
       model: result.model,
       inputTokens: totalInput,
+      cacheWriteTokens: totalCacheWrite,
+      cacheReadTokens: totalCacheRead,
       outputTokens: totalOutput,
       latencyMs: totalLatency,
     };
@@ -557,7 +570,14 @@ export async function runKbAnalysis(): Promise<ActionResult<{ versionId: string 
 async function recordKbRun(
   admin: ReturnType<typeof createAdminClient>,
   provider: string,
-  usage: { model: string; inputTokens: number; outputTokens: number; latencyMs: number },
+  usage: {
+    model: string;
+    inputTokens: number;
+    cacheWriteTokens: number;
+    cacheReadTokens: number;
+    outputTokens: number;
+    latencyMs: number;
+  },
   outcome: { status: 'ok' | 'error'; error?: string },
   kbVersionId?: string,
 ): Promise<void> {
@@ -568,9 +588,17 @@ async function recordKbRun(
     run_type: 'kb_analysis',
     kb_version_id: kbVersionId ?? null,
     input_tokens: usage.inputTokens,
+    cache_write_tokens: usage.cacheWriteTokens,
+    cache_read_tokens: usage.cacheReadTokens,
     output_tokens: usage.outputTokens,
     latency_ms: usage.latencyMs,
-    cost_estimate_cents: estimateCostCents(usage.model, usage.inputTokens, usage.outputTokens),
+    cost_estimate_cents: estimateCostCents(
+      usage.model,
+      usage.inputTokens,
+      usage.outputTokens,
+      usage.cacheWriteTokens,
+      usage.cacheReadTokens,
+    ),
     status: outcome.status,
     error: outcome.error ?? null,
   });

@@ -332,6 +332,10 @@ export interface AiRun {
   proposal_id: string | null;
   kb_version_id: string | null;
   input_tokens: number | null;
+  /** Prompt-cache creation tokens — billed at 1.25x, separate from input_tokens. */
+  cache_write_tokens: number | null;
+  /** Prompt-cache read tokens — billed at 0.1x, separate from input_tokens. */
+  cache_read_tokens: number | null;
   output_tokens: number | null;
   latency_ms: number | null;
   cost_estimate_cents: number | null;

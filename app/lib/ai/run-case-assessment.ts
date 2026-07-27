@@ -103,7 +103,9 @@ export async function runCaseAssessment(
     return {
       ok: false,
       code: 'ai_unavailable',
-      message: err instanceof Error ? err.message : 'AI provider unavailable.',
+      // Generic on purpose: the real error can name env vars and crypto
+      // internals, which belongs in the server log, not in a staff browser.
+      message: 'The AI provider is not available. An admin can check the key under Admin → AI employees.',
     };
   }
 
@@ -172,6 +174,8 @@ export async function runCaseAssessment(
       status: 'error',
       error: `stop_reason ${result.stopReason}`,
       inputTokens: result.inputTokens,
+      cacheWriteTokens: result.cacheWriteTokens,
+      cacheReadTokens: result.cacheReadTokens,
       outputTokens: result.outputTokens,
       latencyMs: result.latencyMs,
     });
@@ -186,6 +190,8 @@ export async function runCaseAssessment(
       status: 'error',
       error: 'payload validation failed',
       inputTokens: result.inputTokens,
+      cacheWriteTokens: result.cacheWriteTokens,
+      cacheReadTokens: result.cacheReadTokens,
       outputTokens: result.outputTokens,
       latencyMs: result.latencyMs,
     });
@@ -219,6 +225,8 @@ export async function runCaseAssessment(
       status: 'error',
       error: 'proposal insert failed',
       inputTokens: result.inputTokens,
+      cacheWriteTokens: result.cacheWriteTokens,
+      cacheReadTokens: result.cacheReadTokens,
       outputTokens: result.outputTokens,
       latencyMs: result.latencyMs,
     });
@@ -228,6 +236,8 @@ export async function runCaseAssessment(
   await recordRun(admin, aiProfileId, provider.providerName, result.model, proposal.id, kbVersion.id, {
     status: 'ok',
     inputTokens: result.inputTokens,
+    cacheWriteTokens: result.cacheWriteTokens,
+    cacheReadTokens: result.cacheReadTokens,
     outputTokens: result.outputTokens,
     latencyMs: result.latencyMs,
   });
@@ -248,6 +258,8 @@ type RunRecord = {
   status: 'ok' | 'error';
   error?: string;
   inputTokens?: number;
+  cacheWriteTokens?: number;
+  cacheReadTokens?: number;
   outputTokens?: number;
   latencyMs?: number;
 };
@@ -269,11 +281,19 @@ async function recordRun(
     proposal_id: proposalId,
     kb_version_id: kbVersionId,
     input_tokens: record.inputTokens ?? null,
+    cache_write_tokens: record.cacheWriteTokens ?? null,
+    cache_read_tokens: record.cacheReadTokens ?? null,
     output_tokens: record.outputTokens ?? null,
     latency_ms: record.latencyMs ?? null,
     cost_estimate_cents:
       record.inputTokens != null && record.outputTokens != null
-        ? estimateCostCents(model, record.inputTokens, record.outputTokens)
+        ? estimateCostCents(
+            model,
+            record.inputTokens,
+            record.outputTokens,
+            record.cacheWriteTokens ?? 0,
+            record.cacheReadTokens ?? 0,
+          )
         : null,
     status: record.status,
     error: record.error ?? null,

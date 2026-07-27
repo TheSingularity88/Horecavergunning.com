@@ -48,7 +48,15 @@ export interface AiCompletionRequest {
 export interface AiCompletionResult {
   /** The response text — the JSON string when jsonSchema was set. */
   text: string;
+  /**
+   * UNCACHED input only. The provider bills cached input separately — writes
+   * at 1.25x, reads at 0.1x — and reports those in the two fields below.
+   * Ignoring them is how chat spend ended up recorded at ~5% of reality:
+   * the cacheable rulebook digest is most of a chat request's input.
+   */
   inputTokens: number;
+  cacheWriteTokens: number;
+  cacheReadTokens: number;
   outputTokens: number;
   model: string;
   stopReason: 'end' | 'max_tokens' | 'refusal' | 'other';
