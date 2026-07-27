@@ -57,6 +57,60 @@ export type Database = {
           },
         ]
       }
+      ai_api_keys: {
+        Row: {
+          ai_profile_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at: string | null
+          last_used_ip: string | null
+          last_used_ua: string | null
+          request_count: number
+          revoked_at: string | null
+          revoked_by: string | null
+          scopes: string[]
+        }
+        Insert: {
+          ai_profile_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at?: string | null
+          last_used_ip?: string | null
+          last_used_ua?: string | null
+          request_count?: number
+          revoked_at?: string | null
+          revoked_by?: string | null
+          scopes?: string[]
+        }
+        Update: {
+          ai_profile_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          label?: string
+          last_used_at?: string | null
+          last_used_ip?: string | null
+          last_used_ua?: string | null
+          request_count?: number
+          revoked_at?: string | null
+          revoked_by?: string | null
+          scopes?: string[]
+        }
+        Relationships: []
+      }
       ai_employee_config: {
         Row: {
           created_at: string
