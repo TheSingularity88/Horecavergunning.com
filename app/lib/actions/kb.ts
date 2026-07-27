@@ -24,6 +24,7 @@ import {
 } from '@/app/lib/ai/bible-schema';
 import { renderBibleMarkdown } from '@/app/lib/ai/render-bible';
 import { estimateCostCents } from '@/app/lib/ai/pricing';
+import { describeProviderError } from '@/app/lib/ai/provider-errors';
 import {
   KB_ANALYSIS_PROMPT_VERSION,
   KB_ANALYSIS_SYSTEM,
@@ -368,15 +369,22 @@ export async function runKbAnalysis(): Promise<ActionResult<{ versionId: string 
       const corpus = cacheCorpus
         ? userContent
         : userContent.map((b) => (b.type === 'text' ? { ...b, cacheable: false } : b));
-      const res = await client.complete({
-        model: KB_ANALYSIS_MODEL,
-        system: KB_ANALYSIS_SYSTEM,
-        messages: [
-          { role: 'user', content: [...corpus, { type: 'text', text: instruction }] },
-        ],
-        maxTokens: 32000,
-        jsonSchema: { name, schema: jsonSchema },
-      });
+      let res;
+      try {
+        res = await client.complete({
+          model: KB_ANALYSIS_MODEL,
+          system: KB_ANALYSIS_SYSTEM,
+          messages: [
+            { role: 'user', content: [...corpus, { type: 'text', text: instruction }] },
+          ],
+          maxTokens: 32000,
+          jsonSchema: { name, schema: jsonSchema },
+        });
+      } catch (err) {
+        // Rethrow with a message the admin can act on ("no credit", "bad key")
+        // instead of a generic failure they have to read the database to explain.
+        throw new Error(describeProviderError('kb', err));
+      }
       totalInput += res.inputTokens;
       totalCacheWrite += res.cacheWriteTokens;
       totalCacheRead += res.cacheReadTokens;

@@ -29,6 +29,19 @@ import { Spinner } from '@/app/components/ui/Spinner';
 import { useToast } from '@/app/components/ui/Toast';
 
 /**
+ * Models an AI employee can run on, with the cost consequence stated at the
+ * moment the choice is made. This was a free-text field, which was a quiet
+ * trap twice over: a typo produced a model the pricing table did not know, so
+ * every run recorded a cost of nothing — and defaulting to Opus made ordinary
+ * testing about five times more expensive than it needed to be.
+ */
+const MODEL_OPTIONS = [
+  { value: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 — cheapest, good for testing' },
+  { value: 'claude-sonnet-5', label: 'Claude Sonnet 5 — recommended for daily work' },
+  { value: 'claude-opus-5', label: 'Claude Opus 5 — most capable, ~5x the cost of Sonnet' },
+];
+
+/**
  * Admin control room for the AI system: provider API keys (Route 1) and the
  * AI employees that use them. All data flows through admin-guarded server
  * actions — the underlying tables are deny-all at RLS, and a provider key is
@@ -49,7 +62,7 @@ export default function AiAdminPage() {
     provider: 'anthropic' as const,
     label: '',
     api_key: '',
-    default_model: 'claude-opus-5',
+    default_model: 'claude-sonnet-5',
   });
   const [pendingDeactivate, setPendingDeactivate] = useState<AiProviderView | null>(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
@@ -93,7 +106,7 @@ export default function AiAdminPage() {
     if (!result.success) showError(result.error);
     else {
       setShowProviderModal(false);
-      setProviderForm({ provider: 'anthropic', label: '', api_key: '', default_model: 'claude-opus-5' });
+      setProviderForm({ provider: 'anthropic', label: '', api_key: '', default_model: 'claude-sonnet-5' });
       await fetchData();
     }
     setIsSaving(false);
@@ -356,11 +369,13 @@ export default function AiAdminPage() {
             />
             <p className="mt-1 text-sm text-slate-500">{ai?.providerKeyHint}</p>
           </div>
-          <Input
+          <Select
             label={ai?.providerModel || 'Default model'}
             value={providerForm.default_model}
             onChange={(e) => setProviderForm((f) => ({ ...f, default_model: e.target.value }))}
+            options={MODEL_OPTIONS}
           />
+          <p className="-mt-2 text-sm text-slate-500">{ai?.providerModelHint}</p>
           <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
             <Button variant="outline" onClick={() => setShowProviderModal(false)}>
               {t.dashboard?.common?.cancel || 'Cancel'}
