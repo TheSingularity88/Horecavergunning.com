@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Bot, KeyRound, Pause, Play, Pencil, Plus } from 'lucide-react';
+import Link from 'next/link';
+import { Activity, Bot, KeyRound, Pause, Play, Pencil, Plus } from 'lucide-react';
+import { dashboardRoutes } from '@/app/lib/routes/dashboard';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import {
@@ -79,26 +81,11 @@ export default function AiAdminPage() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    // Load inline (not by calling the useCallback directly) so the React
-    // Compiler treats the setState as the async-subscription callback rather
-    // than a synchronous effect-body update.
-    let cancelled = false;
     const load = async () => {
-      const result = await getAiAdminData();
-      if (cancelled) return;
-      if (result.success && result.data) {
-        setProviders(result.data.providers);
-        setEmployees(result.data.employees);
-      } else if (!result.success) {
-        showError(result.error);
-      }
-      setIsLoading(false);
+      await fetchData();
     };
     load();
-    return () => {
-      cancelled = true;
-    };
-  }, [isAdmin, showError]);
+  }, [isAdmin, fetchData]);
 
   const submitProvider = async () => {
     setIsSaving(true);
@@ -191,7 +178,15 @@ export default function AiAdminPage() {
   return (
     <DashboardPage title={ai?.title || 'AI employees'}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <p className="mb-6 max-w-2xl text-sm text-slate-600">{ai?.intro}</p>
+        <p className="mb-4 max-w-2xl text-sm text-slate-600">{ai?.intro}</p>
+
+        <Link
+          href={dashboardRoutes.employee.admin.aiActivity}
+          className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 hover:text-blue-900"
+        >
+          <Activity className="h-4 w-4" />
+          {ai?.viewActivity || 'View activity, spend and review outcomes'}
+        </Link>
 
         {isLoading ? (
           <div className="flex justify-center py-12">
