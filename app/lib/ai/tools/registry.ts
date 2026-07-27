@@ -44,8 +44,15 @@ export interface ToolContext {
   admin: ReturnType<typeof createAdminClient>;
   /** The AI employee acting. Every write is attributed to it. */
   aiProfileId: string;
-  /** The staff member whose chat triggered this. Co-attributed. */
-  staffId: string;
+  /**
+   * The staff member whose chat triggered this. Co-attributed.
+   *
+   * NULL when an EXTERNAL AI employee acts on its own API key: there is no
+   * human in the loop at that moment, and naming one would be a lie in the
+   * audit trail. ai_tool_calls.staff_id has always been nullable for exactly
+   * this case (migration 020).
+   */
+  staffId: string | null;
 }
 
 export interface AiTool {
