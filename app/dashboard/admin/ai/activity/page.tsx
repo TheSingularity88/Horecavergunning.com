@@ -331,17 +331,33 @@ export default function AiActivityPage() {
                     const budgetLeft = Math.max(0, employee.maxRunsPerDay - employee.budgetUsed);
                     const budgetSpent =
                       employee.maxRunsPerDay > 0 && budgetLeft === 0 && employee.budgetUsed > 0;
+                    // Every figure on this card counts OUR spend on OUR provider
+                    // key. An external employee pays for its own model, so those
+                    // numbers are structurally zero — rendering them would read
+                    // as "configured but idle", which is the opposite of true.
+                    const isExternal = employee.employmentType === 'external';
                     return (
                       <Card key={employee.profileId} className="p-4">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium text-slate-900">{employee.fullName}</span>
+                          {isExternal && (
+                            <Badge variant="warning">
+                              {t.dashboard?.ai?.routeExternalBadge || 'Route 2 · own API key'}
+                            </Badge>
+                          )}
                           {employee.isPaused && (
                             <Badge variant="warning">{t.dashboard?.ai?.pausedBadge || 'Paused'}</Badge>
                           )}
-                          {budgetSpent && (
+                          {budgetSpent && !isExternal && (
                             <Badge variant="error">{m?.budgetSpent || 'Daily limit reached'}</Badge>
                           )}
                         </div>
+                        {isExternal ? (
+                          <p className="mt-3 text-sm text-slate-500">
+                            {m?.externalNoSpend ||
+                              'This employee works through its own API key, so it uses none of our provider budget. Its actions appear in the proposal queue and the tool-call log.'}
+                          </p>
+                        ) : (
                         <div className="mt-3 grid gap-4 sm:grid-cols-4">
                           <Stat
                             label={m?.budgetUsed || 'Daily budget used'}
@@ -377,6 +393,7 @@ export default function AiActivityPage() {
                             value={formatEuro(employee.month.costCents)}
                           />
                         </div>
+                        )}
                       </Card>
                     );
                   })}

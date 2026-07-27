@@ -17,6 +17,7 @@ import {
   type AiProviderView,
   type AiEmployeeView,
 } from '@/app/lib/actions/ai-admin';
+import type { AiEmploymentType } from '@/app/lib/types/database';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -69,6 +70,9 @@ export default function AiAdminPage() {
   const [editEmployee, setEditEmployee] = useState<AiEmployeeView | null>(null);
   const [employeeForm, setEmployeeForm] = useState({
     name: '',
+    // Which route the employee works through. Fixed at creation — the edit
+    // form shows it but never sends it, because a trigger refuses the change.
+    employment_type: 'platform' as AiEmploymentType,
     job_description: '',
     provider_id: '',
     model: '',
@@ -126,6 +130,7 @@ export default function AiAdminPage() {
     setEditEmployee(null);
     setEmployeeForm({
       name: '',
+      employment_type: 'platform',
       job_description: '',
       provider_id: providers.find((p) => p.is_active)?.id ?? '',
       model: '',
@@ -139,6 +144,7 @@ export default function AiAdminPage() {
     setEditEmployee(employee);
     setEmployeeForm({
       name: employee.full_name,
+      employment_type: employee.config.employment_type,
       job_description: employee.config.job_description,
       provider_id: employee.config.provider_id ?? '',
       model: employee.config.model ?? '',
@@ -150,19 +156,32 @@ export default function AiAdminPage() {
 
   const submitEmployee = async () => {
     setIsSaving(true);
+    // An external employee has no provider and no model, and the server
+    // rejects the pairing outright rather than ignoring it.
+    const isPlatform = employeeForm.employment_type === 'platform';
     const base = {
       job_description: employeeForm.job_description,
-      provider_id: employeeForm.provider_id,
-      model: employeeForm.model.trim() || null,
       max_runs_per_day: employeeForm.max_runs_per_day,
     };
     const result = editEmployee
       ? await updateAiEmployee({
           ...base,
           profile_id: editEmployee.profile_id,
+          provider_id: isPlatform ? employeeForm.provider_id : null,
+          model: isPlatform ? employeeForm.model.trim() || null : null,
           is_paused: employeeForm.is_paused,
         })
-      : await createAiEmployee({ ...base, name: employeeForm.name });
+      : await createAiEmployee(
+          isPlatform
+            ? {
+                ...base,
+                name: employeeForm.name,
+                employment_type: 'platform',
+                provider_id: employeeForm.provider_id,
+                model: employeeForm.model.trim() || null,
+              }
+            : { ...base, name: employeeForm.name, employment_type: 'external' },
+        );
     if (!result.success) showError(result.error);
     else {
       setShowEmployeeModal(false);
@@ -175,7 +194,9 @@ export default function AiAdminPage() {
     const result = await updateAiEmployee({
       profile_id: employee.profile_id,
       job_description: employee.config.job_description,
-      provider_id: employee.config.provider_id ?? '',
+      // null, not '': an external employee has no provider, and '' fails the
+      // uuid check — which used to make Pause reject its own payload.
+      provider_id: employee.config.provider_id,
       model: employee.config.model,
       max_runs_per_day: employee.config.max_runs_per_day,
       is_paused: !employee.config.is_paused,
@@ -261,12 +282,9 @@ export default function AiAdminPage() {
                   <Bot className="h-5 w-5 text-slate-500" />
                   {ai?.tabEmployees || 'AI employees'}
                 </h2>
-                <Button
-                  size="sm"
-                  onClick={openCreateEmployee}
-                  disabled={activeProviders.length === 0}
-                  className="gap-1"
-                >
+                {/* Not gated on having a provider: an external employee needs
+                    none, so a platform with no provider key can still hire one. */}
+                <Button size="sm" onClick={openCreateEmployee} className="gap-1">
                   <Plus className="h-4 w-4" />
                   {ai?.createEmployee || 'Create AI employee'}
                 </Button>
@@ -284,6 +302,17 @@ export default function AiAdminPage() {
                             <span className="font-medium text-slate-900">{employee.full_name}</span>
                             <Badge variant="info">
                               {t.dashboard?.enums?.role?.ai || 'AI employee'}
+                            </Badge>
+                            <Badge
+                              variant={
+                                employee.config.employment_type === 'external'
+                                  ? 'warning'
+                                  : 'default'
+                              }
+                            >
+                              {employee.config.employment_type === 'external'
+                                ? ai?.routeExternalBadge || 'Route 2 · own API key'
+                                : ai?.routePlatformBadge || 'Route 1 · our key'}
                             </Badge>
                             {employee.config.is_paused && (
                               <Badge variant="warning">{ai?.pausedBadge || 'Paused'}</Badge>
@@ -406,6 +435,43 @@ export default function AiAdminPage() {
               onChange={(e) => setEmployeeForm((f) => ({ ...f, name: e.target.value }))}
             />
           )}
+          {/* Route: chosen once, then permanent. On edit it is stated rather
+              than offered, because the database refuses to change it. */}
+          {editEmployee ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                {ai?.routeLabel || 'Route'}
+              </p>
+              <p className="mt-1 text-sm font-medium text-slate-800">
+                {employeeForm.employment_type === 'external'
+                  ? ai?.routeExternalName || 'Route 2 — its own API key'
+                  : ai?.routePlatformName || 'Route 1 — our provider key'}
+              </p>
+              <p className="mt-1 text-sm text-slate-500">{ai?.routeFixedHint}</p>
+            </div>
+          ) : (
+            <div>
+              <Select
+                label={ai?.routeLabel || 'Route'}
+                value={employeeForm.employment_type}
+                onChange={(e) =>
+                  setEmployeeForm((f) => ({
+                    ...f,
+                    employment_type: e.target.value as AiEmploymentType,
+                  }))
+                }
+                options={[
+                  { value: 'platform', label: ai?.routePlatformName || 'Route 1 — our provider key' },
+                  { value: 'external', label: ai?.routeExternalName || 'Route 2 — its own API key' },
+                ]}
+              />
+              <p className="mt-1 text-sm text-slate-500">
+                {employeeForm.employment_type === 'external'
+                  ? ai?.routeExternalHint
+                  : ai?.routePlatformHint}
+              </p>
+            </div>
+          )}
           <div>
             <Textarea
               label={ai?.jobDescription || 'Job description'}
@@ -418,20 +484,30 @@ export default function AiAdminPage() {
             />
             <p className="mt-1 text-sm text-slate-500">{ai?.jobDescriptionHint}</p>
           </div>
-          <Select
-            label={ai?.tabProviders || 'AI provider'}
-            value={employeeForm.provider_id}
-            onChange={(e) => setEmployeeForm((f) => ({ ...f, provider_id: e.target.value }))}
-            options={activeProviders.map((p) => ({
-              value: p.id,
-              label: `${p.label} (${p.default_model})`,
-            }))}
-          />
-          <Input
-            label={ai?.modelOverride || 'Model (optional)'}
-            value={employeeForm.model}
-            onChange={(e) => setEmployeeForm((f) => ({ ...f, model: e.target.value }))}
-          />
+          {/* Hidden, not disabled, for an external employee: it has no provider
+              by construction, and Select renders an empty dropdown for an empty
+              options array rather than saying so. */}
+          {employeeForm.employment_type === 'platform' && (
+            <>
+              <Select
+                label={ai?.tabProviders || 'AI provider'}
+                value={employeeForm.provider_id}
+                onChange={(e) => setEmployeeForm((f) => ({ ...f, provider_id: e.target.value }))}
+                options={activeProviders.map((p) => ({
+                  value: p.id,
+                  label: `${p.label} (${p.default_model})`,
+                }))}
+              />
+              {activeProviders.length === 0 && (
+                <p className="-mt-2 text-sm text-amber-700">{ai?.noProviderYet}</p>
+              )}
+              <Input
+                label={ai?.modelOverride || 'Model (optional)'}
+                value={employeeForm.model}
+                onChange={(e) => setEmployeeForm((f) => ({ ...f, model: e.target.value }))}
+              />
+            </>
+          )}
           <div>
             <Input
               label={ai?.maxRunsPerDay || 'Max runs per day'}

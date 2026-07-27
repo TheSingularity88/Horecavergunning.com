@@ -263,6 +263,13 @@ export default function AiReviewPage() {
                         <span className="font-medium text-slate-900">{proposal.title}</span>
                         {badge && <Badge variant={badge.variant}>{badge.label}</Badge>}
                         <Badge variant="default">{proposal.proposal_type.replace(/_/g, ' ')}</Badge>
+                        {/* Only external is badged. Route 1 is the norm and
+                            labelling everything would make the exception
+                            invisible — what a reviewer needs to notice is that
+                            this one came from somebody's own agent. */}
+                        {proposal.ai_employment_type === 'external' && (
+                          <Badge variant="warning">{r?.fromExternalAgent || 'external agent'}</Badge>
+                        )}
                         {proposal.status !== 'pending' && (
                           <Badge variant={proposal.status === 'approved' ? 'success' : 'default'}>
                             {proposal.status}

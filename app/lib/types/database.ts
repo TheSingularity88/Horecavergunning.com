@@ -280,8 +280,24 @@ export interface AiProvider {
   updated_at: string;
 }
 
+/**
+ * Which route an AI employee works through.
+ *
+ * 'platform' — we hold the provider key and call the model for it (Route 1).
+ * 'external' — we mint an API key and an outside agent (a Custom GPT, the
+ *              Claude CLI) authenticates with it and drives the dashboard
+ *              itself (Route 2). It brings its own model; we never call a
+ *              provider for it, so it has no provider_id and no model.
+ *
+ * Fixed at creation — a database trigger refuses to change it, because
+ * flipping it would silently re-label every proposal, run and tool call the
+ * employee ever produced.
+ */
+export type AiEmploymentType = 'platform' | 'external';
+
 export interface AiEmployeeConfig {
   profile_id: string;
+  employment_type: AiEmploymentType;
   provider_id: string | null;
   model: string | null;
   job_description: string;
@@ -303,6 +319,13 @@ export interface AiProposal {
   kb_version_id: string | null;
   /** Denormalised kb_versions.version — readable by staff who cannot read kb_versions. */
   kb_version_number: number | null;
+  /**
+   * Which route produced this, stamped by a trigger at insert. Denormalised for
+   * the same reason as kb_version_number: ai_employee_config is deny-all RLS, so
+   * a reviewer's browser cannot join to it. Null for proposals predating
+   * migration 023.
+   */
+  ai_employment_type: AiEmploymentType | null;
   status: AiProposalStatus;
   reviewed_by: string | null;
   reviewed_at: string | null;

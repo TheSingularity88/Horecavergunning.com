@@ -60,6 +60,7 @@ export type Database = {
       ai_employee_config: {
         Row: {
           created_at: string
+          employment_type: string
           is_paused: boolean
           job_description: string
           max_runs_per_day: number
@@ -70,6 +71,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          employment_type?: string
           is_paused?: boolean
           job_description: string
           max_runs_per_day?: number
@@ -80,6 +82,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          employment_type?: string
           is_paused?: boolean
           job_description?: string
           max_runs_per_day?: number
@@ -149,6 +152,7 @@ export type Database = {
       }
       ai_proposals: {
         Row: {
+          ai_employment_type: string | null
           ai_profile_id: string
           case_id: string | null
           client_id: string | null
@@ -169,6 +173,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_employment_type?: string | null
           ai_profile_id: string
           case_id?: string | null
           client_id?: string | null
@@ -189,6 +194,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_employment_type?: string | null
           ai_profile_id?: string
           case_id?: string | null
           client_id?: string | null

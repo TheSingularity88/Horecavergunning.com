@@ -58,24 +58,32 @@ export async function getAiChatEmployees(): Promise<ActionResult<{ employees: Ch
 
     const [{ data: profiles }, { data: configs }] = await Promise.all([
       admin.from('profiles').select('id, full_name').eq('role', 'ai').eq('is_active', true),
-      admin.from('ai_employee_config').select('profile_id, is_paused'),
+      // Only PLATFORM employees. This chat works by US calling a model on the
+      // employee's behalf; an external employee has no provider key here, so
+      // offering it in the picker would produce a colleague choosing a
+      // conversation partner that cannot answer. An external employee is
+      // instructed in its own tool — the Custom GPT, or the Claude CLI — and
+      // reaches this platform through the API key we mint for it.
+      admin
+        .from('ai_employee_config')
+        .select('profile_id, is_paused')
+        .eq('employment_type', 'platform'),
     ]);
 
-    const pausedByProfile = new Map(
-      ((configs as { profile_id: string; is_paused: boolean }[]) || []).map((c) => [
-        c.profile_id,
-        c.is_paused,
-      ]),
-    );
+    const platformConfigs =
+      (configs as { profile_id: string; is_paused: boolean }[] | null) || [];
+    const pausedByProfile = new Map(platformConfigs.map((c) => [c.profile_id, c.is_paused]));
 
     return {
       success: true,
       data: {
-        employees: ((profiles as { id: string; full_name: string }[]) || []).map((p) => ({
-          profileId: p.id,
-          fullName: p.full_name,
-          isPaused: pausedByProfile.get(p.id) ?? false,
-        })),
+        employees: ((profiles as { id: string; full_name: string }[]) || [])
+          .filter((p) => pausedByProfile.has(p.id))
+          .map((p) => ({
+            profileId: p.id,
+            fullName: p.full_name,
+            isPaused: pausedByProfile.get(p.id) ?? false,
+          })),
       },
     };
   } catch (err) {

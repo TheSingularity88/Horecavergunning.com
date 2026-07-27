@@ -708,7 +708,8 @@ export const translations = {
         caseFieldEmpty: "empty",
         taskFieldTitle: "New task title",
         taskFieldStatus: "New status",
-        taskVisibleToClient: "The customer sees this task on their own case page."
+        taskVisibleToClient: "The customer sees this task on their own case page.",
+        fromExternalAgent: "external agent"
       },
       aiChat: {
         title: "AI chat",
@@ -748,6 +749,8 @@ export const translations = {
         noEmployees: "No AI employees yet.",
         budgetUsed: "Daily budget used",
         budgetSpent: "Daily limit reached",
+        externalNoSpend:
+          "This employee works through its own API key, so it uses none of our provider budget. Its actions appear in the proposal queue and the tool-call log.",
         resetsAt: "resets {t}",
         runsToday: "Runs today",
         errorsWindow: "Errors (30d)",
@@ -814,6 +817,18 @@ export const translations = {
         pause: "Pause",
         resume: "Resume",
         pausedBadge: "Paused",
+        routeLabel: "Route",
+        routePlatformName: "Route 1 — our provider key",
+        routeExternalName: "Route 2 — its own API key",
+        routePlatformBadge: "Route 1 · our key",
+        routeExternalBadge: "Route 2 · own API key",
+        routePlatformHint:
+          "We store the API key and call the model for this employee. It works from the chat here and can be asked to assess a case. Its usage is billed to us.",
+        routeExternalHint:
+          "We mint an API key and hand it to an outside agent — a ChatGPT Custom GPT, or Claude Code. It brings its own model and subscription, and reaches this dashboard through that key. You instruct it in its own tool, not in the chat here.",
+        routeFixedHint:
+          "The route is fixed when the employee is created. Changing it would re-label everything this employee has already done — create a second employee instead.",
+        noProviderYet: "No active AI provider yet. Add a provider key above first.",
         noEmployees: "No AI employees yet.",
         edit: "Edit",
         saveEmployee: "Save",
@@ -1796,7 +1811,8 @@ export const translations = {
         caseFieldEmpty: "leeg",
         taskFieldTitle: "Nieuwe taaktitel",
         taskFieldStatus: "Nieuwe status",
-        taskVisibleToClient: "De klant ziet deze taak op zijn eigen dossierpagina."
+        taskVisibleToClient: "De klant ziet deze taak op zijn eigen dossierpagina.",
+        fromExternalAgent: "externe agent"
       },
       aiChat: {
         title: "AI-chat",
@@ -1836,6 +1852,8 @@ export const translations = {
         noEmployees: "Nog geen AI-medewerkers.",
         budgetUsed: "Dagbudget gebruikt",
         budgetSpent: "Daglimiet bereikt",
+        externalNoSpend:
+          "Deze medewerker werkt via zijn eigen API-sleutel en gebruikt dus niets van ons providerbudget. Zijn acties staan in de voorstellenwachtrij en in het logboek met tooluitvoeringen.",
         resetsAt: "reset om {t}",
         runsToday: "Runs vandaag",
         errorsWindow: "Fouten (30d)",
@@ -1902,6 +1920,18 @@ export const translations = {
         pause: "Pauzeren",
         resume: "Hervatten",
         pausedBadge: "Gepauzeerd",
+        routeLabel: "Route",
+        routePlatformName: "Route 1 — onze provider-sleutel",
+        routeExternalName: "Route 2 — eigen API-sleutel",
+        routePlatformBadge: "Route 1 · onze sleutel",
+        routeExternalBadge: "Route 2 · eigen API-sleutel",
+        routePlatformHint:
+          "Wij bewaren de API-sleutel en roepen het model aan voor deze medewerker. Hij werkt vanuit de chat hier en kan een dossier beoordelen. Het verbruik komt op onze rekening.",
+        routeExternalHint:
+          "Wij maken een API-sleutel aan en geven die aan een externe agent — een ChatGPT Custom GPT of Claude Code. Die brengt zijn eigen model en abonnement mee en bereikt dit dashboard via die sleutel. U geeft hem opdrachten in zijn eigen tool, niet in de chat hier.",
+        routeFixedHint:
+          "De route ligt vast zodra de medewerker is aangemaakt. Wijzigen zou alles wat deze medewerker al heeft gedaan met terugwerkende kracht anders labelen — maak in plaats daarvan een tweede medewerker aan.",
+        noProviderYet: "Nog geen actieve AI-provider. Voeg hierboven eerst een providersleutel toe.",
         noEmployees: "Nog geen AI-medewerkers.",
         edit: "Bewerken",
         saveEmployee: "Opslaan",
