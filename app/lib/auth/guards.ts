@@ -43,6 +43,11 @@ export async function requireStaff(): Promise<{ user: User; profile: Profile }> 
     .eq('id', user.id)
     .maybeSingle();
 
+  // INVARIANT: role 'ai' is deliberately NOT in this list. AI employees are
+  // profiles for attribution only — they must never pass requireStaff (nor,
+  // by extension, requireAdmin). All AI work runs through service-role code
+  // that writes proposals; humans execute them. Do not "fix" this by adding
+  // 'ai' here.
   if (!profile || !(['employee', 'admin'] as UserRole[]).includes(profile.role as UserRole)) {
     throw new AuthError('Staff access required');
   }

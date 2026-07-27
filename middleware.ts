@@ -110,6 +110,23 @@ export async function middleware(request: NextRequest) {
       profile.is_active !== false;
 
     if (!isActiveStaff) {
+      // An AI-employee account should never have a browser session at all (its
+      // password is discarded at creation). If one reaches /dashboard, that is
+      // an anomaly worth recording, not just a redirect — log it before
+      // bouncing, mirroring the unauthorized_admin_access trail below.
+      if (profile?.role === 'ai') {
+        await supabase.from('activity_log').insert({
+          user_id: user.id,
+          action: 'ai_session_blocked',
+          entity_type: 'profiles',
+          entity_id: user.id,
+          details: {
+            path: pathname,
+            ip: request.headers.get('x-forwarded-for') ?? null,
+            user_agent: request.headers.get('user-agent'),
+          },
+        });
+      }
       // Client users get sent to their own portal; others to the homepage.
       const { data: client } = await supabase
         .from('clients')

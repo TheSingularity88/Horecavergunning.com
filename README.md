@@ -57,6 +57,7 @@ See `.env.example`. Summary:
 | `RESEND_API_KEY` / `RESEND_FROM_EMAIL` / `OWNER_NOTIFICATION_EMAIL` | Email |
 | `MOLLIE_API_KEY` | Payments (use a `test_` key first) |
 | `ANTHROPIC_API_KEY` | AI analysis (knowledge base). Pay-per-use key from console.anthropic.com |
+| `AI_KEY_ENCRYPTION_SECRET` | Encrypts stored AI provider keys (openssl rand -base64 32) |
 
 Email and payments **degrade gracefully** when their keys are absent, so the app
 runs locally without them.

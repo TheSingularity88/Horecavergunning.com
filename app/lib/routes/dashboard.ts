@@ -14,6 +14,7 @@ export const dashboardRoutes = {
       users: '/dashboard/admin/users',
       permitTypes: '/dashboard/admin/permit-types',
       knowledgeBase: '/dashboard/admin/knowledge-base',
+      ai: '/dashboard/admin/ai',
       settings: '/dashboard/admin/settings',
       activity: '/dashboard/admin/activity',
     },
