@@ -1396,6 +1396,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      touch_agent_api_key: {
+        Args: { p_id: string; p_ip: string; p_ua: string | null; p_stale_seconds: number }
+        Returns: undefined
+      }
       activate_kb_version: {
         Args: { p_admin: string; p_id: string }
         Returns: boolean

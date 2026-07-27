@@ -71,22 +71,7 @@ export async function authenticateAgent(request: Request): Promise<AgentAuthResu
   const userAgent = request.headers.get('user-agent');
 
   const token = parseBearer(request.headers.get('authorization'));
-  if (!token) {
-    await recordFailure(admin, 'missing_credentials', ip, userAgent, null);
-    return { ok: false, reason: 'missing_credentials', status: 401 };
-  }
-
-  // Throttle FAILURES by IP before doing any lookup work, so guessing costs
-  // the attacker something even when every guess is wrong.
-  const failureBudget = await checkRateLimitStrict(
-    `agent-auth-fail:${ip}`,
-    FAILURE_LIMIT_PER_MINUTE,
-    60,
-  );
-  if (!failureBudget) {
-    await recordFailure(admin, 'rate_limited', ip, userAgent, null);
-    return { ok: false, reason: 'rate_limited', status: 429 };
-  }
+  if (!token) return deny(admin, 'missing_credentials', 401, ip, userAgent, null);
 
   // Look up by hash. Revoked keys are matched too, so a revoked key can be
   // reported as revoked rather than as unknown — the holder is someone we
@@ -100,13 +85,9 @@ export async function authenticateAgent(request: Request): Promise<AgentAuthResu
   if (error) {
     // Fail closed. An outage must not become an open door.
     console.error('[agent-auth] key lookup failed:', error.message);
-    await recordFailure(admin, 'lookup_failed', ip, userAgent, null);
-    return { ok: false, reason: 'lookup_failed', status: 503 };
+    return deny(admin, 'lookup_failed', 503, ip, userAgent, null);
   }
-  if (!key) {
-    await recordFailure(admin, 'unknown_key', ip, userAgent, null);
-    return { ok: false, reason: 'unknown_key', status: 401 };
-  }
+  if (!key) return deny(admin, 'unknown_key', 401, ip, userAgent, null);
 
   const row = key as {
     id: string;
@@ -119,13 +100,9 @@ export async function authenticateAgent(request: Request): Promise<AgentAuthResu
     request_count: number;
   };
 
-  if (row.revoked_at) {
-    await recordFailure(admin, 'revoked', ip, userAgent, row.id);
-    return { ok: false, reason: 'revoked', status: 401 };
-  }
+  if (row.revoked_at) return deny(admin, 'revoked', 401, ip, userAgent, row.id);
   if (new Date(row.expires_at).getTime() <= Date.now()) {
-    await recordFailure(admin, 'expired', ip, userAgent, row.id);
-    return { ok: false, reason: 'expired', status: 401 };
+    return deny(admin, 'expired', 401, ip, userAgent, row.id);
   }
 
   // The employee behind the key must still be a live, external, unpaused AI.
@@ -144,25 +121,17 @@ export async function authenticateAgent(request: Request): Promise<AgentAuthResu
   const c = config as { employment_type: AiEmploymentType; is_paused: boolean } | null;
 
   if (!p || !c || p.role !== 'ai' || !p.is_active) {
-    await recordFailure(admin, 'employee_inactive', ip, userAgent, row.id);
-    return { ok: false, reason: 'employee_inactive', status: 403 };
+    return deny(admin, 'employee_inactive', 403, ip, userAgent, row.id);
   }
   if (c.employment_type !== 'external') {
     // Unreachable while the mint-time trigger holds, and checked anyway: this
     // is the boundary, not the form that fills it.
-    await recordFailure(admin, 'not_external', ip, userAgent, row.id);
-    return { ok: false, reason: 'not_external', status: 403 };
+    return deny(admin, 'not_external', 403, ip, userAgent, row.id);
   }
-  if (c.is_paused) {
-    await recordFailure(admin, 'employee_paused', ip, userAgent, row.id);
-    return { ok: false, reason: 'employee_paused', status: 403 };
-  }
+  if (c.is_paused) return deny(admin, 'employee_paused', 403, ip, userAgent, row.id);
 
   const withinRate = await checkRateLimitStrict(`agent-key:${row.id}`, RATE_LIMIT_PER_MINUTE, 60);
-  if (!withinRate) {
-    await recordFailure(admin, 'rate_limited', ip, userAgent, row.id);
-    return { ok: false, reason: 'rate_limited', status: 429 };
-  }
+  if (!withinRate) return deny(admin, 'rate_limited', 429, ip, userAgent, row.id);
 
   await touchKey(admin, row, ip, userAgent);
 
@@ -181,34 +150,80 @@ export async function authenticateAgent(request: Request): Promise<AgentAuthResu
   };
 }
 
+/**
+ * Refuse, and record it — but only while this IP still has failure budget.
+ *
+ * The budget is consumed by FAILURES ONLY. An earlier attempt at this checked
+ * it at the top of the function for every request, which would have throttled a
+ * perfectly good agent after 20 successful calls a minute despite its own,
+ * higher, per-key limit.
+ *
+ * The route is public — middleware.ts exempts /api, so `curl` with no headers
+ * is a complete anonymous round trip — and the first version recorded every
+ * refusal unconditionally. That let anyone append to the audit log without
+ * limit and bury the key-minted and key-revoked entries the log exists to
+ * preserve. The first N refusals per minute per IP are the signal worth having;
+ * everything past that IS the flood, and is now a console line instead of a row.
+ */
+async function deny(
+  admin: ReturnType<typeof createAdminClient>,
+  reason: AgentAuthFailure,
+  status: 401 | 403 | 429 | 503,
+  ip: string,
+  userAgent: string | null,
+  keyId: string | null,
+): Promise<AgentAuthResult> {
+  const withinBudget = await checkRateLimitStrict(
+    `agent-auth-fail:${ip}`,
+    FAILURE_LIMIT_PER_MINUTE,
+    60,
+  );
+  if (!withinBudget) {
+    console.warn(`[agent-auth] failure budget exhausted for ${ip}; suppressing audit row`);
+    return { ok: false, reason: 'rate_limited', status: 429 };
+  }
+  await recordFailure(admin, reason, ip, userAgent, keyId);
+  return { ok: false, reason, status };
+}
+
 /** Does this key carry the tier a tool needs? */
 export function hasScope(principal: AgentPrincipal, scope: 'read' | 'write' | 'propose'): boolean {
   return principal.scopes.includes(scope);
 }
 
 /**
- * Stamp usage, but not on every request — see LAST_USED_REFRESH_MS. Never
- * awaited into the failure path: a usage stamp that fails must not deny an
- * otherwise valid request.
+ * Record usage in ONE atomic statement.
+ *
+ * Two things that must not be conflated, and were:
+ *   request_count  counts REQUESTS, and is incremented every time. The first
+ *                  version incremented it inside a once-a-minute throttle, so
+ *                  it silently counted active MINUTES instead — a key driven
+ *                  at its 60/min ceiling reported 60 requests per hour rather
+ *                  than 3600, understating a hammered key by up to 60x on the
+ *                  one screen an admin has for spotting a leaked one.
+ *   last_used_*    is the expensive, low-value part, and stays throttled.
+ *
+ * Doing it in SQL rather than read-then-write also removes a lost update: the
+ * count was read before three round trips and written back as count+1, so
+ * concurrent requests both wrote the same value.
+ *
+ * Never awaited into the failure path — a usage stamp that fails must not deny
+ * an otherwise valid request.
  */
 async function touchKey(
   admin: ReturnType<typeof createAdminClient>,
-  row: { id: string; last_used_at: string | null; request_count: number },
+  row: { id: string },
   ip: string,
   userAgent: string | null,
 ): Promise<void> {
-  const last = row.last_used_at ? new Date(row.last_used_at).getTime() : 0;
-  if (Date.now() - last < LAST_USED_REFRESH_MS) return;
   try {
-    await admin
-      .from('ai_api_keys')
-      .update({
-        last_used_at: new Date().toISOString(),
-        last_used_ip: ip,
-        last_used_ua: userAgent ? userAgent.slice(0, 300) : null,
-        request_count: row.request_count + 1,
-      })
-      .eq('id', row.id);
+    const { error } = await admin.rpc('touch_agent_api_key', {
+      p_id: row.id,
+      p_ip: ip,
+      p_ua: userAgent ? userAgent.slice(0, 300) : null,
+      p_stale_seconds: Math.round(LAST_USED_REFRESH_MS / 1000),
+    });
+    if (error) console.error('[agent-auth] could not stamp key usage:', error.message);
   } catch (err) {
     console.error('[agent-auth] could not stamp key usage:', err);
   }

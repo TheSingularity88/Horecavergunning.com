@@ -175,3 +175,49 @@ DROP TRIGGER IF EXISTS ai_api_keys_secret_immutable ON public.ai_api_keys;
 CREATE TRIGGER ai_api_keys_secret_immutable
   BEFORE UPDATE OF key_hash, key_prefix ON public.ai_api_keys
   FOR EACH ROW EXECUTE FUNCTION public.reject_api_key_secret_change();
+
+-- ---------------------------------------------------------------------------
+-- Usage stamping, in one atomic statement
+-- ---------------------------------------------------------------------------
+--
+-- request_count counts REQUESTS and is incremented every time. The first
+-- version of this incremented it inside a once-a-minute throttle in application
+-- code, so it silently counted active MINUTES: a key driven at its 60/min
+-- ceiling reported 60 requests per hour instead of 3600, understating a
+-- hammered key by up to 60x on the one screen an admin has for spotting a
+-- leaked one. It was also a read-modify-write across three round trips, so
+-- concurrent requests overwrote each other's increment.
+--
+-- last_used_* is the low-value, high-cost half and stays throttled — a minute
+-- of resolution is plenty for "when did this key last work".
+
+CREATE OR REPLACE FUNCTION public.touch_agent_api_key(
+  p_id UUID,
+  p_ip TEXT,
+  p_ua TEXT,
+  p_stale_seconds INTEGER
+)
+RETURNS VOID
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  UPDATE public.ai_api_keys
+  SET
+    request_count = request_count + 1,
+    last_used_at = CASE
+      WHEN last_used_at IS NULL OR last_used_at < now() - make_interval(secs => p_stale_seconds)
+      THEN now() ELSE last_used_at END,
+    last_used_ip = CASE
+      WHEN last_used_at IS NULL OR last_used_at < now() - make_interval(secs => p_stale_seconds)
+      THEN p_ip ELSE last_used_ip END,
+    last_used_ua = CASE
+      WHEN last_used_at IS NULL OR last_used_at < now() - make_interval(secs => p_stale_seconds)
+      THEN p_ua ELSE last_used_ua END
+  WHERE id = p_id;
+$$;
+
+-- Service role only. Exposed as an RPC it would let anyone inflate a key's
+-- usage figures, which is the one thing this table is watched for.
+REVOKE ALL ON FUNCTION public.touch_agent_api_key(UUID, TEXT, TEXT, INTEGER) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.touch_agent_api_key(UUID, TEXT, TEXT, INTEGER) TO service_role;
