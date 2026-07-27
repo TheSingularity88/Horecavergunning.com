@@ -313,6 +313,16 @@ export interface AiProposal {
   updated_at: string;
 }
 
+export interface AiMessage {
+  id: string;
+  ai_profile_id: string;
+  author: 'staff' | 'ai';
+  /** Staff rows: the author. AI rows: who the AI was answering. */
+  staff_id: string | null;
+  content: string;
+  created_at: string;
+}
+
 export interface AiRun {
   id: string;
   ai_profile_id: string | null;
