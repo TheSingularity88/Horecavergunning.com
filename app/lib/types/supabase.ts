@@ -1236,6 +1236,19 @@ export type Database = {
         Returns: boolean
       }
       active_kb_version: { Args: never; Returns: number }
+      ai_usage_daily: {
+        Args: { p_days?: number }
+        Returns: {
+          day: string
+          ai_profile_id: string | null
+          run_type: string
+          runs: number
+          errors: number
+          input_tokens: number
+          output_tokens: number
+          cost_cents: number
+        }[]
+      }
       check_rate_limit: {
         Args: { p_key: string; p_max: number; p_window: string }
         Returns: boolean

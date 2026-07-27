@@ -13,6 +13,7 @@ import { extractDocument, redactText } from '@/app/lib/ai/extract';
 import { envAnthropicClient, type AiContentBlock } from '@/app/lib/ai/provider';
 import { bibleSchema, bibleJsonSchema } from '@/app/lib/ai/bible-schema';
 import { renderBibleMarkdown } from '@/app/lib/ai/render-bible';
+import { estimateCostCents } from '@/app/lib/ai/pricing';
 import {
   KB_ANALYSIS_PROMPT_VERSION,
   KB_ANALYSIS_SYSTEM,
@@ -330,13 +331,19 @@ export async function runKbAnalysis(): Promise<ActionResult<{ versionId: string 
       jsonSchema: schema,
     });
 
-    if (result.stopReason === 'refusal') {
-      return { success: false, error: 'The AI provider declined this request.', code: 'ai_unavailable' };
-    }
-    if (result.stopReason === 'max_tokens') {
+    if (result.stopReason === 'refusal' || result.stopReason === 'max_tokens') {
+      // Billed even though it produced nothing usable. Record it, or spend that
+      // really happened is missing from the dashboard that reports spend.
+      await recordKbRun(admin, client.id, result, {
+        status: 'error',
+        error: `stop_reason ${result.stopReason}`,
+      });
       return {
         success: false,
-        error: 'The analysis output was too large and got cut off. Please try again.',
+        error:
+          result.stopReason === 'refusal'
+            ? 'The AI provider declined this request.'
+            : 'The analysis output was too large and got cut off. Please try again.',
         code: 'ai_unavailable',
       };
     }
@@ -383,6 +390,17 @@ export async function runKbAnalysis(): Promise<ActionResult<{ versionId: string 
         entity_id: null,
         details: { reason: 'schema_validation', error: parsed.error.slice(0, 500) },
       });
+      await recordKbRun(
+        admin,
+        client.id,
+        {
+          model: result.model,
+          inputTokens: totalInput,
+          outputTokens: totalOutput,
+          latencyMs: totalLatency,
+        },
+        { status: 'error', error: 'schema validation failed twice' },
+      );
       return {
         success: false,
         error: 'The AI produced output that did not match the expected structure. Please try again.',
@@ -429,9 +447,22 @@ export async function runKbAnalysis(): Promise<ActionResult<{ versionId: string 
       .select('id')
       .single();
 
+    const kbUsage = {
+      model: result.model,
+      inputTokens: totalInput,
+      outputTokens: totalOutput,
+      latencyMs: totalLatency,
+    };
+
     if (insertError || !inserted) {
+      await recordKbRun(admin, client.id, kbUsage, {
+        status: 'error',
+        error: 'kb_versions insert failed',
+      });
       return { success: false, error: 'The analysis succeeded but could not be saved.' };
     }
+
+    await recordKbRun(admin, client.id, kbUsage, { status: 'ok' }, inserted.id);
 
     await admin.from('activity_log').insert({
       user_id: profile.id,
@@ -451,6 +482,40 @@ export async function runKbAnalysis(): Promise<ActionResult<{ versionId: string 
   } catch (err) {
     return toActionError(err);
   }
+}
+
+/**
+ * Put the knowledge-base analysis in the same cost ledger as everything else.
+ *
+ * This is the most expensive call the platform makes — the whole confidential
+ * corpus through a large model, sometimes twice when the first output fails
+ * schema validation — and it was the one call that recorded nothing, so the
+ * admin dashboard's "what the AI cost" figure excluded it entirely.
+ *
+ * ai_profile_id is NULL: no AI employee ran this, the platform did.
+ */
+async function recordKbRun(
+  admin: ReturnType<typeof createAdminClient>,
+  provider: string,
+  usage: { model: string; inputTokens: number; outputTokens: number; latencyMs: number },
+  outcome: { status: 'ok' | 'error'; error?: string },
+  kbVersionId?: string,
+): Promise<void> {
+  const { error } = await admin.from('ai_runs').insert({
+    ai_profile_id: null,
+    provider,
+    model: usage.model,
+    run_type: 'kb_analysis',
+    kb_version_id: kbVersionId ?? null,
+    input_tokens: usage.inputTokens,
+    output_tokens: usage.outputTokens,
+    latency_ms: usage.latencyMs,
+    cost_estimate_cents: estimateCostCents(usage.model, usage.inputTokens, usage.outputTokens),
+    status: outcome.status,
+    error: outcome.error ?? null,
+  });
+  // Never let ledger bookkeeping fail the analysis itself.
+  if (error) console.error('[kb] could not record ai_runs row:', error);
 }
 
 function safeParseBible(

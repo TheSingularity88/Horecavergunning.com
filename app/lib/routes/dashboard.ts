@@ -16,6 +16,8 @@ export const dashboardRoutes = {
       permitTypes: '/dashboard/admin/permit-types',
       knowledgeBase: '/dashboard/admin/knowledge-base',
       ai: '/dashboard/admin/ai',
+      /** AI usage/cost monitoring — distinct from `activity`, the general audit log. */
+      aiActivity: '/dashboard/admin/ai/activity',
       settings: '/dashboard/admin/settings',
       activity: '/dashboard/admin/activity',
     },
