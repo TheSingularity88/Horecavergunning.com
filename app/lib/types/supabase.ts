@@ -115,6 +115,7 @@ export type Database = {
           execution_result: Json | null
           id: string
           kb_version_id: string | null
+          kb_version_number: number | null
           payload: Json
           proposal_type: string
           rationale: string | null
@@ -134,6 +135,7 @@ export type Database = {
           execution_result?: Json | null
           id?: string
           kb_version_id?: string | null
+          kb_version_number?: number | null
           payload: Json
           proposal_type: string
           rationale?: string | null
@@ -153,6 +155,7 @@ export type Database = {
           execution_result?: Json | null
           id?: string
           kb_version_id?: string | null
+          kb_version_number?: number | null
           payload?: Json
           proposal_type?: string
           rationale?: string | null
@@ -1232,6 +1235,7 @@ export type Database = {
         Args: { p_admin: string; p_id: string }
         Returns: boolean
       }
+      active_kb_version: { Args: never; Returns: number }
       check_rate_limit: {
         Args: { p_key: string; p_max: number; p_window: string }
         Returns: boolean

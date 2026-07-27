@@ -56,7 +56,7 @@ See `.env.example`. Summary:
 | `NEXT_PUBLIC_SITE_URL` | Base URL for Mollie redirect/webhook + email links |
 | `RESEND_API_KEY` / `RESEND_FROM_EMAIL` / `OWNER_NOTIFICATION_EMAIL` | Email |
 | `MOLLIE_API_KEY` | Payments (use a `test_` key first) |
-| `ANTHROPIC_API_KEY` | AI analysis (knowledge base). Pay-per-use key from console.anthropic.com |
+| `ANTHROPIC_API_KEY` | Optional fallback for AI analysis. The normal place for this key is Admin → AI employees → AI providers, where it is stored encrypted and takes precedence. Pay-per-use key from console.anthropic.com, not a Claude.ai subscription |
 | `AI_KEY_ENCRYPTION_SECRET` | Encrypts stored AI provider keys (openssl rand -base64 32) |
 
 Email and payments **degrade gracefully** when their keys are absent, so the app

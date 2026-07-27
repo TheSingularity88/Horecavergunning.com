@@ -33,4 +33,10 @@ export type ActionErrorCode =
   | 'ai_unavailable'
   /** A knowledge-base analysis is already in flight. */
   | 'kb_analysis_running'
+  /** Another reviewer already handled this proposal. */
+  | 'proposal_already_reviewed'
+  /** The AI employee is paused by an admin. */
+  | 'ai_paused'
+  /** The AI employee hit its daily run cap. */
+  | 'ai_budget_exceeded'
   | 'unknown';

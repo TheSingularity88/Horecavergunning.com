@@ -301,6 +301,8 @@ export interface AiProposal {
   payload: import('./supabase').Json;
   rationale: string | null;
   kb_version_id: string | null;
+  /** Denormalised kb_versions.version — readable by staff who cannot read kb_versions. */
+  kb_version_number: number | null;
   status: AiProposalStatus;
   reviewed_by: string | null;
   reviewed_at: string | null;

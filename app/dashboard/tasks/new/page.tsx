@@ -46,7 +46,14 @@ export default function NewTaskPage() {
       try {
         const [casesRes, employeesRes] = await Promise.all([
           supabase.from('cases').select('id, title').order('created_at', { ascending: false }),
-          supabase.from('profiles').select('id, full_name, email').eq('is_active', true),
+          // Humans only. AI employees are active profiles too, and a task
+          // assigned to one is never worked by anyone — role 'ai' has no
+          // session and nothing reads tasks on its behalf.
+          supabase
+            .from('profiles')
+            .select('id, full_name, email')
+            .eq('is_active', true)
+            .neq('role', 'ai'),
         ]);
 
         setCases((casesRes.data as CaseOption[]) || []);

@@ -30,6 +30,35 @@ export async function checkRateLimit(
   }
 }
 
+/**
+ * Fail-CLOSED variant: identical to checkRateLimit, but returns false (blocks)
+ * if the limiter errors. Use this where the limit is a real safety cap rather
+ * than a courtesy — an AI employee's daily run budget must not be bypassable
+ * by a database hiccup, because the thing being rate-limited spends money.
+ */
+export async function checkRateLimitStrict(
+  key: string,
+  max: number,
+  windowSeconds: number
+): Promise<boolean> {
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin.rpc('check_rate_limit', {
+      p_key: key,
+      p_max: max,
+      p_window: `${windowSeconds} seconds`,
+    });
+    if (error) {
+      console.error('[rate-limit strict] error, blocking:', error);
+      return false;
+    }
+    return data === true;
+  } catch (err) {
+    console.error('[rate-limit strict] unexpected error, blocking:', err);
+    return false;
+  }
+}
+
 /** Best-effort client IP from proxy headers. */
 export function clientIp(headers: Headers): string {
   const fwd = headers.get('x-forwarded-for');

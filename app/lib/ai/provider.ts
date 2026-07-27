@@ -67,12 +67,29 @@ export async function createProviderClient(
   }
 }
 
-/** Phase A: resolve the Anthropic client from the environment. */
+/**
+ * Resolve the Anthropic client for platform-level work (the knowledge-base
+ * analysis), preferring the key an admin stored in `/dashboard/admin/ai` and
+ * falling back to ANTHROPIC_API_KEY.
+ *
+ * The DB comes first deliberately. Storing a key in the admin screen and then
+ * being told "ANTHROPIC_API_KEY is missing" is the kind of split-brain that
+ * costs an hour to work out; one key in one place now drives both the analysis
+ * and the AI employees.
+ *
+ * The import is dynamic because this module is also reached from paths that
+ * have no business touching the admin client or the decryption secret.
+ */
 export async function envAnthropicClient(): Promise<AiProviderClient> {
+  const { storedAnthropicKey } = await import('./stored-key');
+  const stored = await storedAnthropicKey();
+  if (stored) return createProviderClient('anthropic', stored);
+
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) {
     throw new ConfigurationError(
-      'ANTHROPIC_API_KEY is missing or empty. The AI analysis cannot run without it.',
+      'No Anthropic API key is available. Add one under Admin → AI employees → AI providers, ' +
+        'or set ANTHROPIC_API_KEY. The AI analysis cannot run without it.',
     );
   }
   return createProviderClient('anthropic', key);
