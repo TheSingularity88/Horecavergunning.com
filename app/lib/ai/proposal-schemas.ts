@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CASE_STATUSES } from '@/app/lib/actions/cases';
+import { CASE_STATUSES } from '@/app/lib/constants/cases';
 
 /**
  * Per-type payload schemas for ai_proposals.payload.
@@ -68,6 +68,25 @@ export const checklistUpdatePayload = z.strictObject({
     .max(50),
 });
 
+// ---- case_update: edit a case's own fields on approval. -----------------------
+//      A proposal rather than a direct write because the client portal renders
+//      every one of these on the customer's own case page.
+//
+//      Every field is OPTIONAL as well as nullable, and the distinction carries
+//      meaning at execution: an ABSENT key means "leave this alone", an explicit
+//      null means "clear it". Required-but-nullable would have been wrong — the
+//      tool files only the fields it was asked to change, so a proposal about a
+//      deadline would have failed re-validation and reverted to pending forever.
+export const caseUpdatePayload = z.strictObject({
+  title: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  municipality: z.string().nullable().optional(),
+  reference_number: z.string().nullable().optional(),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).nullable().optional(),
+  /** YYYY-MM-DD, or null to clear the deadline. */
+  deadline: z.string().nullable().optional(),
+});
+
 // ---- question: the AI asks a human; the human answers in review_note. ----------
 export const questionPayload = z.strictObject({
   question_nl: z.string(),
@@ -79,6 +98,7 @@ export type DraftReplyPayload = z.infer<typeof draftReplyPayload>;
 export type StatusChangePayload = z.infer<typeof statusChangePayload>;
 export type ChecklistUpdatePayload = z.infer<typeof checklistUpdatePayload>;
 export type QuestionPayload = z.infer<typeof questionPayload>;
+export type CaseUpdatePayload = z.infer<typeof caseUpdatePayload>;
 
 /** Validate a stored payload against its type. Returns typed data or an error. */
 export function parseProposalPayload(
@@ -90,6 +110,7 @@ export function parseProposalPayload(
   | { ok: true; type: 'status_change'; data: StatusChangePayload }
   | { ok: true; type: 'checklist_update'; data: ChecklistUpdatePayload }
   | { ok: true; type: 'question'; data: QuestionPayload }
+  | { ok: true; type: 'case_update'; data: CaseUpdatePayload }
   | { ok: false; error: string } {
   switch (type) {
     case 'case_assessment': {
@@ -112,6 +133,12 @@ export function parseProposalPayload(
     }
     case 'checklist_update': {
       const r = checklistUpdatePayload.safeParse(payload);
+      return r.success
+        ? { ok: true, type, data: r.data }
+        : { ok: false, error: r.error.issues[0]?.message ?? 'Invalid payload' };
+    }
+    case 'case_update': {
+      const r = caseUpdatePayload.safeParse(payload);
       return r.success
         ? { ok: true, type, data: r.data }
         : { ok: false, error: r.error.issues[0]?.message ?? 'Invalid payload' };

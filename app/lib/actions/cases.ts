@@ -7,19 +7,7 @@ import { sendEmail } from '@/app/lib/email/resend';
 import { caseStatusChanged } from '@/app/lib/email/templates';
 import { translations } from '@/app/lib/translations';
 import type { Locale } from '@/app/lib/types/database';
-
-/** Mirrors the cases_status_check constraint. */
-export const CASE_STATUSES = [
-  'intake',
-  'in_progress',
-  'waiting_client',
-  'waiting_government',
-  'review',
-  'approved',
-  'rejected',
-  'completed',
-  'cancelled',
-] as const;
+import { CASE_STATUSES } from '@/app/lib/constants/cases';
 
 const updateCaseStatusSchema = z.object({
   caseId: z.string().uuid(),

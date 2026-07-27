@@ -2,6 +2,7 @@ import 'server-only';
 
 import { createAdminClient } from '@/app/lib/supabase/admin';
 import type { AiToolDefinition } from '@/app/lib/ai/provider';
+import { DASHBOARD_TOOLS } from '@/app/lib/ai/tools/dashboard-tools';
 
 /**
  * What an AI employee can do at the dashboard.
@@ -146,7 +147,12 @@ const getCase: AiTool = {
     const [{ data: row }, { data: checklist }, { data: documents }] = await Promise.all([
       ctx.admin
         .from('cases')
-        .select('id, title, case_type, status, priority, municipality, description, deadline, reference_number')
+        .select(
+          'id, title, case_type, status, priority, municipality, description, deadline, reference_number, ' +
+            // Without the client embed the AI could read a case and still not
+            // know whose it was — the most basic thing an employee needs.
+            'client:client_id(id, company_name, contact_name, email, phone)',
+        )
         .eq('id', caseId)
         .maybeSingle(),
       ctx.admin
@@ -495,6 +501,7 @@ export const AI_TOOLS: AiTool[] = [
   proposeChecklistUpdate,
   proposeCaseAction,
   askHuman,
+  ...DASHBOARD_TOOLS,
 ];
 
 export const toolByName = new Map(AI_TOOLS.map((tool) => [tool.name, tool]));

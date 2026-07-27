@@ -25,9 +25,18 @@ import type { AiProposal } from '@/app/lib/types/database';
  * it, then approves (which executes the one mapped action) or rejects.
  */
 
+type CaseFields = {
+  title: string;
+  description: string | null;
+  municipality: string | null;
+  reference_number: string | null;
+  priority: string | null;
+  deadline: string | null;
+};
+
 type ProposalWithMeta = AiProposal & {
   profiles?: { full_name: string } | null;
-  cases?: { title: string } | null;
+  cases?: CaseFields | null;
 };
 
 export default function AiReviewPage() {
@@ -68,7 +77,12 @@ export default function AiReviewPage() {
   const fetchProposals = useCallback(async () => {
     const base = supabase
       .from('ai_proposals')
-      .select('*, profiles:ai_profile_id(full_name), cases:case_id(title)');
+      // The extra case columns are what a case_update proposal is diffed
+      // against — approving "deadline 15-08" is not an informed decision
+      // without knowing what the deadline is today.
+      .select(
+        '*, profiles:ai_profile_id(full_name), cases:case_id(title, description, municipality, reference_number, priority, deadline)',
+      );
 
     const [listResult, countResult, versionResult] = await Promise.all([
       (tab === 'pending' ? base.eq('status', 'pending') : base.neq('status', 'pending'))
@@ -460,6 +474,38 @@ function ProposalDetail({
           <p className="font-medium text-slate-900">→ {parsed.data.to_status}</p>
           <p className="text-slate-600">{parsed.data.reason_nl}</p>
         </div>
+      )}
+
+      {/* Old → new, field by field. Only the fields the proposal actually
+          names are listed, which is also exactly what approval will write. */}
+      {parsed.type === 'case_update' && (
+        <dl className="space-y-2 text-sm">
+          {(
+            [
+              ['title', r?.caseFieldTitle],
+              ['description', r?.caseFieldDescription],
+              ['municipality', r?.caseFieldMunicipality],
+              ['reference_number', r?.caseFieldReference],
+              ['priority', r?.caseFieldPriority],
+              ['deadline', r?.caseFieldDeadline],
+            ] as const
+          )
+            .filter(([key]) => parsed.data[key] !== undefined)
+            .map(([key, label]) => (
+              <div key={key} className="rounded-lg bg-slate-50 p-3">
+                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  {label ?? key}
+                </dt>
+                <dd className="mt-1 flex flex-wrap items-center gap-2 text-slate-800">
+                  <span className="text-slate-500 line-through">
+                    {proposal.cases?.[key] || r?.caseFieldEmpty}
+                  </span>
+                  <span aria-hidden>→</span>
+                  <span className="font-medium">{parsed.data[key] || r?.caseFieldEmpty}</span>
+                </dd>
+              </div>
+            ))}
+        </dl>
       )}
 
       {parsed.type === 'checklist_update' && (
