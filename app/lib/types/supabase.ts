@@ -246,6 +246,63 @@ export type Database = {
           },
         ]
       }
+      ai_tool_calls: {
+        Row: {
+          access: string
+          ai_profile_id: string
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          id: string
+          input: Json
+          ok: boolean
+          result_summary: string | null
+          staff_id: string | null
+          tool_name: string
+        }
+        Insert: {
+          access: string
+          ai_profile_id: string
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          input?: Json
+          ok: boolean
+          result_summary?: string | null
+          staff_id?: string | null
+          tool_name: string
+        }
+        Update: {
+          access?: string
+          ai_profile_id?: string
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          input?: Json
+          ok?: boolean
+          result_summary?: string | null
+          staff_id?: string | null
+          tool_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_tool_calls_ai_profile_id_fkey"
+            columns: ["ai_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_tool_calls_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_providers: {
         Row: {
           created_at: string

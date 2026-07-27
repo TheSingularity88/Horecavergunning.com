@@ -2,6 +2,7 @@ import 'server-only';
 
 import Anthropic from '@anthropic-ai/sdk';
 import type {
+  AiContentBlock,
   AiCompletionRequest,
   AiCompletionResult,
   AiProviderClient,
@@ -39,25 +40,51 @@ export function createAnthropicClient(apiKey: string): AiProviderClient {
         system: req.system,
         messages: req.messages.map((message) => ({
           role: message.role,
-          content: message.content.map((block) =>
-            block.type === 'text'
-              ? {
+          content: message.content.map((block) => {
+            switch (block.type) {
+              case 'text':
+                return {
                   type: 'text' as const,
                   text: block.text,
                   ...(block.cacheable
                     ? { cache_control: { type: 'ephemeral' as const } }
                     : {}),
-                }
-              : {
+                };
+              case 'tool_use':
+                return {
+                  type: 'tool_use' as const,
+                  id: block.id,
+                  name: block.name,
+                  input: block.input,
+                };
+              case 'tool_result':
+                return {
+                  type: 'tool_result' as const,
+                  tool_use_id: block.toolUseId,
+                  content: block.content,
+                  ...(block.isError ? { is_error: true } : {}),
+                };
+              case 'image':
+                return {
                   type: 'image' as const,
                   source: {
                     type: 'base64' as const,
                     media_type: block.mediaType,
                     data: block.base64,
                   },
-                },
-          ),
+                };
+            }
+          }),
         })),
+        ...(req.tools && req.tools.length > 0
+          ? {
+              tools: req.tools.map((tool) => ({
+                name: tool.name,
+                description: tool.description,
+                input_schema: tool.inputSchema as { type: 'object' },
+              })),
+            }
+          : {}),
         ...(req.jsonSchema
           ? {
               output_config: {
@@ -84,7 +111,37 @@ export function createAnthropicClient(apiKey: string): AiProviderClient {
             ? 'max_tokens'
             : message.stop_reason === 'refusal'
               ? 'refusal'
-              : 'other';
+              : message.stop_reason === 'tool_use'
+                ? 'tool_use'
+                : message.stop_reason === 'pause_turn'
+                  ? 'pause'
+                  : 'other';
+
+      const toolUses = message.content
+        .filter((block) => block.type === 'tool_use')
+        .map((block) => ({
+          id: block.id,
+          name: block.name,
+          input: (block.input ?? {}) as Record<string, unknown>,
+        }));
+
+      // The assistant turn is echoed back verbatim on the next request — the
+      // provider rejects a transcript whose tool_use blocks were dropped or
+      // reconstructed, so this must be the real content, not a rebuild.
+      const content: AiContentBlock[] = message.content.flatMap((block): AiContentBlock[] => {
+        if (block.type === 'text') return [{ type: 'text' as const, text: block.text }];
+        if (block.type === 'tool_use') {
+          return [
+            {
+              type: 'tool_use' as const,
+              id: block.id,
+              name: block.name,
+              input: (block.input ?? {}) as Record<string, unknown>,
+            },
+          ];
+        }
+        return [];
+      });
 
       return {
         text,
@@ -96,6 +153,8 @@ export function createAnthropicClient(apiKey: string): AiProviderClient {
         outputTokens: message.usage.output_tokens,
         model: message.model,
         stopReason,
+        toolUses,
+        content,
         latencyMs: Date.now() - started,
       };
     },

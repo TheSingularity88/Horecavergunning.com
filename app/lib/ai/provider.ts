@@ -17,6 +17,20 @@ import { ConfigurationError } from '@/app/lib/errors';
 
 export type AiProviderId = 'anthropic' | 'openai' | 'google';
 
+/** A tool the model may call. `description` should say WHEN to call it. */
+export interface AiToolDefinition {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+}
+
+/** The model asking for a tool to run. */
+export interface AiToolUse {
+  id: string;
+  name: string;
+  input: Record<string, unknown>;
+}
+
 export type AiContentBlock =
   | {
       type: 'text';
@@ -29,7 +43,11 @@ export type AiContentBlock =
        */
       cacheable?: boolean;
     }
-  | { type: 'image'; mediaType: 'image/png' | 'image/jpeg'; base64: string };
+  | { type: 'image'; mediaType: 'image/png' | 'image/jpeg'; base64: string }
+  /** Echoed back so the model sees its own tool call in the transcript. */
+  | { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> }
+  /** The result of running one tool. Must reference the tool_use it answers. */
+  | { type: 'tool_result'; toolUseId: string; content: string; isError?: boolean };
 
 export interface AiCompletionRequest {
   model: string;
@@ -43,6 +61,8 @@ export interface AiCompletionRequest {
    * not replace validation.
    */
   jsonSchema?: { name: string; schema: Record<string, unknown> };
+  /** Tools the model may call. Omit for a plain completion. */
+  tools?: AiToolDefinition[];
 }
 
 export interface AiCompletionResult {
@@ -59,7 +79,16 @@ export interface AiCompletionResult {
   cacheReadTokens: number;
   outputTokens: number;
   model: string;
-  stopReason: 'end' | 'max_tokens' | 'refusal' | 'other';
+  /**
+   * 'tool_use' means the model is waiting on tool results — run them and send
+   * the transcript back. 'pause' is the provider's own server-side tool loop
+   * hitting its iteration cap; resend unchanged to continue.
+   */
+  stopReason: 'end' | 'max_tokens' | 'refusal' | 'tool_use' | 'pause' | 'other';
+  /** Tool calls the model made this turn, in order. */
+  toolUses: AiToolUse[];
+  /** The full assistant content, to append verbatim to the transcript. */
+  content: AiContentBlock[];
   latencyMs: number;
 }
 

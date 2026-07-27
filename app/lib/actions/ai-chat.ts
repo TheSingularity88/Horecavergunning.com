@@ -8,6 +8,8 @@ import { bibleSchema } from '@/app/lib/ai/bible-schema';
 import { renderBibleDigest } from '@/app/lib/ai/render-bible';
 import { buildChatSystem, chatDigestPreface } from '@/app/lib/ai/prompts/chat';
 import { estimateCostCents } from '@/app/lib/ai/pricing';
+import { toolDefinitions } from '@/app/lib/ai/tools/registry';
+import { runToolCalls } from '@/app/lib/ai/tools/run-tools';
 import { describeProviderError } from '@/app/lib/ai/provider-errors';
 import { sendChatMessageSchema, chatHistoryQuerySchema } from '@/app/lib/validation/ai-chat';
 import type { AiMessage } from '@/app/lib/types/database';
@@ -26,7 +28,14 @@ import type { AiContentBlock } from '@/app/lib/ai/provider';
 
 /** How many recent messages travel with each reply. */
 const HISTORY_WINDOW = 20;
-const MAX_REPLY_TOKENS = 2000;
+const MAX_REPLY_TOKENS = 4000;
+
+/**
+ * How many provider round trips one message may take. Each iteration is a paid
+ * call, so this is a spend cap as much as a loop guard: the model gets enough
+ * turns to look something up, act on it, and summarise, and no more.
+ */
+const MAX_TOOL_ITERATIONS = 6;
 
 /**
  * Digest cache, keyed by kb_versions.id. Rules are immutable per version, so
@@ -285,18 +294,101 @@ export async function sendAiChatMessage(
       return { success: false, error: 'Could not send the message.' };
     }
 
+    /*
+     * Agentic loop. The model may call tools, read the results, and call more
+     * before answering — that is what makes it "sitting at the dashboard"
+     * rather than answering from memory.
+     *
+     * Token counts accumulate across iterations: one chat message can be
+     * several billed calls, and the ledger must show the total, not the last.
+     */
+    const system = buildChatSystem(config.job_description);
+    const tools = toolDefinitions();
     let result;
+    let iterations = 0;
+    let inputTokens = 0;
+    let cacheWriteTokens = 0;
+    let cacheReadTokens = 0;
+    let outputTokens = 0;
+    let latencyMs = 0;
+    const mutations: string[] = [];
+
     try {
-      result = await provider.client.complete({
-        model: provider.model,
-        system: buildChatSystem(config.job_description),
-        messages: turns,
-        maxTokens: MAX_REPLY_TOKENS,
-      });
+      for (;;) {
+        iterations += 1;
+        result = await provider.client.complete({
+          model: provider.model,
+          system,
+          messages: turns,
+          maxTokens: MAX_REPLY_TOKENS,
+          tools,
+        });
+
+        inputTokens += result.inputTokens;
+        cacheWriteTokens += result.cacheWriteTokens;
+        cacheReadTokens += result.cacheReadTokens;
+        outputTokens += result.outputTokens;
+        latencyMs += result.latencyMs;
+
+        // The provider's own server-side tool loop hit its cap: resend the
+        // transcript unchanged and it resumes. Not our tools, nothing to run.
+        if (result.stopReason === 'pause') {
+          turns.push({ role: 'assistant', content: result.content });
+          if (iterations >= MAX_TOOL_ITERATIONS) break;
+          continue;
+        }
+
+        if (result.stopReason !== 'tool_use' || result.toolUses.length === 0) break;
+
+        // Echo the assistant turn VERBATIM — the provider rejects a transcript
+        // whose tool_use blocks were dropped or rebuilt.
+        turns.push({ role: 'assistant', content: result.content });
+
+        const outcome = await runToolCalls(result.toolUses, {
+          admin,
+          aiProfileId,
+          staffId: profile.id,
+        });
+        mutations.push(...outcome.mutations);
+
+        // Every tool result goes back in ONE user turn.
+        turns.push({ role: 'user', content: outcome.blocks });
+
+        if (iterations >= MAX_TOOL_ITERATIONS) {
+          // Out of budget mid-task. Tell the model so it wraps up honestly
+          // instead of being cut off mid-thought.
+          turns.push({
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Je hebt geen tool-aanroepen meer over voor dit bericht. Rond af: vertel kort wat je hebt gedaan, wat er nog open staat, en wat een mens nu moet doen.',
+              },
+            ],
+          });
+          result = await provider.client.complete({
+            model: provider.model,
+            system,
+            messages: turns,
+            maxTokens: MAX_REPLY_TOKENS,
+          });
+          inputTokens += result.inputTokens;
+          cacheWriteTokens += result.cacheWriteTokens;
+          cacheReadTokens += result.cacheReadTokens;
+          outputTokens += result.outputTokens;
+          latencyMs += result.latencyMs;
+          break;
+        }
+      }
     } catch (err) {
       await recordChatRun(admin, aiProfileId, provider.providerName, provider.model, {
         status: 'error',
         error: err instanceof Error ? err.message : 'provider error',
+        inputTokens,
+        cacheWriteTokens,
+        cacheReadTokens,
+        outputTokens,
+        latencyMs,
       });
       return {
         success: false,
@@ -309,11 +401,11 @@ export async function sendAiChatMessage(
       await recordChatRun(admin, aiProfileId, provider.providerName, result.model, {
         status: 'error',
         error: 'stop_reason refusal',
-        inputTokens: result.inputTokens,
-        cacheWriteTokens: result.cacheWriteTokens,
-        cacheReadTokens: result.cacheReadTokens,
-        outputTokens: result.outputTokens,
-        latencyMs: result.latencyMs,
+        inputTokens,
+        cacheWriteTokens,
+        cacheReadTokens,
+        outputTokens,
+        latencyMs,
       });
       return { success: false, error: 'The AI declined to answer this.', code: 'ai_unavailable' };
     }
@@ -323,15 +415,21 @@ export async function sendAiChatMessage(
     // An empty reply is an error, not a message: stored, it would render as a
     // blank bubble AND poison every later call in the history window (the
     // provider rejects empty content blocks).
+    if (!reply && mutations.length > 0) {
+      // Tools ran and changed things; the model just had nothing left to say.
+      // Silence would hide real work, so state it plainly.
+      reply = `Uitgevoerd: ${mutations.join(', ')}.`;
+    }
+
     if (!reply) {
       await recordChatRun(admin, aiProfileId, provider.providerName, result.model, {
         status: 'error',
         error: 'empty reply',
-        inputTokens: result.inputTokens,
-        cacheWriteTokens: result.cacheWriteTokens,
-        cacheReadTokens: result.cacheReadTokens,
-        outputTokens: result.outputTokens,
-        latencyMs: result.latencyMs,
+        inputTokens,
+        cacheWriteTokens,
+        cacheReadTokens,
+        outputTokens,
+        latencyMs,
       });
       return { success: false, error: 'The AI could not reply. Try again.', code: 'ai_unavailable' };
     }
@@ -358,11 +456,11 @@ export async function sendAiChatMessage(
     await recordChatRun(admin, aiProfileId, provider.providerName, result.model, {
       status: 'ok',
       error: truncated ? 'truncated at max_tokens' : undefined,
-      inputTokens: result.inputTokens,
-      cacheWriteTokens: result.cacheWriteTokens,
-      cacheReadTokens: result.cacheReadTokens,
-      outputTokens: result.outputTokens,
-      latencyMs: result.latencyMs,
+      inputTokens,
+      cacheWriteTokens,
+      cacheReadTokens,
+      outputTokens,
+      latencyMs,
     });
 
     return { success: true, data: { reply } };
