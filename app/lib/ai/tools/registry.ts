@@ -2,6 +2,7 @@ import 'server-only';
 
 import { createAdminClient } from '@/app/lib/supabase/admin';
 import type { AiToolDefinition } from '@/app/lib/ai/provider';
+import { DASHBOARD_TOOLS } from '@/app/lib/ai/tools/dashboard-tools';
 
 /**
  * What an AI employee can do at the dashboard.
@@ -18,10 +19,20 @@ import type { AiToolDefinition } from '@/app/lib/ai/provider';
  *                PENDING PROPOSAL, never a change. A human approves it in the
  *                review queue, exactly as before.
  *
- * The dividing line is "can a customer see it, or is it hard to undo". A task
- * is neither. A status change emails the client, so it is — and so is a
- * checklist note, which the client portal prints on the customer's own case
- * page. Check where a field is RENDERED before calling it internal.
+ * The dividing line is "can a customer see it, or is it hard to undo".
+ * Check where a field is RENDERED before calling it internal — and check it by
+ * grepping app/client/** and the RLS policies, not by intuition. This comment
+ * previously asserted "a task is neither", and that was wrong twice over:
+ * `tasks_select_client` lets a customer read every task on their own case, and
+ * the portal prints task.title and colours a badge from task.status. So a task
+ * is SPLIT — its planning fields are internal, its title and status are not.
+ *
+ * Things that are customer-visible, each verified in code:
+ *   cases.status         → emails the client
+ *   case_documents.*     → the checklist on the customer's case page
+ *   tasks.title/.status  → the task list on the customer's case page
+ *   cases.title/.description/.municipality/.reference_number/.priority/.deadline
+ *                        → printed on the customer's case page
  *
  * NOTHING here can email, message, or otherwise reach a customer. There is no
  * such tool, which is a stronger guarantee than a rule saying not to.
@@ -146,7 +157,12 @@ const getCase: AiTool = {
     const [{ data: row }, { data: checklist }, { data: documents }] = await Promise.all([
       ctx.admin
         .from('cases')
-        .select('id, title, case_type, status, priority, municipality, description, deadline, reference_number')
+        .select(
+          'id, title, case_type, status, priority, municipality, description, deadline, reference_number, ' +
+            // Without the client embed the AI could read a case and still not
+            // know whose it was — the most basic thing an employee needs.
+            'client:client_id(id, company_name, contact_name, email, phone)',
+        )
         .eq('id', caseId)
         .maybeSingle(),
       ctx.admin
@@ -495,6 +511,7 @@ export const AI_TOOLS: AiTool[] = [
   proposeChecklistUpdate,
   proposeCaseAction,
   askHuman,
+  ...DASHBOARD_TOOLS,
 ];
 
 export const toolByName = new Map(AI_TOOLS.map((tool) => [tool.name, tool]));
