@@ -191,17 +191,22 @@ export default function UsersPage() {
     {
       key: 'role',
       header: t.dashboard?.users?.colRole || 'Role',
-      render: (user: Profile) => (
-        <Select
-          value={user.role}
-          onChange={(e) => handleRoleChange(user.id, e.target.value)}
-          options={[
-            { value: 'employee', label: roleLabel('employee', t) },
-            { value: 'admin', label: roleLabel('admin', t) },
-          ]}
-          className="w-32"
-        />
-      ),
+      render: (user: Profile) =>
+        // AI employees are managed on the AI page; their role is immutable
+        // here (the server action refuses the transition too).
+        user.role === 'ai' ? (
+          <Badge variant="info">{roleLabel('ai', t)}</Badge>
+        ) : (
+          <Select
+            value={user.role}
+            onChange={(e) => handleRoleChange(user.id, e.target.value)}
+            options={[
+              { value: 'employee', label: roleLabel('employee', t) },
+              { value: 'admin', label: roleLabel('admin', t) },
+            ]}
+            className="w-32"
+          />
+        ),
     },
     {
       key: 'status',

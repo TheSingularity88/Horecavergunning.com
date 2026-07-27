@@ -85,8 +85,22 @@ export async function changeUserRole(input: ChangeRoleInput): Promise<ActionResu
     }
 
     const admin = createAdminClient();
-    const { error } = await admin.from('profiles').update({ role }).eq('id', userId);
+
+    // An AI employee must never become staff: role 'ai' is what keeps it out
+    // of requireStaff, the dashboard and the RLS staff surface. The schema
+    // already blocks changing anyone TO 'ai'; this blocks changing FROM it.
+    // The conditional update makes the check atomic — no read-then-write gap.
+    const { data: changed, error } = await admin
+      .from('profiles')
+      .update({ role })
+      .eq('id', userId)
+      .neq('role', 'ai')
+      .select('id')
+      .maybeSingle();
     if (error) return { success: false, error: 'Failed to update role.' };
+    if (!changed) {
+      return { success: false, error: 'AI employees are managed on the AI page, not here.' };
+    }
 
     await logActivity(adminProfile.id, 'staff_role_changed', userId, { role });
     return { success: true };

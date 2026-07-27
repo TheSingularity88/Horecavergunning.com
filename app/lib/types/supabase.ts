@@ -57,6 +57,270 @@ export type Database = {
           },
         ]
       }
+      ai_employee_config: {
+        Row: {
+          created_at: string
+          is_paused: boolean
+          job_description: string
+          max_runs_per_day: number
+          model: string | null
+          profile_id: string
+          provider_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          is_paused?: boolean
+          job_description: string
+          max_runs_per_day?: number
+          model?: string | null
+          profile_id: string
+          provider_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          is_paused?: boolean
+          job_description?: string
+          max_runs_per_day?: number
+          model?: string | null
+          profile_id?: string
+          provider_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_employee_config_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_employee_config_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "ai_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_proposals: {
+        Row: {
+          ai_profile_id: string
+          case_id: string | null
+          client_id: string | null
+          created_at: string
+          executed_at: string | null
+          execution_result: Json | null
+          id: string
+          kb_version_id: string | null
+          payload: Json
+          proposal_type: string
+          rationale: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ai_profile_id: string
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          executed_at?: string | null
+          execution_result?: Json | null
+          id?: string
+          kb_version_id?: string | null
+          payload: Json
+          proposal_type: string
+          rationale?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ai_profile_id?: string
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          executed_at?: string | null
+          execution_result?: Json | null
+          id?: string
+          kb_version_id?: string | null
+          payload?: Json
+          proposal_type?: string
+          rationale?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_proposals_ai_profile_id_fkey"
+            columns: ["ai_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_proposals_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_proposals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_proposals_kb_version_id_fkey"
+            columns: ["kb_version_id"]
+            isOneToOne: false
+            referencedRelation: "kb_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_proposals_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_providers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          default_model: string
+          encrypted_key: string
+          id: string
+          is_active: boolean
+          key_prefix: string
+          label: string
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          default_model: string
+          encrypted_key: string
+          id?: string
+          is_active?: boolean
+          key_prefix: string
+          label: string
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          default_model?: string
+          encrypted_key?: string
+          id?: string
+          is_active?: boolean
+          key_prefix?: string
+          label?: string
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_providers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_runs: {
+        Row: {
+          ai_profile_id: string | null
+          cost_estimate_cents: number | null
+          created_at: string
+          error: string | null
+          id: string
+          input_tokens: number | null
+          kb_version_id: string | null
+          latency_ms: number | null
+          model: string
+          output_tokens: number | null
+          proposal_id: string | null
+          provider: string
+          run_type: string
+          status: string
+        }
+        Insert: {
+          ai_profile_id?: string | null
+          cost_estimate_cents?: number | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          input_tokens?: number | null
+          kb_version_id?: string | null
+          latency_ms?: number | null
+          model: string
+          output_tokens?: number | null
+          proposal_id?: string | null
+          provider: string
+          run_type: string
+          status: string
+        }
+        Update: {
+          ai_profile_id?: string | null
+          cost_estimate_cents?: number | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          input_tokens?: number | null
+          kb_version_id?: string | null
+          latency_ms?: number | null
+          model?: string
+          output_tokens?: number | null
+          proposal_id?: string | null
+          provider?: string
+          run_type?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_runs_ai_profile_id_fkey"
+            columns: ["ai_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_runs_kb_version_id_fkey"
+            columns: ["kb_version_id"]
+            isOneToOne: false
+            referencedRelation: "kb_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_runs_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "ai_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_documents: {
         Row: {
           case_id: string

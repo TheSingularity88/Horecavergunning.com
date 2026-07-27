@@ -7,7 +7,10 @@
 
 export type { Database, Json, Tables, TablesInsert, TablesUpdate } from './supabase';
 
-export type UserRole = 'employee' | 'admin';
+// 'ai' is an AI employee: attributable like any profile, but never staff at
+// the RLS layer, never accepted by requireStaff/requireAdmin, and bounced by
+// the dashboard middleware. See migration 014.
+export type UserRole = 'employee' | 'admin' | 'ai';
 export type ClientStatus = 'active' | 'inactive' | 'pending';
 export type CaseType =
   | 'exploitatievergunning'
@@ -248,6 +251,80 @@ export interface Payment {
   amount_cents: number;
   method: string | null;
   raw: import('./supabase').Json | null;
+  created_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// AI employees (Phase B)
+// ---------------------------------------------------------------------------
+
+export type AiProviderName = 'anthropic' | 'openai' | 'google';
+export type AiProposalType =
+  | 'case_assessment'
+  | 'draft_reply'
+  | 'status_change'
+  | 'checklist_update'
+  | 'question';
+export type AiProposalStatus = 'pending' | 'approved' | 'rejected' | 'needs_info';
+
+export interface AiProvider {
+  id: string;
+  provider: AiProviderName;
+  label: string;
+  encrypted_key: string;
+  key_prefix: string;
+  default_model: string;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiEmployeeConfig {
+  profile_id: string;
+  provider_id: string | null;
+  model: string | null;
+  job_description: string;
+  max_runs_per_day: number;
+  is_paused: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiProposal {
+  id: string;
+  ai_profile_id: string;
+  case_id: string | null;
+  client_id: string | null;
+  proposal_type: AiProposalType;
+  title: string;
+  payload: import('./supabase').Json;
+  rationale: string | null;
+  kb_version_id: string | null;
+  status: AiProposalStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
+  executed_at: string | null;
+  execution_result: import('./supabase').Json | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiRun {
+  id: string;
+  ai_profile_id: string | null;
+  provider: string;
+  model: string;
+  run_type: 'kb_analysis' | 'case_assessment' | 'draft_reply' | 'question';
+  proposal_id: string | null;
+  kb_version_id: string | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  latency_ms: number | null;
+  cost_estimate_cents: number | null;
+  status: 'ok' | 'error';
+  error: string | null;
   created_at: string;
 }
 

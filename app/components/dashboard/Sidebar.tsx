@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   Menu,
   BookLock,
+  Bot,
 } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
