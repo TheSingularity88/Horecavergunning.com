@@ -75,7 +75,8 @@ export async function runCaseAssessment(
     return { ok: false, code: 'case_not_found', message: 'Case not found.' };
   }
 
-  const [{ data: checklist }, { data: documents }, { data: request }] = await Promise.all([
+  const [{ data: checklist }, { data: documents }, { data: request }, { data: answered }] =
+    await Promise.all([
     admin.from('case_documents').select('id, name, status').eq('case_id', caseId).order('sort_order'),
     // Metadata only — file CONTENTS are deliberately not sent in v1.
     admin.from('documents').select('name, category').eq('case_id', caseId),
@@ -84,6 +85,18 @@ export async function runCaseAssessment(
       .select('description')
       .eq('converted_to_case_id', caseId)
       .maybeSingle(),
+    // Questions this employee asked about this case that a human answered.
+    // Without this the answer never reaches the AI and it asks again.
+    admin
+      .from('ai_proposals')
+      .select('payload, review_note')
+      .eq('ai_profile_id', aiProfileId)
+      .eq('case_id', caseId)
+      .eq('proposal_type', 'question')
+      .eq('status', 'approved')
+      .not('review_note', 'is', null)
+      .order('reviewed_at', { ascending: true })
+      .limit(20),
   ]);
 
   const rulesets = relevantRulesets(bible, caseRow.case_type);
@@ -148,6 +161,12 @@ export async function runCaseAssessment(
       documents: ((documents as { name: string; category: string | null }[]) || []).map((d) => ({
         name: d.name,
         category: d.category,
+      })),
+      answeredQuestions: (
+        (answered as { payload: { question_nl?: string } | null; review_note: string }[]) || []
+      ).map((q) => ({
+        question: q.payload?.question_nl ?? '(vraag onbekend)',
+        answer: q.review_note,
       })),
     },
     rulesets,

@@ -41,6 +41,12 @@ interface CaseContext {
   requestText: string | null;
   checklist: { id: string; name: string; status: string }[];
   documents: { name: string; category: string | null }[];
+  /**
+   * Questions this AI asked about THIS case that a human has since answered.
+   * Feeding them back is the whole point of letting it ask: without this the
+   * answer sits in the database and the AI asks the same thing again.
+   */
+  answeredQuestions: { question: string; answer: string }[];
 }
 
 /** Filter the bible to the rulesets that apply to this case's type. */
@@ -74,6 +80,14 @@ export function buildCaseAssessmentUserText(
       ? ctx.documents.map((d) => `- ${d.name}${d.category ? ` (${d.category})` : ''}`)
       : ['(geen documenten geüpload)']),
     '',
+    ...(ctx.answeredQuestions.length > 0
+      ? [
+          '## Eerder door een collega beantwoorde vragen (bindend — volg deze)',
+          ...ctx.answeredQuestions.map((q) => `- V: ${q.question}
+  A: ${q.answer}`),
+          '',
+        ]
+      : []),
     '# Regelboek (toets hiertegen)',
     JSON.stringify(rulesets, null, 2),
     '',

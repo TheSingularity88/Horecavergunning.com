@@ -195,6 +195,25 @@ export async function sendAiChatMessage(
       digestByVersion.set(kbHead.id, cached);
     }
 
+    // Answers a colleague gave to this employee's questions. Without feeding
+    // them back the AI asks the same thing forever — the answer sits in the
+    // database and never reaches the one who asked.
+    const { data: answered } = await admin
+      .from('ai_proposals')
+      .select('payload, review_note')
+      .eq('ai_profile_id', aiProfileId)
+      .eq('proposal_type', 'question')
+      .eq('status', 'approved')
+      .not('review_note', 'is', null)
+      .order('reviewed_at', { ascending: false })
+      .limit(10);
+
+    const answeredBlock = (
+      (answered as { payload: { question_nl?: string } | null; review_note: string }[]) || []
+    )
+      .map((q) => `- V: ${q.payload?.question_nl ?? '(vraag onbekend)'}\n  A: ${q.review_note}`)
+      .join('\n');
+
     // Recent history, oldest first.
     const { data: historyRows } = await admin
       .from('ai_messages')
@@ -257,7 +276,19 @@ export async function sendAiChatMessage(
     };
 
     const turns: { role: 'user' | 'assistant'; content: AiContentBlock[] }[] = [
-      { role: 'user', content: [digestBlock] },
+      {
+        role: 'user',
+        content: answeredBlock
+          ? [
+              digestBlock,
+              {
+                type: 'text',
+                text: `EERDER BEANTWOORDE VRAGEN (bindend — volg deze, vraag ze niet opnieuw):
+${answeredBlock}`,
+              },
+            ]
+          : [digestBlock],
+      },
       { role: 'assistant', content: [{ type: 'text', text: 'Begrepen. Waarmee kan ik helpen?' }] },
     ];
     for (const m of history) {
