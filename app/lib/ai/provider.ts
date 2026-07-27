@@ -18,7 +18,17 @@ import { ConfigurationError } from '@/app/lib/errors';
 export type AiProviderId = 'anthropic' | 'openai' | 'google';
 
 export type AiContentBlock =
-  | { type: 'text'; text: string }
+  | {
+      type: 'text';
+      text: string;
+      /**
+       * Marks the end of a reusable prefix. Providers that support prompt
+       * caching (Anthropic) will cache everything up to and including this
+       * block, so a pipeline that sends the same corpus with a different
+       * instruction each time pays full price once instead of every call.
+       */
+      cacheable?: boolean;
+    }
   | { type: 'image'; mediaType: 'image/png' | 'image/jpeg'; base64: string };
 
 export interface AiCompletionRequest {

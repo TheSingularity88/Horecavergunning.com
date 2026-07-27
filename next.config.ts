@@ -56,6 +56,21 @@ const nextConfig: NextConfig = {
   // Don't advertise the framework to scanners looking for version-specific CVEs.
   poweredByHeader: false,
 
+  logging: {
+    // OFF because Next prints server function ARGUMENTS, and some of ours are
+    // secrets. Saving a provider API key logged the whole plaintext key to the
+    // dev terminal:
+    //
+    //   └─ ƒ saveAiProvider({"api_key":"sk-ant-api03-…"}) in 322ms
+    //
+    // The key is encrypted before it reaches the database, but the logger sat
+    // in front of that. There is no way to keep the timing line and drop the
+    // arguments — it is one boolean — and a leaked credential costs more than
+    // the diagnostics are worth. Flip this back on temporarily if you need to
+    // trace an action, but not while typing a key into a form.
+    serverFunctions: false,
+  },
+
   async headers() {
     // Keep the private portal + auth routes out of search indexes.
     const noindex = {

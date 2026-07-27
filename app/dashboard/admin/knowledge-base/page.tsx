@@ -149,6 +149,18 @@ export default function KnowledgeBasePage() {
     setIsPreviewing(false);
   };
 
+  // While an analysis runs, refresh the version list on an interval. The run
+  // finishes server-side even if this page's connection drops — today's first
+  // real run looked like "nothing happened" for exactly that reason, while a
+  // finished draft sat one manual refresh away.
+  useEffect(() => {
+    if (!isAnalyzing) return;
+    const timer = setInterval(() => {
+      fetchVersions();
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [isAnalyzing, fetchVersions]);
+
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     setAnalyzeDone(false);
@@ -450,7 +462,10 @@ export default function KnowledgeBasePage() {
             </Button>
           </div>
           {isAnalyzing && (
-            <p className="mt-2 text-sm font-medium text-amber-700">{kb?.analyzeRunning}</p>
+            <div className="mt-3 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <Spinner size="sm" />
+              <p className="text-sm font-medium text-amber-800">{kb?.analyzeRunning}</p>
+            </div>
           )}
           {analyzeDone && !isAnalyzing && (
             <p className="mt-2 text-sm font-medium text-green-700">{kb?.analyzeDone}</p>
