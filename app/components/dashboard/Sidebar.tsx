@@ -20,6 +20,7 @@ import {
   Menu,
   BookLock,
   Bot,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
@@ -185,6 +186,11 @@ export function Sidebar() {
       name: t.dashboard?.nav?.tasks || 'Tasks',
       href: dashboardRoutes.employee.tasks,
       icon: CheckSquare,
+    },
+    {
+      name: t.dashboard?.nav?.aiReview || 'AI proposals',
+      href: dashboardRoutes.employee.aiReview,
+      icon: Sparkles,
     },
     {
       name: t.dashboard?.nav?.documents || 'Documents',

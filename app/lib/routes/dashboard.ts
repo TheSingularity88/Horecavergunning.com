@@ -7,6 +7,7 @@ export const dashboardRoutes = {
     cases: '/dashboard/cases',
     requests: '/dashboard/requests',
     tasks: '/dashboard/tasks',
+    aiReview: '/dashboard/ai-review',
     documents: '/dashboard/documents',
     leads: '/dashboard/leads',
     profile: '/dashboard/profile',

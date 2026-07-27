@@ -12,12 +12,16 @@ import {
   FileText,
   CheckSquare,
   Trash2,
+  Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
 import { billCase } from '@/app/lib/actions/billing';
 import { updateCaseStatus } from '@/app/lib/actions/cases';
+import { requestCaseAssessment } from '@/app/lib/actions/ai-run';
+import { dashboardRoutes } from '@/app/lib/routes/dashboard';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -52,6 +56,9 @@ export default function CaseDetailPage() {
   const [isBilling, setIsBilling] = useState(false);
   const [billingMessage, setBillingMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isAssessing, setIsAssessing] = useState(false);
+  const [aiMessage, setAiMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [openProposalCount, setOpenProposalCount] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -117,6 +124,14 @@ export default function CaseDetailPage() {
           .eq('case_id', caseId)
           .order('created_at', { ascending: false });
         setDocuments((docsData as Document[]) || []);
+
+        // How many AI proposals for this case are still awaiting review.
+        const { count } = await supabase
+          .from('ai_proposals')
+          .select('*', { count: 'exact', head: true })
+          .eq('case_id', caseId)
+          .eq('status', 'pending');
+        setOpenProposalCount(count ?? 0);
       } catch (err) {
         console.error('Error fetching case:', err);
         setError('Failed to load case');
@@ -186,6 +201,38 @@ export default function CaseDetailPage() {
       setError('Failed to update case');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  /**
+   * Ask an AI employee to assess this case. The result is a PROPOSAL in the
+   * review queue — this button never changes the case itself.
+   */
+  const handleRequestAssessment = async () => {
+    setIsAssessing(true);
+    setAiMessage(null);
+    try {
+      const result = await requestCaseAssessment({ caseId });
+      if (!result.success) {
+        setAiMessage({ ok: false, text: result.error });
+        return;
+      }
+      setAiMessage({
+        ok: true,
+        text: t.dashboard?.aiReview?.assessmentDone || 'Assessment ready — see AI proposals.',
+      });
+      setOpenProposalCount((count) => count + 1);
+    } catch {
+      // An assessment can run for a while; a dropped connection rejects the
+      // action call even though the server may still have finished it.
+      setAiMessage({
+        ok: false,
+        text:
+          t.clientPortal?.errors?.network ||
+          'Connection lost. Check the AI proposals page for the result.',
+      });
+    } finally {
+      setIsAssessing(false);
     }
   };
 
@@ -513,6 +560,49 @@ export default function CaseDetailPage() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* AI assessment — produces a PROPOSAL for the review queue.
+                  Deliberately changes nothing about the case itself. */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t.dashboard?.nav?.aiReview || 'AI proposals'}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {aiMessage && (
+                    <p className={aiMessage.ok ? 'text-sm text-green-700' : 'text-sm text-red-600'}>
+                      {aiMessage.text}
+                    </p>
+                  )}
+                  {openProposalCount > 0 && (
+                    <Link
+                      href={dashboardRoutes.employee.aiReview}
+                      className="flex items-center gap-1 text-sm font-medium text-amber-600 hover:text-amber-700"
+                    >
+                      {openProposalCount}{' '}
+                      {t.dashboard?.aiReview?.openProposals || 'open AI proposal(s)'}
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  )}
+                  <Button
+                    variant="outline"
+                    className="w-full justify-center gap-2"
+                    disabled={isAssessing}
+                    onClick={handleRequestAssessment}
+                  >
+                    {isAssessing ? (
+                      <>
+                        <Spinner size="sm" />
+                        {t.dashboard?.aiReview?.assessmentRunning || 'Assessing...'}
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        {t.dashboard?.aiReview?.requestAssessment || 'Ask AI to assess'}
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
 
               {/* Billing — the only way to invoice a case that did not come
                   in through the request-approval flow (phone/email customers). */}
