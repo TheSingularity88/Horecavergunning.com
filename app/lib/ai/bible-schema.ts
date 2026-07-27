@@ -136,7 +136,47 @@ export const bibleSchema = z.strictObject({
 export type BibleRules = z.infer<typeof bibleSchema>;
 export type BibleRuleset = z.infer<typeof ruleset>;
 
+export const rulesetSchema = ruleset;
+
 /** JSON Schema form, sent to the provider as the required response format. */
 export function bibleJsonSchema(): Record<string, unknown> {
   return z.toJSONSchema(bibleSchema) as Record<string, unknown>;
+}
+
+/**
+ * One ruleset at a time.
+ *
+ * The whole-bible schema is rejected by Anthropic's structured outputs with
+ * "the compiled grammar is too large" — rulesets[] nests five more arrays of
+ * strict objects inside it, and the grammar compiler multiplies that out. A
+ * single ruleset is a fraction of the size and compiles fine, so the analysis
+ * asks for one ruleset per call and assembles the bible here.
+ */
+export function rulesetJsonSchema(): Record<string, unknown> {
+  return z.toJSONSchema(ruleset) as Record<string, unknown>;
+}
+
+/** The small planning call: which rulesets should exist for this corpus. */
+export const rulesetPlanSchema = z.strictObject({
+  rulesets: z.array(
+    z.strictObject({
+      id: z.string(),
+      title_nl: z.string(),
+      scope_nl: z.string(),
+    }),
+  ),
+});
+
+export function rulesetPlanJsonSchema(): Record<string, unknown> {
+  return z.toJSONSchema(rulesetPlanSchema) as Record<string, unknown>;
+}
+
+/** The closing call: glossary + the model's own open questions. */
+export const bibleTailSchema = z.strictObject({
+  glossary: z.array(z.strictObject({ term: z.string(), definition_nl: z.string() })),
+  open_questions: z.array(z.string()),
+});
+
+export function bibleTailJsonSchema(): Record<string, unknown> {
+  return z.toJSONSchema(bibleTailSchema) as Record<string, unknown>;
 }

@@ -41,7 +41,13 @@ export function createAnthropicClient(apiKey: string): AiProviderClient {
           role: message.role,
           content: message.content.map((block) =>
             block.type === 'text'
-              ? { type: 'text' as const, text: block.text }
+              ? {
+                  type: 'text' as const,
+                  text: block.text,
+                  ...(block.cacheable
+                    ? { cache_control: { type: 'ephemeral' as const } }
+                    : {}),
+                }
               : {
                   type: 'image' as const,
                   source: {

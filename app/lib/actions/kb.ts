@@ -1,5 +1,6 @@
 'use server';
 
+import { z } from 'zod';
 import { createAdminClient } from '@/app/lib/supabase/admin';
 import { requireAdmin, toActionError, type ActionResult } from '@/app/lib/auth/guards';
 import { checkRateLimit } from '@/app/lib/rate-limit';
@@ -11,13 +12,25 @@ import {
 } from '@/app/lib/validation/kb';
 import { extractDocument, redactText } from '@/app/lib/ai/extract';
 import { envAnthropicClient, type AiContentBlock } from '@/app/lib/ai/provider';
-import { bibleSchema, bibleJsonSchema } from '@/app/lib/ai/bible-schema';
+import {
+  bibleSchema,
+  rulesetSchema,
+  rulesetJsonSchema,
+  rulesetPlanSchema,
+  rulesetPlanJsonSchema,
+  bibleTailSchema,
+  bibleTailJsonSchema,
+  type BibleRuleset,
+} from '@/app/lib/ai/bible-schema';
 import { renderBibleMarkdown } from '@/app/lib/ai/render-bible';
 import { estimateCostCents } from '@/app/lib/ai/pricing';
 import {
   KB_ANALYSIS_PROMPT_VERSION,
   KB_ANALYSIS_SYSTEM,
   buildKbAnalysisUserText,
+  buildRulesetPlanInstruction,
+  buildRulesetInstruction,
+  buildTailInstruction,
 } from '@/app/lib/ai/prompts/kb-analysis';
 import type { KbDocument } from '@/app/lib/types/database';
 
@@ -306,6 +319,9 @@ export async function runKbAnalysis(): Promise<ActionResult<{ versionId: string 
             notes: p.doc.notes,
           })),
         ),
+        // Identical in every call of the pipeline, so cache it: the first call
+        // pays full price for the corpus, the rest pay a fraction.
+        cacheable: true,
       },
     ];
     for (const p of prepared) {
@@ -320,93 +336,137 @@ export async function runKbAnalysis(): Promise<ActionResult<{ versionId: string 
       }
     }
 
+
     const client = await envAnthropicClient();
-    const schema = { name: 'bible', schema: bibleJsonSchema() };
 
-    let result = await client.complete({
-      model: KB_ANALYSIS_MODEL,
-      system: KB_ANALYSIS_SYSTEM,
-      messages: [{ role: 'user', content: userContent }],
-      maxTokens: 64000,
-      jsonSchema: schema,
-    });
+    // Accumulated across every call in the pipeline, so the version row and the
+    // cost ledger report the whole analysis rather than its last step.
+    let totalInput = 0;
+    let totalOutput = 0;
+    let totalLatency = 0;
+    let lastModel = KB_ANALYSIS_MODEL;
 
-    if (result.stopReason === 'refusal' || result.stopReason === 'max_tokens') {
-      // Billed even though it produced nothing usable. Record it, or spend that
-      // really happened is missing from the dashboard that reports spend.
-      await recordKbRun(admin, client.id, result, {
-        status: 'error',
-        error: `stop_reason ${result.stopReason}`,
-      });
-      return {
-        success: false,
-        error:
-          result.stopReason === 'refusal'
-            ? 'The AI provider declined this request.'
-            : 'The analysis output was too large and got cut off. Please try again.',
-        code: 'ai_unavailable',
-      };
-    }
-
-    // Validate; one retry with the validation errors appended.
-    let totalInput = result.inputTokens;
-    let totalOutput = result.outputTokens;
-    let totalLatency = result.latencyMs;
-    let parsed = safeParseBible(result.text);
-
-    if (!parsed.ok) {
-      const retry = await client.complete({
+    /**
+     * One structured call over the shared corpus.
+     *
+     * `cacheCorpus` is deliberately per-call. Measured against the live API:
+     * the response schema is part of the cached prefix, so a call with a
+     * different schema never hits an existing entry — it writes a new one at
+     * 1.25x input price. Caching therefore pays only where the same schema
+     * repeats, which is the per-ruleset loop (one write, then reads at a tenth
+     * of the price). The single plan and tail calls would pay the write
+     * surcharge for a hit that can never come, so they opt out.
+     */
+    const step = async (
+      instruction: string,
+      jsonSchema: Record<string, unknown>,
+      name: string,
+      cacheCorpus = false,
+    ) => {
+      const corpus = cacheCorpus
+        ? userContent
+        : userContent.map((b) => (b.type === 'text' ? { ...b, cacheable: false } : b));
+      const res = await client.complete({
         model: KB_ANALYSIS_MODEL,
         system: KB_ANALYSIS_SYSTEM,
         messages: [
-          { role: 'user', content: userContent },
-          { role: 'assistant', content: [{ type: 'text', text: result.text }] },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `Je vorige antwoord voldeed niet aan het schema. Fouten: ${parsed.error.slice(0, 2000)}\n\nGeef het volledige, gecorrigeerde JSON-regelboek.`,
-              },
-            ],
-          },
+          { role: 'user', content: [...corpus, { type: 'text', text: instruction }] },
         ],
-        maxTokens: 64000,
-        jsonSchema: schema,
+        maxTokens: 32000,
+        jsonSchema: { name, schema: jsonSchema },
       });
-      totalInput += retry.inputTokens;
-      totalOutput += retry.outputTokens;
-      totalLatency += retry.latencyMs;
-      result = retry;
-      parsed = safeParseBible(retry.text);
-    }
+      totalInput += res.inputTokens;
+      totalOutput += res.outputTokens;
+      totalLatency += res.latencyMs;
+      lastModel = res.model;
+      return res;
+    };
 
-    if (!parsed.ok) {
-      console.error('[kb] analysis output failed validation twice:', parsed.error);
+    const failed = async (reason: string, message: string) => {
+      console.error('[kb] analysis failed:', reason);
       await admin.from('activity_log').insert({
         user_id: profile.id,
         action: 'kb_analysis_failed',
         entity_type: 'kb_versions',
         entity_id: null,
-        details: { reason: 'schema_validation', error: parsed.error.slice(0, 500) },
+        details: { reason: reason.slice(0, 500) },
       });
       await recordKbRun(
         admin,
         client.id,
-        {
-          model: result.model,
-          inputTokens: totalInput,
-          outputTokens: totalOutput,
-          latencyMs: totalLatency,
-        },
-        { status: 'error', error: 'schema validation failed twice' },
+        { model: lastModel, inputTokens: totalInput, outputTokens: totalOutput, latencyMs: totalLatency },
+        { status: 'error', error: reason.slice(0, 500) },
       );
-      return {
-        success: false,
-        error: 'The AI produced output that did not match the expected structure. Please try again.',
-        code: 'ai_unavailable',
-      };
+      return { success: false as const, error: message, code: 'ai_unavailable' as const };
+    };
+
+    // --- 1. Which rulesets should exist? -----------------------------------
+    const planResult = await step(buildRulesetPlanInstruction(), rulesetPlanJsonSchema(), 'ruleset_plan');
+    if (planResult.stopReason === 'refusal' || planResult.stopReason === 'max_tokens') {
+      return failed(`plan stop_reason ${planResult.stopReason}`, 'The AI could not plan the rulebook. Please try again.');
     }
+    const plan = safeParse(rulesetPlanSchema, planResult.text);
+    if (!plan.ok) return failed(`plan: ${plan.error}`, 'The AI produced an unusable plan. Please try again.');
+    if (plan.value.rulesets.length === 0) {
+      return failed('plan contained no rulesets', 'The AI found no rules in these documents. Check the documents and try again.');
+    }
+
+    // --- 2. One call per ruleset ------------------------------------------
+    const rulesets: BibleRuleset[] = [];
+    for (const [index, item] of plan.value.rulesets.entries()) {
+      const instruction = buildRulesetInstruction(item, index, plan.value.rulesets.length);
+      let res = await step(instruction, rulesetJsonSchema(), 'ruleset', true);
+
+      // Running out of output tokens produces truncated JSON, which is a
+      // formatting problem rather than a content one — a thorough ruleset is
+      // simply long. Ask once more for a shorter one instead of throwing away
+      // the rulesets already generated.
+      if (res.stopReason === 'max_tokens') {
+        console.warn(`[kb] ruleset ${item.id} hit max_tokens, retrying with a brevity instruction`);
+        res = await step(
+          `${instruction}\n\nJe vorige poging werd afgekapt omdat het antwoord te lang was. Geef dezelfde ruleset opnieuw, maar aanzienlijk beknopter: houd elk tekstveld bij één zin en laat toelichtingen weg die niet nodig zijn om de regel toe te passen.`,
+          rulesetJsonSchema(),
+          'ruleset',
+          true,
+        );
+      }
+
+      if (res.stopReason === 'refusal' || res.stopReason === 'max_tokens') {
+        return failed(
+          `ruleset ${item.id} stop_reason ${res.stopReason}`,
+          `The AI could not complete ruleset "${item.title_nl}". Please try again.`,
+        );
+      }
+      const one = safeParse(rulesetSchema, res.text);
+      if (!one.ok) return failed(`ruleset ${item.id}: ${one.error}`, `Ruleset "${item.title_nl}" did not match the expected structure. Please try again.`);
+      rulesets.push(one.value);
+    }
+
+    // --- 3. Glossary + the model's own open questions ----------------------
+    const tailResult = await step(
+      buildTailInstruction(rulesets.map((r) => r.title_nl)),
+      bibleTailJsonSchema(),
+      'bible_tail',
+    );
+    const tail = safeParse(bibleTailSchema, tailResult.text);
+    // A missing glossary is not worth throwing away a whole rulebook for.
+    const tailValue = tail.ok ? tail.value : { glossary: [], open_questions: [] };
+    if (!tail.ok) console.error('[kb] tail call unusable, continuing without it:', tail.error);
+
+    // --- 4. Assemble and validate the whole thing --------------------------
+    const parsed = safeParseBible(
+      JSON.stringify({
+        schema_version: '1',
+        rulesets,
+        glossary: tailValue.glossary,
+        open_questions: tailValue.open_questions,
+      }),
+    );
+    if (!parsed.ok) {
+      return failed(`assembled bible: ${parsed.error}`, 'The assembled rulebook did not validate. Please try again.');
+    }
+
+    const result = { model: lastModel };
 
     const { data: maxRow } = await admin
       .from('kb_versions')
@@ -516,6 +576,27 @@ async function recordKbRun(
   });
   // Never let ledger bookkeeping fail the analysis itself.
   if (error) console.error('[kb] could not record ai_runs row:', error);
+}
+
+/** Parse provider JSON against any zod schema, with a readable error. */
+function safeParse<T>(
+  schema: z.ZodType<T>,
+  text: string,
+): { ok: true; value: T } | { ok: false; error: string } {
+  try {
+    const parsed = schema.safeParse(JSON.parse(text));
+    if (!parsed.success) {
+      return {
+        ok: false,
+        error: parsed.error.issues
+          .map((i) => `${i.path.join('.')}: ${i.message}`)
+          .join('; '),
+      };
+    }
+    return { ok: true, value: parsed.data };
+  } catch {
+    return { ok: false, error: 'Response was not valid JSON.' };
+  }
 }
 
 function safeParseBible(
