@@ -2,7 +2,7 @@
 
 import { createAdminClient } from '@/app/lib/supabase/admin';
 import { requireAdmin, toActionError, type ActionResult } from '@/app/lib/auth/guards';
-import { runHistoryQuerySchema } from '@/app/lib/validation/ai-monitoring';
+import { runHistoryQuerySchema, toolCallQuerySchema } from '@/app/lib/validation/ai-monitoring';
 
 /**
  * Read-only monitoring of the AI system: what it ran, what it cost, how often a
@@ -420,6 +420,112 @@ export async function getAiRunHistory(
         })),
         total: count ?? 0,
         pageSize: PAGE_SIZE,
+      },
+    };
+  } catch (err) {
+    return toActionError(err);
+  }
+}
+
+
+/**
+ * What the AI actually DID at the dashboard.
+ *
+ * ai_tool_calls has been written on every tool invocation since migration 020,
+ * and until now nothing read it. That was the wrong way round: the record is
+ * the reason it is acceptable for an AI to create a task or file a proposal
+ * without asking first, and it was visible only to someone with database
+ * access. An audit trail nobody can see is not an audit trail.
+ *
+ * `access` is the tier the tool had AT THE TIME — stored per row rather than
+ * looked up from today's registry, so re-tiering a tool later cannot rewrite
+ * history. That is why the filter is worth having: 'write' and 'propose' are
+ * the rows that changed something.
+ */
+export interface AiToolCallRow {
+  id: string;
+  createdAt: string;
+  aiName: string | null;
+  staffName: string | null;
+  toolName: string;
+  access: 'read' | 'write' | 'propose';
+  input: Record<string, unknown>;
+  resultSummary: string | null;
+  ok: boolean;
+  error: string | null;
+  durationMs: number | null;
+}
+
+const TOOL_CALL_PAGE_SIZE = 25;
+
+export async function getAiToolCalls(
+  input: unknown,
+): Promise<ActionResult<{ rows: AiToolCallRow[]; total: number; pageSize: number }>> {
+  try {
+    await requireAdmin();
+    const parsed = toolCallQuerySchema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid request.' };
+    }
+    const { page, aiProfileId, access, outcome } = parsed.data;
+
+    const admin = createAdminClient();
+    let query = admin
+      .from('ai_tool_calls')
+      .select(
+        'id, created_at, tool_name, access, input, result_summary, ok, error, duration_ms, ' +
+          'ai:ai_profile_id(full_name), staff:staff_id(full_name)',
+        { count: 'exact' },
+      );
+
+    if (aiProfileId) query = query.eq('ai_profile_id', aiProfileId);
+    if (access) query = query.eq('access', access);
+    if (outcome) query = query.eq('ok', outcome === 'ok');
+
+    const from = page * TOOL_CALL_PAGE_SIZE;
+    const { data, count, error } = await query
+      .order('created_at', { ascending: false })
+      .range(from, from + TOOL_CALL_PAGE_SIZE - 1);
+
+    if (error) {
+      console.error('[ai-monitoring] tool calls failed:', error);
+      return { success: false, error: 'Could not load the tool history.' };
+    }
+
+    type Raw = {
+      id: string;
+      created_at: string;
+      tool_name: string;
+      access: 'read' | 'write' | 'propose';
+      input: Record<string, unknown> | null;
+      result_summary: string | null;
+      ok: boolean;
+      error: string | null;
+      duration_ms: number | null;
+      ai: { full_name: string } | null;
+      staff: { full_name: string } | null;
+    };
+
+    return {
+      success: true,
+      data: {
+        rows: ((data as unknown as Raw[]) || []).map((r) => ({
+          id: r.id,
+          createdAt: r.created_at,
+          aiName: r.ai?.full_name ?? null,
+          // Null for work an external agent does on its own key — that is the
+          // shape R4b needs, so it is not treated as missing data.
+          staffName: r.staff?.full_name ?? null,
+          toolName: r.tool_name,
+          access: r.access,
+          input: r.input ?? {},
+          resultSummary: r.result_summary,
+          ok: r.ok,
+          error: r.error,
+          durationMs: r.duration_ms,
+        })),
+        total: count ?? 0,
+        pageSize: TOOL_CALL_PAGE_SIZE,
       },
     };
   } catch (err) {

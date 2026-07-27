@@ -13,14 +13,17 @@ import {
   ChevronRight,
   Coins,
   Gauge,
+  Wrench,
 } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import {
   getAiMonitoring,
   getAiRunHistory,
+  getAiToolCalls,
   type AiMonitoringData,
   type AiRunRow,
+  type AiToolCallRow,
   type AiUsageWindow,
 } from '@/app/lib/actions/ai-monitoring';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
@@ -65,6 +68,14 @@ export default function AiActivityPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingRuns, setIsLoadingRuns] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [toolCalls, setToolCalls] = useState<AiToolCallRow[]>([]);
+  const [toolTotal, setToolTotal] = useState(0);
+  const [toolPageSize, setToolPageSize] = useState(25);
+  const [toolPage, setToolPage] = useState(0);
+  const [toolAccess, setToolAccess] = useState('');
+  const [toolOutcome, setToolOutcome] = useState('');
+  const [isLoadingTools, setIsLoadingTools] = useState(false);
+  const [toolsError, setToolsError] = useState<string | null>(null);
   const [runsError, setRunsError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -132,6 +143,33 @@ export default function AiActivityPage() {
     load();
   }, [isAdmin, loadSummary]);
 
+  const loadToolCalls = useCallback(async () => {
+    setIsLoadingTools(true);
+    try {
+      const result = await getAiToolCalls({
+        page: toolPage,
+        access: toolAccess || undefined,
+        outcome: toolOutcome || undefined,
+      });
+      if (result.success && result.data) {
+        setToolCalls(result.data.rows);
+        setToolTotal(result.data.total);
+        setToolPageSize(result.data.pageSize);
+        setToolsError(null);
+      } else if (!result.success) {
+        setToolCalls([]);
+        setToolsError(result.error);
+        showError(result.error);
+      }
+    } catch {
+      setToolCalls([]);
+      setToolsError(NETWORK_ERROR);
+      showError(NETWORK_ERROR);
+    } finally {
+      setIsLoadingTools(false);
+    }
+  }, [toolPage, toolAccess, toolOutcome, showError]);
+
   useEffect(() => {
     if (!isAdmin) return;
     const load = async () => {
@@ -140,9 +178,18 @@ export default function AiActivityPage() {
     load();
   }, [isAdmin, loadRuns]);
 
+  useEffect(() => {
+    if (!isAdmin) return;
+    const load = async () => {
+      await loadToolCalls();
+    };
+    load();
+  }, [isAdmin, loadToolCalls]);
+
   if (!isAdmin) return null;
 
   const lastPage = Math.max(0, Math.ceil(total / pageSize) - 1);
+  const toolLastPage = Math.max(0, Math.ceil(toolTotal / toolPageSize) - 1);
 
   return (
     <DashboardPage title={m?.title || 'AI activity'}>
@@ -337,6 +384,162 @@ export default function AiActivityPage() {
               )}
             </section>
 
+            {/* What the AI DID. This is the record that makes it acceptable for
+                an AI to create a task or file a proposal without asking first —
+                written on every call since migration 020, and read by nothing
+                at all until now. */}
+            <section>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+                  <Wrench className="h-5 w-5 text-slate-500" />
+                  {m?.toolsTitle || 'What the AI did'}
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  <Select
+                    value={toolAccess}
+                    onChange={(e) => {
+                      setToolAccess(e.target.value);
+                      setToolPage(0);
+                    }}
+                    className="w-auto"
+                    options={[
+                      { value: '', label: m?.toolAllTiers || 'All actions' },
+                      { value: 'read', label: m?.tierRead || 'Looked something up' },
+                      { value: 'write', label: m?.tierWrite || 'Changed something' },
+                      { value: 'propose', label: m?.tierPropose || 'Filed a proposal' },
+                    ]}
+                  />
+                  <Select
+                    value={toolOutcome}
+                    onChange={(e) => {
+                      setToolOutcome(e.target.value);
+                      setToolPage(0);
+                    }}
+                    className="w-auto"
+                    options={[
+                      { value: '', label: m?.allStatuses || 'All outcomes' },
+                      { value: 'ok', label: m?.statusOk || 'Succeeded' },
+                      { value: 'failed', label: m?.statusError || 'Failed' },
+                    ]}
+                  />
+                </div>
+              </div>
+              <p className="mb-3 max-w-2xl text-sm text-slate-500">{m?.toolsIntro}</p>
+
+              {isLoadingTools ? (
+                <div className="flex justify-center py-8">
+                  <Spinner />
+                </div>
+              ) : toolsError ? (
+                <Card className="p-6 text-center">
+                  <p className="text-slate-700">{toolsError}</p>
+                  <Button variant="outline" size="sm" className="mt-3" onClick={loadToolCalls}>
+                    {m?.retry || 'Try again'}
+                  </Button>
+                </Card>
+              ) : toolCalls.length === 0 ? (
+                <Card className="p-6 text-center text-slate-500">
+                  {m?.noToolCalls || 'The AI has not used any tools yet.'}
+                </Card>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[52rem] text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-left text-slate-500">
+                          <th className="py-2 pr-3 font-medium">{m?.colWhen || 'When'}</th>
+                          <th className="py-2 pr-3 font-medium">{m?.colWho || 'AI employee'}</th>
+                          <th className="py-2 pr-3 font-medium">{m?.colAction || 'Action'}</th>
+                          <th className="py-2 pr-3 font-medium">{m?.colDetails || 'Details'}</th>
+                          <th className="py-2 pr-3 font-medium">{m?.colOnBehalfOf || 'For'}</th>
+                          <th className="py-2 pr-3 text-right font-medium">
+                            {m?.colLatency || 'Time'}
+                          </th>
+                          <th className="py-2 font-medium">{m?.colResult || 'Result'}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {toolCalls.map((call) => (
+                          <tr key={call.id} className="border-b border-slate-100 align-top">
+                            <td className="py-2 pr-3 whitespace-nowrap text-slate-600">
+                              {formatDateTime(call.createdAt)}
+                            </td>
+                            <td className="py-2 pr-3 text-slate-900">{call.aiName ?? '—'}</td>
+                            <td className="py-2 pr-3">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="font-mono text-xs text-slate-700">
+                                  {call.toolName}
+                                </span>
+                                <Badge variant={accessBadge(call.access)}>
+                                  {accessLabel(call.access, m)}
+                                </Badge>
+                              </div>
+                            </td>
+                            <td className="max-w-[22rem] py-2 pr-3">
+                              <p className="truncate font-mono text-xs text-slate-500">
+                                {summariseInput(call.input)}
+                              </p>
+                            </td>
+                            <td className="py-2 pr-3 text-slate-600">
+                              {/* Null when an external agent acts on its own
+                                  key — expected, not missing data. */}
+                              {call.staffName ?? (m?.onOwnKey || '—')}
+                            </td>
+                            <td className="py-2 pr-3 text-right tabular-nums text-slate-600">
+                              {call.durationMs === null ? '—' : `${call.durationMs}ms`}
+                            </td>
+                            <td className="py-2">
+                              {call.ok ? (
+                                <Badge variant="success">{m?.statusOk || 'Succeeded'}</Badge>
+                              ) : (
+                                <div className="flex items-start gap-1.5">
+                                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+                                  <span className="text-red-700">
+                                    {call.error || m?.statusError || 'Failed'}
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between gap-3 text-sm text-slate-500">
+                    <span>
+                      {(m?.pageOfActions || 'Page {p} of {n} · {total} actions')
+                        .replace('{p}', String(toolPage + 1))
+                        .replace('{n}', String(toolLastPage + 1))
+                        .replace('{total}', String(toolTotal))}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={toolPage === 0}
+                        onClick={() => setToolPage((p) => Math.max(0, p - 1))}
+                        className="gap-1"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        {m?.previous || 'Previous'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={toolPage >= toolLastPage}
+                        onClick={() => setToolPage((p) => p + 1)}
+                        className="gap-1"
+                      >
+                        {m?.next || 'Next'}
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </section>
+
             {/* Run history */}
             <section>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -504,6 +707,45 @@ export default function AiActivityPage() {
 /** Euro cents (possibly fractional) as a euro amount. */
 function formatEuro(cents: number): string {
   return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(cents / 100);
+}
+
+/**
+ * The tier is the whole point of the row: read = it looked, write = it changed
+ * something on its own, propose = it queued something for a human. Colour them
+ * so an admin can scan for the ones that mattered.
+ */
+function accessBadge(access: 'read' | 'write' | 'propose'): 'default' | 'warning' | 'info' {
+  if (access === 'write') return 'warning';
+  if (access === 'propose') return 'info';
+  return 'default';
+}
+
+function accessLabel(
+  access: 'read' | 'write' | 'propose',
+  m: ReturnType<typeof useLanguage>['t']['dashboard'] extends infer D
+    ? D extends { aiActivity?: infer A }
+      ? A
+      : undefined
+    : undefined,
+): string {
+  const labels = m as Record<string, string> | undefined;
+  if (access === 'write') return labels?.tierWrite ?? 'changed something';
+  if (access === 'propose') return labels?.tierPropose ?? 'filed a proposal';
+  return labels?.tierRead ?? 'looked something up';
+}
+
+/**
+ * One readable line of the arguments. The full input is kept in the database;
+ * this column exists so two calls to the same tool are distinguishable at a
+ * glance without opening anything.
+ */
+function summariseInput(input: Record<string, unknown>): string {
+  const parts = Object.entries(input)
+    .filter(([, v]) => v !== null && v !== undefined && v !== '')
+    .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`);
+  if (parts.length === 0) return '—';
+  const line = parts.join(' · ');
+  return line.length > 140 ? `${line.slice(0, 137)}…` : line;
 }
 
 function formatDateTime(iso: string): string {
