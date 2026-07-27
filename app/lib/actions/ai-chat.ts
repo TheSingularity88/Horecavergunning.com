@@ -51,33 +51,59 @@ export interface ChatEmployee {
   isPaused: boolean;
 }
 
-export async function getAiChatEmployees(): Promise<ActionResult<{ employees: ChatEmployee[] }>> {
+export async function getAiChatEmployees(): Promise<
+  ActionResult<{ employees: ChatEmployee[]; externalCount: number }>
+> {
   try {
     await requireStaff();
     const admin = createAdminClient();
 
-    const [{ data: profiles }, { data: configs }] = await Promise.all([
+    const [profilesResult, configsResult] = await Promise.all([
       admin.from('profiles').select('id, full_name').eq('role', 'ai').eq('is_active', true),
-      admin.from('ai_employee_config').select('profile_id, is_paused'),
+      // Every AI employee's route, not just the platform ones: an
+      // external-only setup has to be reported as "your employees work
+      // elsewhere", not as "you have none".
+      admin.from('ai_employee_config').select('profile_id, is_paused, employment_type'),
     ]);
 
-    const pausedByProfile = new Map(
-      ((configs as { profile_id: string; is_paused: boolean }[]) || []).map((c) => [
-        c.profile_id,
-        c.is_paused,
-      ]),
-    );
+    // Report a failed read as a failure. supabase-js RESOLVES a failed query
+    // with { data: null, error }, so `?? []` would coalesce an outage into an
+    // empty list — and because the config row is now the membership test, that
+    // would render as a confident "no AI employees yet" instead of an error.
+    if (profilesResult.error || configsResult.error) {
+      console.error(
+        '[ai-chat] employee lookup failed:',
+        profilesResult.error?.message ?? configsResult.error?.message,
+      );
+      return { success: false, error: 'Could not load the AI employees.' };
+    }
 
-    return {
-      success: true,
-      data: {
-        employees: ((profiles as { id: string; full_name: string }[]) || []).map((p) => ({
-          profileId: p.id,
-          fullName: p.full_name,
-          isPaused: pausedByProfile.get(p.id) ?? false,
-        })),
-      },
-    };
+    const configs =
+      (configsResult.data as
+        | { profile_id: string; is_paused: boolean; employment_type: string }[]
+        | null) || [];
+    const configByProfile = new Map(configs.map((c) => [c.profile_id, c]));
+    const activeProfiles = (profilesResult.data as { id: string; full_name: string }[]) || [];
+
+    // Only PLATFORM employees are offered. This chat works by US calling a model
+    // on the employee's behalf; an external employee has no provider key here,
+    // so offering it would mean choosing a conversation partner that cannot
+    // answer. An external employee is instructed in its own tool — the Custom
+    // GPT, or the Claude CLI — and reaches this platform through the API key we
+    // mint for it.
+    const employees: ChatEmployee[] = [];
+    let externalCount = 0;
+    for (const p of activeProfiles) {
+      const config = configByProfile.get(p.id);
+      if (!config) continue;
+      if (config.employment_type !== 'platform') {
+        externalCount += 1;
+        continue;
+      }
+      employees.push({ profileId: p.id, fullName: p.full_name, isPaused: config.is_paused });
+    }
+
+    return { success: true, data: { employees, externalCount } };
   } catch (err) {
     return toActionError(err);
   }
@@ -156,12 +182,24 @@ export async function sendAiChatMessage(
         .maybeSingle(),
       admin
         .from('ai_employee_config')
-        .select('job_description, max_runs_per_day, is_paused')
+        .select('job_description, max_runs_per_day, is_paused, employment_type')
         .eq('profile_id', aiProfileId)
         .maybeSingle(),
     ]);
     if (!ai || !config) {
       return { success: false, error: 'That AI employee is not available.' };
+    }
+    // Self-guard, because every `use server` export is a POST endpoint and the
+    // picker filter is only a UI convenience. Without this the request still
+    // fails — resolveEmployeeProvider throws on the null provider_id — but with
+    // "an admin can check the key", advice nobody can act on: the provider field
+    // is hidden for an external employee and the database CHECK forbids one.
+    if (config.employment_type !== 'platform') {
+      return {
+        success: false,
+        error:
+          'That AI employee works through its own API key and is instructed in its own tool, not from this chat.',
+      };
     }
     if (config.is_paused) {
       return { success: false, error: 'This AI employee is paused.', code: 'ai_paused' };

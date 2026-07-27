@@ -3,6 +3,7 @@
 import { createAdminClient } from '@/app/lib/supabase/admin';
 import { requireAdmin, toActionError, type ActionResult } from '@/app/lib/auth/guards';
 import { runHistoryQuerySchema, toolCallQuerySchema } from '@/app/lib/validation/ai-monitoring';
+import type { AiEmploymentType } from '@/app/lib/types/database';
 
 /**
  * Read-only monitoring of the AI system: what it ran, what it cost, how often a
@@ -36,6 +37,14 @@ export interface AiUsageWindow {
 export interface AiEmployeeUsage {
   profileId: string;
   fullName: string;
+  /**
+   * Which route this employee works through. Every figure below counts OUR
+   * spend on OUR provider key, so for an external employee they are all
+   * structurally zero — it pays for its own model. The UI must say "not
+   * applicable" rather than render a confident 0, which would read as an
+   * employee that is configured but idle.
+   */
+  employmentType: AiEmploymentType;
   isPaused: boolean;
   maxRunsPerDay: number;
   /** Slots consumed in the limiter's current 24h window, capped at the max. */
@@ -190,7 +199,9 @@ export async function getAiMonitoring(): Promise<ActionResult<AiMonitoringData>>
     ] = await Promise.all([
       admin.rpc('ai_usage_daily', { p_days: WINDOW_DAYS }),
       admin.from('profiles').select('id, full_name').eq('role', 'ai'),
-      admin.from('ai_employee_config').select('profile_id, max_runs_per_day, is_paused'),
+      admin
+        .from('ai_employee_config')
+        .select('profile_id, max_runs_per_day, is_paused, employment_type'),
       admin.from('rate_limits').select('key, count, window_start').like('key', 'ai-run:%'),
       countPending,
       countApproved,
@@ -269,7 +280,12 @@ export async function getAiMonitoring(): Promise<ActionResult<AiMonitoringData>>
     const configByProfile = new Map(
       (
         (configsResult.data as
-          | { profile_id: string; max_runs_per_day: number; is_paused: boolean }[]
+          | {
+              profile_id: string;
+              max_runs_per_day: number;
+              is_paused: boolean;
+              employment_type: AiEmploymentType;
+            }[]
           | null) || []
       ).map((c) => [c.profile_id, c]),
     );
@@ -304,6 +320,7 @@ export async function getAiMonitoring(): Promise<ActionResult<AiMonitoringData>>
       return {
         profileId: profile.id,
         fullName: profile.full_name,
+        employmentType: config?.employment_type ?? 'platform',
         isPaused: config?.is_paused ?? false,
         maxRunsPerDay,
         budgetUsed,

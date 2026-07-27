@@ -34,6 +34,10 @@ export default function AiChatPage() {
   const c = t.dashboard?.aiChat;
 
   const [employees, setEmployees] = useState<ChatEmployee[]>([]);
+  // Active AI employees that exist but cannot be chatted with here, because
+  // they work through their own API key. Without this the empty state claims
+  // no AI employees are set up while the admin screen plainly lists one.
+  const [externalCount, setExternalCount] = useState(0);
   const [selectedId, setSelectedId] = useState('');
   const [messages, setMessages] = useState<ChatMessageView[]>([]);
   const [draft, setDraft] = useState('');
@@ -53,6 +57,7 @@ export default function AiChatPage() {
         const result = await getAiChatEmployees();
         if (result.success && result.data) {
           setEmployees(result.data.employees);
+          setExternalCount(result.data.externalCount);
           if (result.data.employees.length > 0) {
             setSelectedId(result.data.employees[0].profileId);
           }
@@ -154,7 +159,9 @@ export default function AiChatPage() {
         ) : employees.length === 0 ? (
           <Card className="p-8 text-center">
             <Bot className="mx-auto mb-4 h-12 w-12 text-slate-300" />
-            <p className="text-slate-500">{c?.noEmployees}</p>
+            <p className="text-slate-500">
+              {externalCount > 0 ? c?.onlyExternalEmployees : c?.noEmployees}
+            </p>
           </Card>
         ) : (
           // dvh (not vh) so mobile browser chrome is accounted for; the

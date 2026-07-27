@@ -37,7 +37,12 @@ export interface AiEmployeeView {
   is_active: boolean;
   config: Pick<
     AiEmployeeConfig,
-    'provider_id' | 'model' | 'job_description' | 'max_runs_per_day' | 'is_paused'
+    | 'employment_type'
+    | 'provider_id'
+    | 'model'
+    | 'job_description'
+    | 'max_runs_per_day'
+    | 'is_paused'
   >;
 }
 
@@ -67,7 +72,12 @@ export async function getAiAdminData(): Promise<
       data: {
         providers: (providers as AiProviderView[]) || [],
         employees: ((profiles as { id: string; full_name: string; email: string; is_active: boolean }[]) || [])
-          .map((p) => {
+          // Annotated, not inferred. The `is AiEmployeeView` predicate on the
+          // filter below ASSERTS the shape rather than checking it, so a field
+          // missing from this literal type-checks clean and only shows up as a
+          // wrong badge in the browser — which is exactly how employment_type
+          // was missed the first time.
+          .map((p): AiEmployeeView | null => {
             const config = configByProfile.get(p.id);
             if (!config) return null;
             return {
@@ -76,6 +86,7 @@ export async function getAiAdminData(): Promise<
               email: p.email,
               is_active: p.is_active,
               config: {
+                employment_type: config.employment_type,
                 provider_id: config.provider_id,
                 model: config.model,
                 job_description: config.job_description,
@@ -184,15 +195,20 @@ export async function createAiEmployee(input: unknown): Promise<ActionResult> {
 
     const admin = createAdminClient();
 
-    // The provider must exist and be active — an AI without a working
-    // provider would be created broken.
-    const { data: provider } = await admin
-      .from('ai_providers')
-      .select('id, is_active')
-      .eq('id', data.provider_id)
-      .maybeSingle();
-    if (!provider || !provider.is_active) {
-      return { success: false, error: 'Choose an active AI provider first.' };
+    // Only a PLATFORM employee needs a provider — we call the model on its
+    // behalf, and one without a working provider would be created broken. An
+    // external employee brings its own model, so there is nothing to check and
+    // nothing to bind; requiring a provider here would make external employees
+    // uncreatable on a platform that has no provider key at all.
+    if (data.employment_type === 'platform') {
+      const { data: provider } = await admin
+        .from('ai_providers')
+        .select('id, is_active')
+        .eq('id', data.provider_id)
+        .maybeSingle();
+      if (!provider || !provider.is_active) {
+        return { success: false, error: 'Choose an active AI provider first.' };
+      }
     }
 
     const slug = data.name
@@ -237,10 +253,14 @@ export async function createAiEmployee(input: unknown): Promise<ActionResult> {
       return { success: false, error: 'Could not configure the AI account.' };
     }
 
+    // An external employee stores no provider and no model. Migration 023's
+    // CHECK enforces that pairing, so writing them would be rejected outright
+    // rather than quietly ignored.
     const { error: configError } = await admin.from('ai_employee_config').insert({
       profile_id: created.user.id,
-      provider_id: data.provider_id,
-      model: data.model,
+      employment_type: data.employment_type,
+      provider_id: data.employment_type === 'platform' ? data.provider_id : null,
+      model: data.employment_type === 'platform' ? data.model : null,
       job_description: data.job_description,
       max_runs_per_day: data.max_runs_per_day,
     });
@@ -254,7 +274,11 @@ export async function createAiEmployee(input: unknown): Promise<ActionResult> {
       action: 'ai_employee_created',
       entity_type: 'profiles',
       entity_id: created.user.id,
-      details: { name: data.name, max_runs_per_day: data.max_runs_per_day },
+      details: {
+        name: data.name,
+        employment_type: data.employment_type,
+        max_runs_per_day: data.max_runs_per_day,
+      },
     });
 
     return { success: true };
@@ -274,11 +298,28 @@ export async function updateAiEmployee(input: unknown): Promise<ActionResult> {
     const data = parsed.data;
 
     const admin = createAdminClient();
+
+    // Read the route rather than trusting the caller for it. It cannot be
+    // changed here (a trigger refuses), but it decides whether provider_id and
+    // model are even writable: for an external employee they must stay null,
+    // and a stale value posted from an old tab would otherwise be rejected by
+    // the CHECK as an opaque database error.
+    const { data: existing } = await admin
+      .from('ai_employee_config')
+      .select('employment_type')
+      .eq('profile_id', data.profile_id)
+      .maybeSingle();
+    if (!existing) return { success: false, error: 'AI employee not found.' };
+    const isPlatform = (existing as { employment_type: string }).employment_type === 'platform';
+    if (isPlatform && !data.provider_id) {
+      return { success: false, error: 'Choose an AI provider.' };
+    }
+
     const { data: updated, error } = await admin
       .from('ai_employee_config')
       .update({
-        provider_id: data.provider_id,
-        model: data.model,
+        provider_id: isPlatform ? data.provider_id : null,
+        model: isPlatform ? data.model : null,
         job_description: data.job_description,
         max_runs_per_day: data.max_runs_per_day,
         is_paused: data.is_paused,
