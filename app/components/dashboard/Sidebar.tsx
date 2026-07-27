@@ -22,6 +22,7 @@ import {
   Bot,
   Sparkles,
   MessagesSquare,
+  KeyRound,
 } from 'lucide-react';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
@@ -225,6 +226,24 @@ export function Sidebar() {
       name: t.dashboard?.nav?.knowledgeBase || 'Knowledge base',
       href: dashboardRoutes.employee.admin.knowledgeBase,
       icon: BookLock,
+    },
+    // The three AI admin screens. They were reachable only by typing the URL:
+    // the routes and the `nav.ai` label existed in both languages, but no nav
+    // item ever consumed them, so the whole cluster was invisible.
+    {
+      name: t.dashboard?.nav?.ai || 'AI employees',
+      href: dashboardRoutes.employee.admin.ai,
+      icon: Bot,
+    },
+    {
+      name: t.dashboard?.nav?.aiActivity || 'AI activity & costs',
+      href: dashboardRoutes.employee.admin.aiActivity,
+      icon: Activity,
+    },
+    {
+      name: t.dashboard?.nav?.aiKeys || 'Agent API keys',
+      href: dashboardRoutes.employee.admin.aiKeys,
+      icon: KeyRound,
     },
     {
       name: t.dashboard?.nav?.settings || 'Settings',

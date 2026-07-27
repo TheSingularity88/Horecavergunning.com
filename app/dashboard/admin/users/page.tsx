@@ -169,6 +169,9 @@ export default function UsersPage() {
     { value: '', label: t.dashboard?.users?.allRoles || 'All roles' },
     { value: 'admin', label: roleLabel('admin', t) },
     { value: 'employee', label: roleLabel('employee', t) },
+    // AI accounts appear in the list with an immutable badge, so they must be
+    // filterable too — otherwise they are visible but unfindable.
+    { value: 'ai', label: roleLabel('ai', t) },
   ];
 
   const columns = [

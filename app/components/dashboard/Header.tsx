@@ -130,13 +130,22 @@ export function Header({ title }: HeaderProps) {
                 </div>
 
                 <div className="py-1">
+                  {/* This header is shared by BOTH portals — every /client page
+                      renders it through DashboardPage. Sending a client to the
+                      staff profile route made middleware bounce them straight
+                      back to /client, so the menu item silently did nothing. */}
                   <Link
-                    href={dashboardRoutes.employee.profile}
+                    href={
+                      clientData
+                        ? dashboardRoutes.client.profile
+                        : dashboardRoutes.employee.profile
+                    }
                     className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                     onClick={() => setShowUserMenu(false)}
                   >
                     <User className="w-4 h-4" />
-                    {t.dashboard?.nav?.profile || 'Profile'}
+                    {(clientData ? t.clientPortal?.nav?.profile : t.dashboard?.nav?.profile) ||
+                      'Profile'}
                   </Link>
                   {isAdmin && (
                     <Link
