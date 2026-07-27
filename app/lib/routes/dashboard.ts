@@ -8,6 +8,7 @@ export const dashboardRoutes = {
     requests: '/dashboard/requests',
     tasks: '/dashboard/tasks',
     aiReview: '/dashboard/ai-review',
+    aiChat: '/dashboard/ai-chat',
     documents: '/dashboard/documents',
     leads: '/dashboard/leads',
     profile: '/dashboard/profile',

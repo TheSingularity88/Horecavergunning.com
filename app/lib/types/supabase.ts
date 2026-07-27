@@ -105,6 +105,48 @@ export type Database = {
           },
         ]
       }
+      ai_messages: {
+        Row: {
+          ai_profile_id: string
+          author: string
+          content: string
+          created_at: string
+          id: string
+          staff_id: string | null
+        }
+        Insert: {
+          ai_profile_id: string
+          author: string
+          content: string
+          created_at?: string
+          id?: string
+          staff_id?: string | null
+        }
+        Update: {
+          ai_profile_id?: string
+          author?: string
+          content?: string
+          created_at?: string
+          id?: string
+          staff_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_messages_ai_profile_id_fkey"
+            columns: ["ai_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_messages_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_proposals: {
         Row: {
           ai_profile_id: string

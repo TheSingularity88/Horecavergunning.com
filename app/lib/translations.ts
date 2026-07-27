@@ -275,6 +275,7 @@ export const translations = {
         knowledgeBase: "Knowledge base",
         ai: "AI employees",
         aiReview: "AI proposals",
+        aiChat: "AI chat",
         settings: "Settings",
         activity: "Activity",
         profile: "Profile",
@@ -443,7 +444,8 @@ export const translations = {
           kb_analysis: "Rulebook analysis",
           case_assessment: "Case assessment",
           draft_reply: "Draft reply",
-          question: "Question"
+          question: "Question",
+          chat: "Chat"
         },
         caseType: {
           exploitatievergunning: "Operating permit",
@@ -697,6 +699,16 @@ export const translations = {
         reviewedBy: "Reviewed by",
         lastAttemptFailed: "Previous attempt failed",
         aiDisclaimer: "This is AI-generated advice based on the internal rulebook. Check it before acting — you remain responsible for the decision."
+      },
+      aiChat: {
+        title: "AI chat",
+        intro: "Talk to your AI colleague. Everything here is advice: the AI cannot change cases, send email, or contact customers from this chat. For a full case assessment, use the button on the case page — that produces a proposal a human approves.",
+        noEmployees: "No AI employees are set up yet. An admin can create one under Admin → AI employees.",
+        emptyThread: "No messages yet. Whatever you ask stays inside the platform.",
+        inputPlaceholder: "Ask your AI colleague something...",
+        send: "Send",
+        pausedNote: "This AI employee is paused — it will not reply until an admin resumes it.",
+        disclaimer: "AI answers are advice based on the internal rulebook — check before acting. Every reply counts against the AI's daily budget."
       },
       aiActivity: {
         title: "AI activity",
@@ -1328,6 +1340,7 @@ export const translations = {
         knowledgeBase: "Kennisbank",
         ai: "AI-medewerkers",
         aiReview: "AI-voorstellen",
+        aiChat: "AI-chat",
         settings: "Instellingen",
         activity: "Activiteit",
         profile: "Profiel",
@@ -1496,7 +1509,8 @@ export const translations = {
           kb_analysis: "Regelboek-analyse",
           case_assessment: "Dossierbeoordeling",
           draft_reply: "Conceptantwoord",
-          question: "Vraag"
+          question: "Vraag",
+          chat: "Chat"
         },
         caseType: {
           exploitatievergunning: "Exploitatievergunning",
@@ -1750,6 +1764,16 @@ export const translations = {
         reviewedBy: "Beoordeeld door",
         lastAttemptFailed: "Vorige poging mislukt",
         aiDisclaimer: "Dit is AI-advies op basis van het interne regelboek. Controleer het voordat u handelt — u blijft verantwoordelijk voor de beslissing."
+      },
+      aiChat: {
+        title: "AI-chat",
+        intro: "Praat met uw AI-collega. Alles hier is advies: de AI kan vanuit deze chat geen dossiers wijzigen, geen e-mail versturen en geen klanten benaderen. Voor een volledige dossierbeoordeling gebruikt u de knop op de dossierpagina — die levert een voorstel op dat een mens goedkeurt.",
+        noEmployees: "Er zijn nog geen AI-medewerkers. Een beheerder kan er een aanmaken onder Beheer → AI-medewerkers.",
+        emptyThread: "Nog geen berichten. Alles wat u hier vraagt blijft binnen het platform.",
+        inputPlaceholder: "Vraag uw AI-collega iets...",
+        send: "Versturen",
+        pausedNote: "Deze AI-medewerker is gepauzeerd — er komt geen antwoord totdat een beheerder hem hervat.",
+        disclaimer: "AI-antwoorden zijn advies op basis van het interne regelboek — controleer voordat u handelt. Elk antwoord telt mee in het dagbudget van de AI."
       },
       aiActivity: {
         title: "AI-activiteit",

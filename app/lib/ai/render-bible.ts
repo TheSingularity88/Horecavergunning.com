@@ -46,6 +46,66 @@ export function renderBibleMarkdown(rules: BibleRules): string {
   return md.join('\n');
 }
 
+/**
+ * Compact plain-text digest of the rulebook, for the CHAT context.
+ *
+ * Chat sends rulebook context with every message, so size is money. The full
+ * rendered rulebook is ~160k characters; most of that is assessment prose
+ * (pass/fail/escalate guidance) that a conversational answer rarely needs.
+ * This digest keeps what Q&A actually draws on — which checklists exist, which
+ * criteria are tested, the hard thresholds, and the routing rules — at a
+ * fraction of the size. For a full assessment the AI tells staff to trigger
+ * one, which uses the complete rules.
+ */
+export function renderBibleDigest(rules: BibleRules): string {
+  const out: string[] = [];
+
+  for (const ruleset of rules.rulesets) {
+    out.push(
+      `## ${ruleset.title_nl} [${ruleset.id}]`,
+      `Van toepassing: ${ruleset.applies_to.case_types.join(', ')} (${ruleset.applies_to.scenario})`,
+    );
+    if (ruleset.checklist.length > 0) {
+      out.push(
+        'Aan te leveren: ' +
+          ruleset.checklist
+            .map((c) => `${c.label_nl}${c.required ? ' (verplicht)' : ''}`)
+            .join('; '),
+      );
+    }
+    if (ruleset.criteria.length > 0) {
+      out.push('Toetsingscriteria:');
+      for (const criterion of ruleset.criteria) {
+        out.push(`- ${criterion.question_nl}${criterion.severity === 'blocking' ? ' [blokkerend]' : ''}`);
+      }
+    }
+    if (ruleset.thresholds.length > 0) {
+      out.push('Grenswaarden:');
+      for (const threshold of ruleset.thresholds) {
+        out.push(
+          `- ${threshold.name_nl}: ${threshold.comparator} ${threshold.value} ${threshold.unit} → ${threshold.action_if_met_nl}`,
+        );
+      }
+    }
+    if (ruleset.routing.length > 0) {
+      out.push('Doorverwijzen:');
+      for (const rule of ruleset.routing) {
+        out.push(`- ${rule.trigger_nl} → ${rule.action_nl} (${rule.recipient})`);
+      }
+    }
+    out.push('');
+  }
+
+  if (rules.glossary.length > 0) {
+    out.push('## Begrippen');
+    for (const entry of rules.glossary) {
+      out.push(`- ${entry.term}: ${entry.definition_nl}`);
+    }
+  }
+
+  return out.join('\n');
+}
+
 function renderRulesetBody(md: string[], ruleset: BibleRuleset): void {
   if (ruleset.checklist.length > 0) {
     md.push('## Checklist (aan te leveren)', '');
