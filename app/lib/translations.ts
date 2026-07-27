@@ -715,6 +715,8 @@ export const translations = {
         title: "AI chat",
         intro: "Talk to your AI colleague. Everything here is advice: the AI cannot change cases, send email, or contact customers from this chat. For a full case assessment, use the button on the case page — that produces a proposal a human approves.",
         noEmployees: "No AI employees are set up yet. An admin can create one under Admin → AI employees.",
+        onlyExternalEmployees:
+          "Your AI employees all work through their own API key, so they are instructed in their own tool — a Custom GPT or Claude Code — rather than from this chat. To chat here, an admin can add an employee on our provider key under Admin → AI employees.",
         emptyThread: "No messages yet. Whatever you ask stays inside the platform.",
         inputPlaceholder: "Ask your AI colleague something...",
         send: "Send",
@@ -1818,6 +1820,8 @@ export const translations = {
         title: "AI-chat",
         intro: "Praat met uw AI-collega. Alles hier is advies: de AI kan vanuit deze chat geen dossiers wijzigen, geen e-mail versturen en geen klanten benaderen. Voor een volledige dossierbeoordeling gebruikt u de knop op de dossierpagina — die levert een voorstel op dat een mens goedkeurt.",
         noEmployees: "Er zijn nog geen AI-medewerkers. Een beheerder kan er een aanmaken onder Beheer → AI-medewerkers.",
+        onlyExternalEmployees:
+          "Uw AI-medewerkers werken allemaal via hun eigen API-sleutel. U geeft ze opdrachten in hun eigen tool — een Custom GPT of Claude Code — en niet vanuit deze chat. Wilt u hier chatten, dan kan een beheerder onder Beheer → AI-medewerkers een medewerker op onze providersleutel aanmaken.",
         emptyThread: "Nog geen berichten. Alles wat u hier vraagt blijft binnen het platform.",
         inputPlaceholder: "Vraag uw AI-collega iets...",
         send: "Versturen",
