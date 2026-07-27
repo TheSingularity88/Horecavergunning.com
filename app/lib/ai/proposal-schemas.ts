@@ -87,6 +87,17 @@ export const caseUpdatePayload = z.strictObject({
   deadline: z.string().nullable().optional(),
 });
 
+// ---- task_update: rename a task or mark it done, on approval. ------------------
+//      A proposal rather than a direct write because the client portal lists a
+//      case's tasks to its own customer, printing each title and colouring a
+//      badge from each status. Internal planning fields are NOT here — those
+//      stay a direct write, because nothing renders them to a customer.
+export const taskUpdatePayload = z.strictObject({
+  task_id: z.string().uuid(),
+  title: z.string().min(1).optional(),
+  status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']).optional(),
+});
+
 // ---- question: the AI asks a human; the human answers in review_note. ----------
 export const questionPayload = z.strictObject({
   question_nl: z.string(),
@@ -99,6 +110,7 @@ export type StatusChangePayload = z.infer<typeof statusChangePayload>;
 export type ChecklistUpdatePayload = z.infer<typeof checklistUpdatePayload>;
 export type QuestionPayload = z.infer<typeof questionPayload>;
 export type CaseUpdatePayload = z.infer<typeof caseUpdatePayload>;
+export type TaskUpdatePayload = z.infer<typeof taskUpdatePayload>;
 
 /** Validate a stored payload against its type. Returns typed data or an error. */
 export function parseProposalPayload(
@@ -111,6 +123,7 @@ export function parseProposalPayload(
   | { ok: true; type: 'checklist_update'; data: ChecklistUpdatePayload }
   | { ok: true; type: 'question'; data: QuestionPayload }
   | { ok: true; type: 'case_update'; data: CaseUpdatePayload }
+  | { ok: true; type: 'task_update'; data: TaskUpdatePayload }
   | { ok: false; error: string } {
   switch (type) {
     case 'case_assessment': {
@@ -139,6 +152,12 @@ export function parseProposalPayload(
     }
     case 'case_update': {
       const r = caseUpdatePayload.safeParse(payload);
+      return r.success
+        ? { ok: true, type, data: r.data }
+        : { ok: false, error: r.error.issues[0]?.message ?? 'Invalid payload' };
+    }
+    case 'task_update': {
+      const r = taskUpdatePayload.safeParse(payload);
       return r.success
         ? { ok: true, type, data: r.data }
         : { ok: false, error: r.error.issues[0]?.message ?? 'Invalid payload' };

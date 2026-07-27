@@ -11,12 +11,20 @@ import type { AiTool } from '@/app/lib/ai/tools/registry';
  * had created, and could not mark the very lead its own prompt told it to
  * handle. These close that gap.
  *
- * Tiering follows the same rule, with the checklist lesson applied: check where
- * a field is RENDERED before calling it internal.
+ * Tiering follows the same rule: check where a field is RENDERED before calling
+ * it internal — by grepping app/client/** and the RLS policies, not by
+ * intuition. Each of these was traced:
  *   - A client record carries no login (user_id stays null) and appears in no
  *     portal, so creating one is internal work → write.
- *   - A lead is pre-customer CRM state, invisible to any portal → write.
- *   - A task is internal by construction → write.
+ *   - A lead is pre-customer CRM state, read nowhere under app/client/ and with
+ *     no anon policy → write.
+ *   - A task is SPLIT. `tasks_select_client` (002_security_fixes.sql) lets a
+ *     customer read every task on their own case, and the portal prints
+ *     task.title and colours a badge from task.status — so those two are
+ *     propose, while priority/due_date/description/assigned_to are write.
+ *     This file originally claimed "a task is internal by construction"; an
+ *     adversarial review proved otherwise, which is why the rule above says to
+ *     grep rather than reason.
  *   - Case fields are printed on the customer's own case page → propose.
  */
 
@@ -25,6 +33,75 @@ const str = (v: unknown): string | null =>
 
 const num = (v: unknown): number | null =>
   typeof v === 'number' && Number.isFinite(v) ? v : null;
+
+/**
+ * The `inputSchema` on a tool is a HINT TO THE MODEL, not a contract. Nothing
+ * validates tool arguments server-side — run-tools.ts hands `tool.run` the raw
+ * JSON the provider emitted. So every enumerated field has to be re-checked
+ * here, and the database is not a backstop: a CHECK constraint is *satisfied*
+ * by NULL, so `status: null` sails past `CHECK (status IN (...))` and lands.
+ */
+const oneOf = <T extends string>(v: unknown, allowed: readonly T[], field: string): T => {
+  const s = str(v);
+  if (!s || !(allowed as readonly string[]).includes(s)) {
+    throw new Error(`${field} must be one of: ${allowed.join(', ')}`);
+  }
+  return s as T;
+};
+
+/**
+ * A real YYYY-MM-DD calendar date. Postgres `date` accepts much looser input
+ * and resolves ambiguous forms by server locale, so "08/09/2026" could store a
+ * different day than the human read and approved.
+ */
+const isoDate = (v: unknown, field: string): string => {
+  const s = str(v);
+  if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) throw new Error(`${field} must be YYYY-MM-DD`);
+  const parsed = new Date(`${s}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== s) {
+    throw new Error(`${field} is not a real date`);
+  }
+  return s;
+};
+
+/**
+ * Today in Amsterdam. `toISOString()` is UTC by specification — no TZ env var
+ * can change it — so for the first one to two hours of every Dutch day it names
+ * yesterday, which would make "overdue" and "due this week" wrong exactly when
+ * someone checks first thing in the morning.
+ */
+const amsterdamToday = (): string =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Amsterdam' }).format(new Date());
+
+/** Days after an Amsterdam date, anchored at midday so a DST shift cannot slip a day. */
+const daysAfter = (isoDay: string, days: number): string =>
+  new Date(new Date(`${isoDay}T12:00:00Z`).getTime() + days * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+
+/**
+ * PostgREST parses `or=(...)` as a boolean tree and supabase-js appends the
+ * string unescaped, so a search term containing a comma or a parenthesis does
+ * not get searched for — it edits the filter. Strip the grammar characters.
+ */
+const likeTerm = (v: unknown): string | null => {
+  const s = str(v);
+  if (!s) return null;
+  return s.replace(/[,()\\"*]/g, ' ').trim() || null;
+};
+
+/**
+ * Presence with an explicit null means "clear this field"; presence with an
+ * empty string is a model slip, not an instruction. Collapsing both to null (as
+ * `str` does) turns a sloppy `title: ""` into a silent proposal to ERASE the
+ * case title, which a reviewer sees only as "→ leeg".
+ */
+const nullableField = (v: unknown, field: string): string | null => {
+  if (v === null) return null;
+  const s = str(v);
+  if (!s) throw new Error(`${field} must be text, or null to clear it`);
+  return s;
+};
 
 /**
  * Page size for every list tool. Paired with an `offset` argument — the first
@@ -74,9 +151,10 @@ export const listClients: AiTool = {
       .order('created_at', { ascending: false })
       .range(from, to);
 
-    const status = str(input.status);
-    if (status) query = query.eq('status', status);
-    const search = str(input.search);
+    if ('status' in input) {
+      query = query.eq('status', oneOf(input.status, ['active', 'inactive', 'pending'], 'status'));
+    }
+    const search = likeTerm(input.search);
     if (search) {
       query = query.or(
         `company_name.ilike.%${search}%,contact_name.ilike.%${search}%,email.ilike.%${search}%`,
@@ -103,7 +181,7 @@ export const getClient: AiTool = {
     const clientId = str(input.client_id);
     if (!clientId) throw new Error('client_id is required');
 
-    const [{ data: row }, { data: cases }] = await Promise.all([
+    const [clientResult, casesResult] = await Promise.all([
       ctx.admin
         .from('clients')
         .select(
@@ -119,8 +197,13 @@ export const getClient: AiTool = {
         .limit(LIMIT),
     ]);
 
-    if (!row) throw new Error('client not found');
-    return { client: row, cases: cases ?? [] };
+    // Report failures as failures. Dropping `error` on the floor turns a
+    // connection blip into "client not found" or a silently empty case list,
+    // and the model then advises the colleague on a client it never read.
+    if (clientResult.error) throw new Error(`could not read the client: ${clientResult.error.message}`);
+    if (casesResult.error) throw new Error(`could not read the cases: ${casesResult.error.message}`);
+    if (!clientResult.data) throw new Error('client not found');
+    return { client: clientResult.data, cases: casesResult.data ?? [] };
   },
 };
 
@@ -165,8 +248,16 @@ export const listDocuments: AiTool = {
     if (caseId) query = query.eq('case_id', caseId);
     const clientId = str(input.client_id);
     if (clientId) query = query.eq('client_id', clientId);
-    const category = str(input.category);
-    if (category) query = query.eq('category', category);
+    if ('category' in input) {
+      query = query.eq(
+        'category',
+        oneOf(
+          input.category,
+          ['contract', 'permit', 'identification', 'financial', 'correspondence', 'bibob', 'general'],
+          'category',
+        ),
+      );
+    }
 
     const { data, count, error } = await query;
     if (error) throw new Error(`could not read documents: ${error.message}`);
@@ -181,8 +272,8 @@ export const getOverview: AiTool = {
     'What needs attention right now: overdue tasks, deadlines in the next 7 days, unreviewed client requests, new leads, and open AI proposals. Call this first when asked something broad like "what is urgent", "what should I do today" or "how are we doing".',
   inputSchema: { type: 'object', properties: {} },
   async run(_input, ctx) {
-    const today = new Date().toISOString().slice(0, 10);
-    const inAWeek = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
+    const today = amsterdamToday();
+    const inAWeek = daysAfter(today, 7);
 
     const [overdueTasks, dueSoon, openTasks, newLeads, pendingRequests, openProposals, activeCases] =
       await Promise.all([
@@ -243,16 +334,14 @@ export const updateTask: AiTool = {
   name: 'update_task',
   access: 'write',
   description:
-    'Update an existing task: complete it, reschedule it, change its priority or text, or assign it to a human colleague. Call this when a colleague says a task is done or needs to move. Only fields you name are changed.',
+    'Update the internal planning of an existing task: its priority, due date, description, or which human colleague owns it. Only fields you name are changed. To change a task TITLE or mark it done, use propose_task_update instead — the customer can see those.',
   inputSchema: {
     type: 'object',
     properties: {
       task_id: { type: 'string', description: 'Task id from list_tasks.' },
-      status: { type: 'string', enum: ['pending', 'in_progress', 'completed', 'cancelled'] },
       priority: { type: 'string', enum: ['low', 'normal', 'high', 'urgent'] },
-      due_date: { type: 'string', description: 'YYYY-MM-DD, or empty string to clear.' },
-      title: { type: 'string' },
-      description: { type: 'string' },
+      due_date: { type: 'string', description: 'YYYY-MM-DD, or null to clear it.' },
+      description: { type: 'string', description: 'Internal detail. Not shown to the customer.' },
       assigned_to: {
         type: 'string',
         description:
@@ -265,18 +354,26 @@ export const updateTask: AiTool = {
     const taskId = str(input.task_id);
     if (!taskId) throw new Error('task_id is required');
 
-    const patch: Record<string, string | null> = {};
-    if ('status' in input) patch.status = str(input.status);
-    if ('priority' in input) patch.priority = str(input.priority);
-    if ('title' in input) patch.title = str(input.title);
-    if ('description' in input) patch.description = str(input.description);
-    if ('assigned_to' in input) patch.assigned_to = str(input.assigned_to);
-    // An empty string means "clear the date"; the column is nullable.
-    if ('due_date' in input) patch.due_date = str(input.due_date);
+    // title and status are deliberately absent: the client portal prints both
+    // on the customer's own case page (app/client/cases/[id]/page.tsx renders
+    // task.title and colours a badge from task.status). Say so rather than
+    // ignoring them, so the model routes to the proposal instead of assuming
+    // the change landed.
+    if ('title' in input || 'status' in input) {
+      throw new Error(
+        'title and status are visible to the customer — use propose_task_update for those. This tool only changes internal planning fields.',
+      );
+    }
 
-    // Completing a task should stamp when, the way the dashboard does.
-    if (patch.status === 'completed') patch.completed_at = new Date().toISOString();
-    if (patch.status && patch.status !== 'completed') patch.completed_at = null;
+    const patch: Record<string, string | null> = {};
+    if ('priority' in input) {
+      patch.priority = oneOf(input.priority, ['low', 'normal', 'high', 'urgent'], 'priority');
+    }
+    if ('description' in input) patch.description = nullableField(input.description, 'description');
+    if ('assigned_to' in input) patch.assigned_to = nullableField(input.assigned_to, 'assigned_to');
+    if ('due_date' in input) {
+      patch.due_date = input.due_date === null ? null : isoDate(input.due_date, 'due_date');
+    }
 
     if (Object.keys(patch).length === 0) throw new Error('name at least one field to change');
 
@@ -308,8 +405,8 @@ export const setLeadStatus: AiTool = {
   },
   async run(input, ctx) {
     const leadId = str(input.lead_id);
-    const status = str(input.status);
-    if (!leadId || !status) throw new Error('lead_id and status are required');
+    if (!leadId) throw new Error('lead_id is required');
+    const status = oneOf(input.status, ['new', 'contacted', 'converted', 'closed'], 'status');
 
     const { data, error } = await ctx.admin
       .from('leads')
@@ -412,16 +509,23 @@ export const proposeCaseUpdate: AiTool = {
 
     // Only the keys actually named. approveProposal keys off this too, so a
     // proposal about a deadline can never blank the municipality.
+    //
+    // Each value is validated HERE, not just at approval: a reviewer reads the
+    // rendered diff and clicks approve, so anything that would be rejected or
+    // silently reinterpreted later must be refused before a human is asked to
+    // vouch for it.
     const payload: Record<string, string | null> = {};
-    for (const key of [
-      'title',
-      'description',
-      'municipality',
-      'reference_number',
-      'priority',
-      'deadline',
-    ] as const) {
-      if (key in input) payload[key] = str(input[key]);
+    for (const key of ['title', 'description', 'municipality', 'reference_number'] as const) {
+      if (key in input) payload[key] = nullableField(input[key], key);
+    }
+    if ('priority' in input) {
+      payload.priority =
+        input.priority === null
+          ? null
+          : oneOf(input.priority, ['low', 'normal', 'high', 'urgent'], 'priority');
+    }
+    if ('deadline' in input) {
+      payload.deadline = input.deadline === null ? null : isoDate(input.deadline, 'deadline');
     }
     if (Object.keys(payload).length === 0) {
       throw new Error('name at least one case field to change');
@@ -449,6 +553,80 @@ export const proposeCaseUpdate: AiTool = {
   },
 };
 
+export const proposeTaskUpdate: AiTool = {
+  name: 'propose_task_update',
+  access: 'propose',
+  description:
+    "Propose renaming a task or changing whether it is done. This does NOT change anything: the customer sees their case's task list, including each task's title and whether it is completed, so a human approves first. Use update_task for priority, dates and internal detail.",
+  inputSchema: {
+    type: 'object',
+    properties: {
+      task_id: { type: 'string', description: 'Task id from list_tasks.' },
+      title_summary: { type: 'string', description: 'Short Dutch summary for the review queue.' },
+      rationale: { type: 'string', description: 'Why, grounded in what the colleague told you.' },
+      title: { type: 'string', description: 'New task title, in Dutch.' },
+      status: { type: 'string', enum: ['pending', 'in_progress', 'completed', 'cancelled'] },
+    },
+    required: ['task_id', 'title_summary', 'rationale'],
+  },
+  async run(input, ctx) {
+    const taskId = str(input.task_id);
+    const summary = str(input.title_summary);
+    const rationale = str(input.rationale);
+    if (!taskId || !summary || !rationale) {
+      throw new Error('task_id, title_summary and rationale are required');
+    }
+
+    // Resolve the task's case now, so the proposal lands on the right case in
+    // the review queue and a reviewer can see which customer it touches.
+    const { data: task, error: taskError } = await ctx.admin
+      .from('tasks')
+      .select('id, case_id, title, status')
+      .eq('id', taskId)
+      .maybeSingle();
+    if (taskError) throw new Error(`could not read the task: ${taskError.message}`);
+    if (!task) throw new Error('task not found');
+
+    const payload: Record<string, string> = { task_id: taskId };
+    if ('title' in input) {
+      const title = str(input.title);
+      if (!title) throw new Error('title must be text');
+      payload.title = title;
+    }
+    if ('status' in input) {
+      payload.status = oneOf(
+        input.status,
+        ['pending', 'in_progress', 'completed', 'cancelled'],
+        'status',
+      );
+    }
+    if (!payload.title && !payload.status) {
+      throw new Error('name a new title, a new status, or both');
+    }
+
+    const { data, error } = await ctx.admin
+      .from('ai_proposals')
+      .insert({
+        ai_profile_id: ctx.aiProfileId,
+        case_id: (task as { case_id: string | null }).case_id,
+        proposal_type: 'task_update',
+        title: summary,
+        payload: payload as never,
+        rationale,
+        status: 'pending',
+      })
+      .select('id')
+      .single();
+
+    if (error) throw new Error(`could not file the proposal: ${error.message}`);
+    return {
+      proposed: data,
+      current: { title: (task as { title: string }).title, status: (task as { status: string | null }).status },
+      note: 'Filed as a PENDING proposal. The task is unchanged until a human approves it.',
+    };
+  },
+};
+
 export const DASHBOARD_TOOLS: AiTool[] = [
   listClients,
   getClient,
@@ -458,4 +636,5 @@ export const DASHBOARD_TOOLS: AiTool[] = [
   setLeadStatus,
   createClient,
   proposeCaseUpdate,
+  proposeTaskUpdate,
 ];

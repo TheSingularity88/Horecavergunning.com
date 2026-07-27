@@ -705,7 +705,10 @@ export const translations = {
         caseFieldReference: "Reference number",
         caseFieldPriority: "Priority",
         caseFieldDeadline: "Deadline",
-        caseFieldEmpty: "empty"
+        caseFieldEmpty: "empty",
+        taskFieldTitle: "New task title",
+        taskFieldStatus: "New status",
+        taskVisibleToClient: "The customer sees this task on their own case page."
       },
       aiChat: {
         title: "AI chat",
@@ -1790,7 +1793,10 @@ export const translations = {
         caseFieldReference: "Kenmerk",
         caseFieldPriority: "Prioriteit",
         caseFieldDeadline: "Deadline",
-        caseFieldEmpty: "leeg"
+        caseFieldEmpty: "leeg",
+        taskFieldTitle: "Nieuwe taaktitel",
+        taskFieldStatus: "Nieuwe status",
+        taskVisibleToClient: "De klant ziet deze taak op zijn eigen dossierpagina."
       },
       aiChat: {
         title: "AI-chat",

@@ -143,6 +143,31 @@ export async function approveProposal(input: unknown): Promise<ActionResult> {
           break;
         }
 
+        case 'task_update': {
+          // The task id lives in the payload, not on the proposal row, so it is
+          // re-validated as a uuid by the schema before it reaches a filter.
+          const { task_id: taskId, ...fields } = parsedPayload.data;
+          const patch: Record<string, string | null> = {};
+          if (fields.title !== undefined) patch.title = fields.title;
+          if (fields.status !== undefined) {
+            patch.status = fields.status;
+            // Stamp completion the way the dashboard does, so an approved
+            // "mark it done" is indistinguishable from a human doing it.
+            patch.completed_at = fields.status === 'completed' ? new Date().toISOString() : null;
+          }
+          if (Object.keys(patch).length === 0) throw new Error('no fields to update');
+
+          const { data: updated, error } = await admin
+            .from('tasks')
+            .update(patch)
+            .eq('id', taskId)
+            .select('id')
+            .maybeSingle();
+          if (error || !updated) throw new Error('task update failed');
+          executionResult = { kind: 'task_updated', task_id: taskId, fields: Object.keys(patch) };
+          break;
+        }
+
         case 'checklist_update': {
           if (!proposal.case_id) throw new Error('no case on proposal');
           // Bound every update to THIS case — a payload cannot touch another

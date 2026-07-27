@@ -508,6 +508,31 @@ function ProposalDetail({
         </dl>
       )}
 
+      {/* Only the fields that change. No old value is shown: the task is not
+          joined here, and inventing a "before" the reviewer cannot trust would
+          be worse than showing none. */}
+      {parsed.type === 'task_update' && (
+        <dl className="space-y-2 text-sm">
+          {parsed.data.title !== undefined && (
+            <div className="rounded-lg bg-slate-50 p-3">
+              <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                {r?.taskFieldTitle}
+              </dt>
+              <dd className="mt-1 font-medium text-slate-800">{parsed.data.title}</dd>
+            </div>
+          )}
+          {parsed.data.status !== undefined && (
+            <div className="rounded-lg bg-slate-50 p-3">
+              <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                {r?.taskFieldStatus}
+              </dt>
+              <dd className="mt-1 font-medium text-slate-800">{parsed.data.status}</dd>
+            </div>
+          )}
+          <p className="text-xs text-slate-500">{r?.taskVisibleToClient}</p>
+        </dl>
+      )}
+
       {parsed.type === 'checklist_update' && (
         <ul className="space-y-1 text-sm">
           {parsed.data.updates.map((u) => (
