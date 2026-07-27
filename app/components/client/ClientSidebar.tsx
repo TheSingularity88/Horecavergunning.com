@@ -67,6 +67,7 @@ function SidebarContent({
   onNavigate,
   companyName,
 }: SidebarContentProps) {
+  const { t } = useLanguage();
   return (
     <>
       {/* Logo */}
@@ -110,7 +111,9 @@ function SidebarContent({
               collapsed && 'rotate-180'
             )}
           />
-          {!collapsed && <span className="text-sm">Collapse</span>}
+          {!collapsed && (
+            <span className="text-sm">{t.dashboard?.nav?.collapse || 'Collapse'}</span>
+          )}
         </button>
       </div>
     </>

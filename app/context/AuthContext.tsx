@@ -206,7 +206,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setClientData(null);
   };
 
-  const isAdmin = profile?.role === 'admin';
+  // is_active matters: middleware (profile.is_active !== false), requireStaff()
+  // and the SQL is_admin()/is_staff() helpers all reject a deactivated account.
+  // Without it here the nav would offer admin links to someone every server-side
+  // gate refuses — two different definitions of "admin" in one app.
+  const isAdmin = profile?.role === 'admin' && profile.is_active !== false;
   const isClient = clientData !== null;
   const clientId = clientData?.id || null;
 
