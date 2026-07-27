@@ -101,7 +101,12 @@ const listLeads: AiTool = {
 
     const status = str(input.status);
     if (status) query = query.eq('status', status);
-    const search = str(input.search);
+    // Strip the characters PostgREST parses as its own boolean-tree grammar:
+    // supabase-js appends this string to or=(...) unescaped, so a comma or a
+    // parenthesis would edit the filter rather than be searched for. The
+    // dashboard tools already do this; this one was missed, and its caller is
+    // now an external party rather than a model we prompt.
+    const search = str(input.search)?.replace(/[,()\\"*]/g, ' ').trim() || null;
     if (search) query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,company_name.ilike.%${search}%`);
 
     const { data, error } = await query;

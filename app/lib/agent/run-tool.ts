@@ -24,15 +24,40 @@ const REQUIRED_SCOPE: Record<ToolAccess, 'read' | 'write' | 'propose'> = {
   propose: 'propose',
 };
 
-export type AgentToolFailure = 'unknown_tool' | 'scope_denied' | 'tool_failed' | 'bad_input';
+/**
+ * Tools the INTERNAL chat may use but the external surface may not.
+ *
+ * `create_task` is tier `write`, and at that tier `update_task` explicitly
+ * REFUSES to set a task's title because the customer's own case page prints it
+ * (tasks_select_client + app/client/cases/[id]/page.tsx). Creating a task sets
+ * the same column with no such refusal — so the human-approval gate on task
+ * titles is bypassed by creating one instead of renaming one.
+ *
+ * That gap predates this file: internally the caller is a model we prompt, with
+ * a colleague reading the conversation. Exposing it over HTTP hands it to an
+ * unattended third-party agent, which would settle an open product question —
+ * should AI-authored task titles reach customers at all? — by default and in
+ * the unsafe direction. Withheld until that is decided deliberately.
+ */
+const WITHHELD_FROM_EXTERNAL = new Set(['create_task']);
+
+export type AgentToolFailure =
+  | 'unknown_tool'
+  | 'scope_denied'
+  | 'not_available_externally'
+  | 'tool_failed'
+  | 'bad_input';
 
 export type AgentToolResult =
   | { ok: true; tool: string; access: ToolAccess; result: unknown }
   | { ok: false; reason: AgentToolFailure; status: 400 | 403 | 404; message: string };
 
+/** Is this tool offered to external agents at all? */
+const availableExternally = (name: string) => !WITHHELD_FROM_EXTERNAL.has(name);
+
 /** The catalogue an agent reads to know what it may do. */
 export function agentToolCatalogue(principal: AgentPrincipal) {
-  return AI_TOOLS.map((tool) => ({
+  return AI_TOOLS.filter((tool) => availableExternally(tool.name)).map((tool) => ({
     name: tool.name,
     description: tool.description,
     access: tool.access,
@@ -72,6 +97,18 @@ export async function runAgentTool(
     };
   }
   const args = (input ?? {}) as Record<string, unknown>;
+
+  if (!availableExternally(toolName)) {
+    // Refused before the scope check and before the tool, and recorded: an
+    // agent reaching for a withheld tool is worth seeing.
+    await record(admin, principal, toolName, tool.access, args, false, null, 'withheld from the external surface', 0);
+    return {
+      ok: false,
+      reason: 'not_available_externally',
+      status: 403,
+      message: `${toolName} is not available over the API. A colleague can do this from the dashboard.`,
+    };
+  }
 
   const required = REQUIRED_SCOPE[tool.access];
   if (!hasScope(principal, required)) {
