@@ -19,6 +19,8 @@ export const dashboardRoutes = {
       ai: '/dashboard/admin/ai',
       /** AI usage/cost monitoring — distinct from `activity`, the general audit log. */
       aiActivity: '/dashboard/admin/ai/activity',
+      /** Inbound keys an external AI employee uses to reach us (route 2). */
+      aiKeys: '/dashboard/admin/ai/keys',
       settings: '/dashboard/admin/settings',
       activity: '/dashboard/admin/activity',
     },

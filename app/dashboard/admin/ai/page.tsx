@@ -214,13 +214,22 @@ export default function AiAdminPage() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <p className="mb-4 max-w-2xl text-sm text-slate-600">{ai?.intro}</p>
 
+        <div className="mb-6 flex flex-wrap items-center gap-4">
         <Link
           href={dashboardRoutes.employee.admin.aiActivity}
-          className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 hover:text-blue-900"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 hover:text-blue-900"
         >
           <Activity className="h-4 w-4" />
           {ai?.viewActivity || 'View activity, spend and review outcomes'}
+        </Link>
+        <Link
+          href={dashboardRoutes.employee.admin.aiKeys}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 hover:text-blue-900"
+        >
+          <KeyRound className="h-4 w-4" />
+          {ai?.manageAgentKeys || 'Agent API keys (route 2)'}
         </Link>
+        </div>
 
         {isLoading ? (
           <div className="flex justify-center py-12">

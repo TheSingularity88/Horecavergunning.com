@@ -57,6 +57,60 @@ export type Database = {
           },
         ]
       }
+      ai_api_keys: {
+        Row: {
+          ai_profile_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at: string | null
+          last_used_ip: string | null
+          last_used_ua: string | null
+          request_count: number
+          revoked_at: string | null
+          revoked_by: string | null
+          scopes: string[]
+        }
+        Insert: {
+          ai_profile_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at?: string | null
+          last_used_ip?: string | null
+          last_used_ua?: string | null
+          request_count?: number
+          revoked_at?: string | null
+          revoked_by?: string | null
+          scopes?: string[]
+        }
+        Update: {
+          ai_profile_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          label?: string
+          last_used_at?: string | null
+          last_used_ip?: string | null
+          last_used_ua?: string | null
+          request_count?: number
+          revoked_at?: string | null
+          revoked_by?: string | null
+          scopes?: string[]
+        }
+        Relationships: []
+      }
       ai_employee_config: {
         Row: {
           created_at: string
@@ -1342,6 +1396,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      touch_agent_api_key: {
+        Args: { p_id: string; p_ip: string; p_ua: string | null; p_stale_seconds: number }
+        Returns: undefined
+      }
       activate_kb_version: {
         Args: { p_admin: string; p_id: string }
         Returns: boolean
