@@ -45,21 +45,54 @@ export default function AiReviewPage() {
   const [answerFor, setAnswerFor] = useState<ProposalWithMeta | null>(null);
   const [answerText, setAnswerText] = useState('');
   const [isActing, setIsActing] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   // Which rulebook is live right now. Comes from an RPC rather than a join
   // because kb_versions itself is admin-only — the rules are confidential, the
   // version number is not.
   const [activeKbVersion, setActiveKbVersion] = useState<number | null>(null);
   const supabase = useMemo(() => createClient(), []);
 
+  /**
+   * Filtering happens in the DATABASE, not in this component.
+   *
+   * Fetching the 200 newest rows of every status and filtering here looks
+   * equivalent, but proposals are never deleted — only their status changes.
+   * Once 200 handled proposals accumulate, the oldest pending ones fall off the
+   * end of the page and the queue quietly renders "no open proposals" while
+   * real work sits unreviewed. That is the one thing this screen must never do.
+   *
+   * The pending count is a separate exact count for the same reason. Migration
+   * 014 ships a partial index on (created_at) WHERE status = 'pending', so both
+   * are cheap.
+   */
   const fetchProposals = useCallback(async () => {
-    const { data } = await supabase
+    const base = supabase
       .from('ai_proposals')
-      .select('*, profiles:ai_profile_id(full_name), cases:case_id(title)')
-      .order('created_at', { ascending: false })
-      .limit(200);
-    setProposals((data as ProposalWithMeta[]) || []);
+      .select('*, profiles:ai_profile_id(full_name), cases:case_id(title)');
+
+    const [listResult, countResult, versionResult] = await Promise.all([
+      (tab === 'pending' ? base.eq('status', 'pending') : base.neq('status', 'pending'))
+        // Open items read oldest-first: it is a queue, and the thing waiting
+        // longest is the thing most likely to be overdue.
+        .order('created_at', { ascending: tab === 'pending' })
+        .limit(200),
+      supabase
+        .from('ai_proposals')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending'),
+      // Refreshed with the list, not once per mount: an admin can activate a
+      // new rulebook while this page is open, and a pinned value would then
+      // brand fresh assessments "no longer active" and stale ones current.
+      supabase.rpc('active_kb_version'),
+    ]);
+
+    setProposals((listResult.data as ProposalWithMeta[]) || []);
+    setPendingCount(countResult.count ?? 0);
+    setActiveKbVersion(
+      typeof versionResult.data === 'number' ? versionResult.data : null,
+    );
     setIsLoading(false);
-  }, [supabase]);
+  }, [supabase, tab]);
 
   useEffect(() => {
     const load = async () => {
@@ -68,58 +101,75 @@ export default function AiReviewPage() {
     load();
   }, [fetchProposals]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const loadActiveVersion = async () => {
-      const { data } = await supabase.rpc('active_kb_version');
-      if (cancelled) return;
-      setActiveKbVersion(typeof data === 'number' ? data : null);
-    };
-    loadActiveVersion();
-    return () => {
-      cancelled = true;
-    };
-  }, [supabase]);
+  const visible = proposals;
 
-  const visible = proposals.filter((p) =>
-    tab === 'pending' ? p.status === 'pending' : p.status !== 'pending',
-  );
-  const pendingCount = proposals.filter((p) => p.status === 'pending').length;
+  /**
+   * Run one review action and always return the screen to a usable state.
+   *
+   * The try/finally is not decoration: a server action rejects on transport
+   * failures too — a deploy invalidates an already-loaded page's action id, a
+   * connection drops — and without it `isActing` latched on forever, silently
+   * disabling every approve, reject and answer control until a reload.
+   *
+   * The list is refetched on every outcome, including failure, because the
+   * likeliest failure is "someone else already reviewed this" and the reviewer
+   * needs to see that immediately.
+   */
+  const runReviewAction = async (
+    action: () => Promise<{ success: boolean; error?: string }>,
+    reset: () => void,
+  ) => {
+    setIsActing(true);
+    try {
+      const result = await action();
+      if (!result.success) showError(result.error ?? 'Something went wrong.');
+    } catch {
+      showError(
+        t.clientPortal?.errors?.network ||
+          'Connection lost. Reload the page and check the queue.',
+      );
+    } finally {
+      await fetchProposals();
+      setIsActing(false);
+      reset();
+      setViewing(null);
+    }
+  };
 
   const performApprove = async () => {
     if (!pendingApprove) return;
-    setIsActing(true);
-    const result = await approveProposal({ proposalId: pendingApprove.id, note: note || undefined });
-    if (!result.success) showError(result.error);
-    else await fetchProposals();
-    setIsActing(false);
-    setPendingApprove(null);
-    setNote('');
-    setViewing(null);
+    const id = pendingApprove.id;
+    await runReviewAction(
+      () => approveProposal({ proposalId: id, note: note || undefined }),
+      () => {
+        setPendingApprove(null);
+        setNote('');
+      },
+    );
   };
 
   const performReject = async () => {
     if (!pendingReject) return;
-    setIsActing(true);
-    const result = await rejectProposal({ proposalId: pendingReject.id, note: note || undefined });
-    if (!result.success) showError(result.error);
-    else await fetchProposals();
-    setIsActing(false);
-    setPendingReject(null);
-    setNote('');
-    setViewing(null);
+    const id = pendingReject.id;
+    await runReviewAction(
+      () => rejectProposal({ proposalId: id, note: note || undefined }),
+      () => {
+        setPendingReject(null);
+        setNote('');
+      },
+    );
   };
 
   const performAnswer = async () => {
     if (!answerFor) return;
-    setIsActing(true);
-    const result = await answerQuestion({ proposalId: answerFor.id, answer: answerText });
-    if (!result.success) showError(result.error);
-    else await fetchProposals();
-    setIsActing(false);
-    setAnswerFor(null);
-    setAnswerText('');
-    setViewing(null);
+    const id = answerFor.id;
+    await runReviewAction(
+      () => answerQuestion({ proposalId: id, answer: answerText }),
+      () => {
+        setAnswerFor(null);
+        setAnswerText('');
+      },
+    );
   };
 
   const formatDate = (date: string) =>
@@ -432,10 +482,33 @@ function ProposalDetail({
         </div>
       )}
 
-      {proposal.review_note && proposal.status !== 'pending' && (
-        <div className="border-t border-slate-100 pt-3 text-sm">
-          <span className="font-medium text-slate-900">{r?.reviewedBy || 'Reviewed'}:</span>{' '}
-          <span className="text-slate-600">{proposal.review_note}</span>
+      {/* A note on a PENDING proposal is not a review — it is the reason a
+          previous approval failed to execute and was put back in the queue.
+          Hiding it left the reviewer re-clicking an approval that could not
+          work, with no explanation. */}
+      {proposal.review_note && (
+        <div
+          className={
+            proposal.status === 'pending'
+              ? 'rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm'
+              : 'border-t border-slate-100 pt-3 text-sm'
+          }
+        >
+          <span
+            className={
+              proposal.status === 'pending'
+                ? 'font-medium text-amber-900'
+                : 'font-medium text-slate-900'
+            }
+          >
+            {proposal.status === 'pending'
+              ? r?.lastAttemptFailed || 'Previous attempt failed'
+              : r?.reviewedBy || 'Reviewed'}
+            :
+          </span>{' '}
+          <span className={proposal.status === 'pending' ? 'text-amber-800' : 'text-slate-600'}>
+            {proposal.review_note}
+          </span>
         </div>
       )}
     </div>

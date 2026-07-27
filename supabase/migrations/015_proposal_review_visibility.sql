@@ -55,6 +55,11 @@ WHERE p.kb_version_id = v.id
 
 -- SECURITY DEFINER so a non-admin staff member can compare against it. It
 -- returns a single integer: no rules, no provenance, no document names.
+--
+-- EXECUTE has to be granted to `authenticated` for PostgREST to expose it at
+-- all, and `authenticated` includes signed-in CUSTOMERS. They have no business
+-- calling this, so the body gates on is_staff() and returns NULL otherwise —
+-- the grant is the door, this is the lock.
 CREATE OR REPLACE FUNCTION public.active_kb_version()
 RETURNS integer
 LANGUAGE sql
@@ -62,7 +67,9 @@ STABLE
 SECURITY DEFINER
 SET search_path TO 'public'
 AS $$
-  SELECT version FROM public.kb_versions WHERE status = 'active' LIMIT 1;
+  SELECT version FROM public.kb_versions
+  WHERE status = 'active' AND public.is_staff()
+  LIMIT 1;
 $$;
 
 -- Same lockdown shape as check_rate_limit / activate_kb_version: revoke the

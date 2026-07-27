@@ -45,21 +45,6 @@ export async function runCaseAssessment(
     return { ok: false, code: 'ai_paused', message: 'This AI employee is paused.' };
   }
 
-  // Daily budget — fail closed, so a limiter error blocks rather than allows
-  // an unbounded spend.
-  const withinBudget = await checkRateLimitStrict(
-    `ai-run:${aiProfileId}`,
-    config.max_runs_per_day,
-    86400,
-  );
-  if (!withinBudget) {
-    return {
-      ok: false,
-      code: 'ai_budget_exceeded',
-      message: 'This AI employee has reached its daily run limit.',
-    };
-  }
-
   // Active rulebook.
   const { data: kbVersion } = await admin
     .from('kb_versions')
@@ -107,10 +92,39 @@ export async function runCaseAssessment(
   try {
     provider = await resolveEmployeeProvider(aiProfileId);
   } catch (err) {
+    // A deactivated key or an undecryptable ciphertext fails here. Record it,
+    // otherwise the monitoring dashboard shows an idle employee while staff
+    // watch every assessment fail.
+    console.error('[ai-run] provider unavailable:', err);
+    await recordRun(admin, aiProfileId, 'unknown', 'unknown', null, kbVersion.id, {
+      status: 'error',
+      error: err instanceof Error ? err.message : 'provider unavailable',
+    });
     return {
       ok: false,
       code: 'ai_unavailable',
       message: err instanceof Error ? err.message : 'AI provider unavailable.',
+    };
+  }
+
+  // Daily budget — fail closed, so a limiter error blocks rather than allows an
+  // unbounded spend.
+  //
+  // Deliberately the LAST gate before the paid call. Asking the limiter spends
+  // a slot (check_rate_limit increments and then compares), so checking earlier
+  // meant a misconfigured employee burnt its whole daily budget on runs that
+  // never reached a provider — and then stayed locked out for 24h after the
+  // misconfiguration was fixed.
+  const withinBudget = await checkRateLimitStrict(
+    `ai-run:${aiProfileId}`,
+    config.max_runs_per_day,
+    86400,
+  );
+  if (!withinBudget) {
+    return {
+      ok: false,
+      code: 'ai_budget_exceeded',
+      message: 'This AI employee has reached its daily run limit.',
     };
   }
 
@@ -198,6 +212,16 @@ export async function runCaseAssessment(
     .select('id')
     .single();
   if (proposalError || !proposal) {
+    // The provider call already happened and was already billed. Record it, or
+    // real spend disappears from the cost ledger.
+    console.error('[ai-run] proposal insert failed:', proposalError);
+    await recordRun(admin, aiProfileId, provider.providerName, result.model, null, kbVersion.id, {
+      status: 'error',
+      error: 'proposal insert failed',
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens,
+      latencyMs: result.latencyMs,
+    });
     return { ok: false, code: 'ai_unavailable', message: 'Could not save the assessment.' };
   }
 

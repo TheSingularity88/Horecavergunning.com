@@ -90,10 +90,12 @@ export default function TaskDetailPage() {
           if (assigneeData) setAssignee(assigneeData as Profile);
         }
 
+        // Humans only — an AI employee cannot work a task (see tasks/new).
         const { data: employeesData } = await supabase
           .from('profiles')
           .select('id, full_name')
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .neq('role', 'ai');
         setEmployees((employeesData as EmployeeOption[]) || []);
       } catch (err) {
         console.error('Error fetching task:', err);

@@ -139,8 +139,9 @@ export async function approveProposal(input: unknown): Promise<ActionResult> {
 
         case 'question':
           // A question is not "approved" into an action; steer the reviewer to
-          // answer it instead.
-          await revertToPending(admin, proposal.id, null);
+          // answer it instead. Keep whatever note was already on the row — this
+          // is not a review, so it must not erase one.
+          await revertToPending(admin, proposal.id, proposal.review_note);
           return { success: false, error: 'Answer this question instead of approving it.' };
       }
     } catch (err) {

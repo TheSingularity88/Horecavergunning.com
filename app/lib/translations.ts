@@ -689,6 +689,7 @@ export const translations = {
         statusUnclear: "unclear",
         byAi: "by",
         reviewedBy: "Reviewed by",
+        lastAttemptFailed: "Previous attempt failed",
         aiDisclaimer: "This is AI-generated advice based on the internal rulebook. Check it before acting — you remain responsible for the decision."
       },
       ai: {
@@ -1683,6 +1684,7 @@ export const translations = {
         statusUnclear: "onduidelijk",
         byAi: "door",
         reviewedBy: "Beoordeeld door",
+        lastAttemptFailed: "Vorige poging mislukt",
         aiDisclaimer: "Dit is AI-advies op basis van het interne regelboek. Controleer het voordat u handelt — u blijft verantwoordelijk voor de beslissing."
       },
       ai: {
