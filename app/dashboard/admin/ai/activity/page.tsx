@@ -194,6 +194,30 @@ export default function AiActivityPage() {
                   t={t}
                 />
               </div>
+              {/* Where the money goes: chat vs assessments vs rulebook
+                  analysis. Without this split "spend is up" has no answer. */}
+              {data.byRunType.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600">
+                  {data.byRunType.map((entry) => (
+                    <span key={entry.runType}>
+                      <span className="font-medium text-slate-900">
+                        {t.dashboard?.enums?.aiRunType?.[
+                          entry.runType as keyof typeof t.dashboard.enums.aiRunType
+                        ] || entry.runType.replace(/_/g, ' ')}
+                        :
+                      </span>{' '}
+                      {formatEuro(entry.costCents)} ({entry.runs}{' '}
+                      {m?.runsLabel || 'runs'}
+                      {entry.errors > 0 && (
+                        <span className="text-red-600">
+                          , {entry.errors} {m?.errorsLabel || 'failed'}
+                        </span>
+                      )}
+                      )
+                    </span>
+                  ))}
+                </div>
+              )}
               <p className="mt-2 text-xs text-slate-500">{m?.costDisclaimer}</p>
             </section>
 

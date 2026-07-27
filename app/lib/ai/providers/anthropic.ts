@@ -89,6 +89,10 @@ export function createAnthropicClient(apiKey: string): AiProviderClient {
       return {
         text,
         inputTokens: message.usage.input_tokens,
+        // Billed separately from input_tokens; dropping them under-reports
+        // every cached request's real cost.
+        cacheWriteTokens: message.usage.cache_creation_input_tokens ?? 0,
+        cacheReadTokens: message.usage.cache_read_input_tokens ?? 0,
         outputTokens: message.usage.output_tokens,
         model: message.model,
         stopReason,

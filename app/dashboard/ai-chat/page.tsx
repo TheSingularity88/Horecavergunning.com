@@ -41,6 +41,11 @@ export default function AiChatPage() {
   const [isLoadingThread, setIsLoadingThread] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  // Which employee's thread the user is LOOKING at right now. Thread loads
+  // check against this before writing state, so a slow response for employee A
+  // can never overwrite the view after switching to employee B.
+  const selectedIdRef = useRef('');
+  selectedIdRef.current = selectedId;
 
   useEffect(() => {
     const load = async () => {
@@ -63,26 +68,32 @@ export default function AiChatPage() {
     load();
   }, [showError]);
 
-  const loadThread = useCallback(async () => {
-    if (!selectedId) return;
-    setIsLoadingThread(true);
-    try {
-      const result = await getAiChatHistory({ aiProfileId: selectedId });
-      if (result.success && result.data) setMessages(result.data.messages);
-      else if (!result.success) showError(result.error);
-    } catch {
-      showError(NETWORK_ERROR);
-    } finally {
-      setIsLoadingThread(false);
-    }
-  }, [selectedId, showError]);
+  const loadThread = useCallback(
+    async (aiProfileId: string) => {
+      if (!aiProfileId) return;
+      setIsLoadingThread(true);
+      try {
+        const result = await getAiChatHistory({ aiProfileId });
+        // Stale response? The user switched employees while this was in
+        // flight — drop it, or A's messages render under B's name.
+        if (selectedIdRef.current !== aiProfileId) return;
+        if (result.success && result.data) setMessages(result.data.messages);
+        else if (!result.success) showError(result.error);
+      } catch {
+        if (selectedIdRef.current === aiProfileId) showError(NETWORK_ERROR);
+      } finally {
+        if (selectedIdRef.current === aiProfileId) setIsLoadingThread(false);
+      }
+    },
+    [showError],
+  );
 
   useEffect(() => {
     const load = async () => {
-      await loadThread();
+      await loadThread(selectedId);
     };
     load();
-  }, [loadThread]);
+  }, [selectedId, loadThread]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
@@ -91,6 +102,7 @@ export default function AiChatPage() {
   const handleSend = async () => {
     const message = draft.trim();
     if (!message || !selectedId || isSending) return;
+    const sendingTo = selectedId;
     setIsSending(true);
 
     // Optimistic: show the outgoing message immediately; the reload after the
@@ -108,16 +120,22 @@ export default function AiChatPage() {
     setDraft('');
 
     try {
-      const result = await sendAiChatMessage({ aiProfileId: selectedId, message });
+      const result = await sendAiChatMessage({ aiProfileId: sendingTo, message });
       if (!result.success) {
         showError(result.error);
+        // Failures BEFORE the message was stored (budget spent, paused,
+        // no rulebook) mean the reload wipes the optimistic bubble — the
+        // typed text must come back rather than vanish.
+        setDraft((d) => d || message);
       }
     } catch {
       showError(NETWORK_ERROR);
+      setDraft((d) => d || message);
     } finally {
-      // Reload on every outcome: the staff message is stored even when the
-      // reply failed, and the thread should show exactly what the server has.
-      await loadThread();
+      // Reload on every outcome, bound to the employee this was SENT to —
+      // switching employees mid-send must not repaint the new thread with the
+      // old one's messages (loadThread drops stale responses).
+      await loadThread(sendingTo);
       setIsSending(false);
     }
   };
@@ -139,7 +157,12 @@ export default function AiChatPage() {
             <p className="text-slate-500">{c?.noEmployees}</p>
           </Card>
         ) : (
-          <div className="flex flex-col" style={{ height: 'calc(100vh - 16rem)' }}>
+          // dvh (not vh) so mobile browser chrome is accounted for; the
+          // minimum keeps the thread readable on short/landscape viewports.
+          <div
+            className="flex flex-col"
+            style={{ height: 'min(48rem, calc(100dvh - 16rem))', minHeight: '20rem' }}
+          >
             {employees.length > 1 && (
               <div className="mb-3 max-w-xs">
                 <Select
@@ -216,18 +239,21 @@ export default function AiChatPage() {
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
+                      // isComposing: for IME users (Chinese/Japanese/Korean),
+                      // Enter confirms the composed characters — that must not
+                      // fire a half-finished message into the shared thread.
+                      if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                         e.preventDefault();
                         handleSend();
                       }
                     }}
                     placeholder={c?.inputPlaceholder || 'Ask your AI colleague something...'}
                     rows={2}
-                    className="flex-1"
+                    className="min-h-0 resize-none"
                   />
                   <Button
                     onClick={handleSend}
-                    disabled={isSending || !draft.trim() || !selectedId}
+                    disabled={isSending || !draft.trim() || !selectedId || selected?.isPaused}
                     className="gap-1.5"
                   >
                     {isSending ? <Spinner size="sm" /> : <Send className="h-4 w-4" />}

@@ -360,7 +360,7 @@ export async function getAiRunHistory(
     let query = admin
       .from('ai_runs')
       .select(
-        'id, created_at, run_type, provider, model, input_tokens, output_tokens, latency_ms, cost_estimate_cents, status, error, proposal_id, ai_profile_id, profiles:ai_profile_id(full_name)',
+        'id, created_at, run_type, provider, model, input_tokens, cache_write_tokens, cache_read_tokens, output_tokens, latency_ms, cost_estimate_cents, status, error, proposal_id, ai_profile_id, profiles:ai_profile_id(full_name)',
         { count: 'exact' },
       );
 
@@ -384,6 +384,8 @@ export async function getAiRunHistory(
       provider: string;
       model: string;
       input_tokens: number | null;
+      cache_write_tokens: number | null;
+      cache_read_tokens: number | null;
       output_tokens: number | null;
       latency_ms: number | null;
       cost_estimate_cents: number | null;
@@ -403,7 +405,12 @@ export async function getAiRunHistory(
           runType: r.run_type,
           provider: r.provider,
           model: r.model,
-          inputTokens: r.input_tokens,
+          // Billed input includes the cache buckets; the split matters for
+          // pricing (done at record time), not for this table.
+          inputTokens:
+            r.input_tokens === null && r.cache_write_tokens === null && r.cache_read_tokens === null
+              ? null
+              : (r.input_tokens ?? 0) + (r.cache_write_tokens ?? 0) + (r.cache_read_tokens ?? 0),
           outputTokens: r.output_tokens,
           latencyMs: r.latency_ms,
           costCents: r.cost_estimate_cents === null ? null : Number(r.cost_estimate_cents),

@@ -27,6 +27,14 @@ import type { AiContentBlock } from '@/app/lib/ai/provider';
 const HISTORY_WINDOW = 20;
 const MAX_REPLY_TOKENS = 2000;
 
+/**
+ * Digest cache, keyed by kb_versions.id. Rules are immutable per version, so
+ * re-fetching 160KB of JSON and re-rendering the digest on every chat message
+ * bought nothing. Module scope = per server instance, which is exactly the
+ * lifetime this needs.
+ */
+const digestByVersion = new Map<string, { version: number; digest: string }>();
+
 export interface ChatEmployee {
   profileId: string;
   fullName: string;
@@ -150,20 +158,31 @@ export async function sendAiChatMessage(
     }
 
     // Rulebook digest — chat answers must be grounded in the active rules.
-    const { data: kbVersion } = await admin
+    const { data: kbHead } = await admin
       .from('kb_versions')
-      .select('version, rules')
+      .select('id, version')
       .eq('status', 'active')
       .maybeSingle();
-    if (!kbVersion) {
+    if (!kbHead) {
       return {
         success: false,
         error: 'There is no active rulebook yet. Activate a knowledge-base version first.',
       };
     }
-    const bible = bibleSchema.safeParse(kbVersion.rules);
-    if (!bible.success) {
-      return { success: false, error: 'The active rulebook is not readable.' };
+
+    let cached = digestByVersion.get(kbHead.id);
+    if (!cached) {
+      const { data: kbFull } = await admin
+        .from('kb_versions')
+        .select('rules')
+        .eq('id', kbHead.id)
+        .maybeSingle();
+      const bible = bibleSchema.safeParse(kbFull?.rules);
+      if (!bible.success) {
+        return { success: false, error: 'The active rulebook is not readable.' };
+      }
+      cached = { version: kbHead.version, digest: renderBibleDigest(bible.data) };
+      digestByVersion.set(kbHead.id, cached);
     }
 
     // Recent history, oldest first.
@@ -181,9 +200,12 @@ export async function sendAiChatMessage(
     try {
       provider = await resolveEmployeeProvider(aiProfileId);
     } catch (err) {
+      // Generic on purpose: the real error can name env vars and crypto
+      // internals, which belongs in the server log, not in a staff browser.
+      console.error('[ai-chat] provider resolution failed:', err);
       return {
         success: false,
-        error: err instanceof Error ? err.message : 'AI provider unavailable.',
+        error: 'The AI provider is not available. An admin can check the key under Admin → AI employees.',
         code: 'ai_unavailable',
       };
     }
@@ -220,7 +242,7 @@ export async function sendAiChatMessage(
      */
     const digestBlock: AiContentBlock = {
       type: 'text',
-      text: chatDigestPreface(kbVersion.version) + renderBibleDigest(bible.data),
+      text: chatDigestPreface(cached.version) + cached.digest,
       cacheable: true,
     };
 
@@ -229,6 +251,9 @@ export async function sendAiChatMessage(
       { role: 'assistant', content: [{ type: 'text', text: 'Begrepen. Waarmee kan ik helpen?' }] },
     ];
     for (const m of history) {
+      // The provider rejects empty text blocks with a 400 — one bad stored row
+      // must not brick the whole thread.
+      if (!m.content.trim()) continue;
       const role = m.author === 'staff' ? 'user' : 'assistant';
       const last = turns[turns.length - 1];
       if (last.role === role) {
@@ -281,13 +306,40 @@ export async function sendAiChatMessage(
         status: 'error',
         error: 'stop_reason refusal',
         inputTokens: result.inputTokens,
+        cacheWriteTokens: result.cacheWriteTokens,
+        cacheReadTokens: result.cacheReadTokens,
         outputTokens: result.outputTokens,
         latencyMs: result.latencyMs,
       });
       return { success: false, error: 'The AI declined to answer this.', code: 'ai_unavailable' };
     }
 
-    const reply = result.text.trim();
+    let reply = result.text.trim();
+
+    // An empty reply is an error, not a message: stored, it would render as a
+    // blank bubble AND poison every later call in the history window (the
+    // provider rejects empty content blocks).
+    if (!reply) {
+      await recordChatRun(admin, aiProfileId, provider.providerName, result.model, {
+        status: 'error',
+        error: 'empty reply',
+        inputTokens: result.inputTokens,
+        cacheWriteTokens: result.cacheWriteTokens,
+        cacheReadTokens: result.cacheReadTokens,
+        outputTokens: result.outputTokens,
+        latencyMs: result.latencyMs,
+      });
+      return { success: false, error: 'The AI could not reply. Try again.', code: 'ai_unavailable' };
+    }
+
+    // A reply that hit the token cap is stored — it was billed and may still
+    // be useful — but never silently: the thread must show it is incomplete.
+    const truncated = result.stopReason === 'max_tokens';
+    if (truncated) {
+      reply +=
+        '\n\n[Antwoord afgekapt — stel een gerichtere vraag, of vraag een AI-beoordeling aan voor het volledige overzicht.]';
+    }
+
     const { error: replyError } = await admin.from('ai_messages').insert({
       ai_profile_id: aiProfileId,
       author: 'ai',
@@ -301,7 +353,10 @@ export async function sendAiChatMessage(
 
     await recordChatRun(admin, aiProfileId, provider.providerName, result.model, {
       status: 'ok',
+      error: truncated ? 'truncated at max_tokens' : undefined,
       inputTokens: result.inputTokens,
+      cacheWriteTokens: result.cacheWriteTokens,
+      cacheReadTokens: result.cacheReadTokens,
       outputTokens: result.outputTokens,
       latencyMs: result.latencyMs,
     });
@@ -321,6 +376,8 @@ async function recordChatRun(
     status: 'ok' | 'error';
     error?: string;
     inputTokens?: number;
+    cacheWriteTokens?: number;
+    cacheReadTokens?: number;
     outputTokens?: number;
     latencyMs?: number;
   },
@@ -331,11 +388,19 @@ async function recordChatRun(
     model,
     run_type: 'chat',
     input_tokens: record.inputTokens ?? null,
+    cache_write_tokens: record.cacheWriteTokens ?? null,
+    cache_read_tokens: record.cacheReadTokens ?? null,
     output_tokens: record.outputTokens ?? null,
     latency_ms: record.latencyMs ?? null,
     cost_estimate_cents:
       record.inputTokens != null && record.outputTokens != null
-        ? estimateCostCents(model, record.inputTokens, record.outputTokens)
+        ? estimateCostCents(
+            model,
+            record.inputTokens,
+            record.outputTokens,
+            record.cacheWriteTokens ?? 0,
+            record.cacheReadTokens ?? 0,
+          )
         : null,
     status: record.status,
     error: record.error ?? null,
