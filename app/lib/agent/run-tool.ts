@@ -48,7 +48,7 @@ export type AgentToolResult =
   | { ok: false; reason: AgentToolFailure; status: 400 | 403 | 404; message: string };
 
 /** Is this tool offered to external agents at all? */
-const availableExternally = (name: string) => !WITHHELD_FROM_EXTERNAL.has(name);
+export const availableExternally = (name: string) => !WITHHELD_FROM_EXTERNAL.has(name);
 
 /** The catalogue an agent reads to know what it may do. */
 export function agentToolCatalogue(principal: AgentPrincipal) {
