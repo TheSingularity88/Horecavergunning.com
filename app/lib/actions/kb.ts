@@ -758,10 +758,37 @@ export async function importKbVersion(input: unknown): Promise<ActionResult<{ ve
 
 /** `path.to.field: message`, one per line — long enough to need a modal, not a toast. */
 function flattenIssues(issues: { path: PropertyKey[]; message: string }[]): string {
-  return issues
-    .slice(0, 25)
-    .map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`)
-    .join('\n');
+  // Repeats are COLLAPSED rather than listed. A generated rulebook fails the
+  // same way everywhere: omit `escalate_if_nl` once and you omit it 115 times.
+  // Listing those individually spent the whole budget inside the first two
+  // rulesets and read as "a problem with ruleset 0", when the truth was "this
+  // field, 115 times, throughout". Grouped on the LAST path segment plus the
+  // message — the shape of the mistake, not where it happened to land.
+  const groups = new Map<string, { field: string; message: string; count: number; first: string }>();
+  for (const issue of issues) {
+    const path = issue.path.join('.') || '(root)';
+    const field = String(issue.path[issue.path.length - 1] ?? '(root)');
+    const key = `${field}::${issue.message}`;
+    const existing = groups.get(key);
+    if (existing) existing.count += 1;
+    else groups.set(key, { field, message: issue.message, count: 1, first: path });
+  }
+
+  const MAX_LINES = 25;
+  const all = [...groups.values()];
+  const lines = all
+    .slice(0, MAX_LINES)
+    .map((g) =>
+      g.count === 1
+        ? `${g.first}: ${g.message}`
+        : `${g.field}: ${g.message}  (${g.count}×, first at ${g.first})`,
+    );
+  // Always say when something was cut: a silently truncated list is one the
+  // admin fixes, re-uploads, and gets a fresh batch from.
+  if (all.length > MAX_LINES) {
+    lines.push(`… and ${all.length - MAX_LINES} more distinct problems (${issues.length} issues in total).`);
+  }
+  return lines.join('\n');
 }
 
 /** Promote a draft/archived version to active (atomic; archives the current). */
