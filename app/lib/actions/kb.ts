@@ -9,6 +9,7 @@ import {
   updateKbDocumentFlagsSchema,
   kbDocumentIdSchema,
   kbVersionIdSchema,
+  importKbVersionSchema,
 } from '@/app/lib/validation/kb';
 import { extractDocument, redactText } from '@/app/lib/ai/extract';
 import { envAnthropicClient, type AiContentBlock } from '@/app/lib/ai/provider';
@@ -648,6 +649,119 @@ function safeParseBible(
   } catch {
     return { ok: false, error: 'Response was not valid JSON.' };
   }
+}
+
+/**
+ * Import a rulebook generated OFF the platform.
+ *
+ * The Analyze run takes ~17.7 minutes against a 300-second maxDuration, so it
+ * cannot finish on Vercel. Generation moves to the admin's own machine — where
+ * the confidential documents stay — and the result is uploaded here.
+ *
+ * Everything downstream is unchanged: the version lands as a DRAFT and goes
+ * through the same review, diff, activate and rollback controls an analysed
+ * version does. Only its provenance differs, which is what `origin` records.
+ *
+ * Deliberately NOT written: an ai_runs row. That table is the cost ledger, and
+ * an import cost us nothing — a zero-token row would be noise in the spend
+ * figures rather than a record of anything.
+ */
+export async function importKbVersion(input: unknown): Promise<ActionResult<{ version: number }>> {
+  try {
+    const { profile } = await requireAdmin();
+
+    const envelope = importKbVersionSchema.safeParse(input);
+    if (!envelope.success) {
+      return { success: false, error: flattenIssues(envelope.error.issues) };
+    }
+    const manifest = envelope.data;
+
+    // bibleSchema is the authority on the rulebook's shape, and its issues are
+    // RETURNED rather than logged. Every object in it is a strictObject with no
+    // optionals, so one extra key or one nullable field omitted instead of set
+    // to null rejects the whole document — without the path the admin is
+    // guessing at a 160KB file. runKbAnalysis discards this detail because the
+    // model can simply be asked again; a human editing a file cannot.
+    const rules = bibleSchema.safeParse(manifest.rules);
+    if (!rules.success) {
+      return { success: false, error: flattenIssues(rules.error.issues) };
+    }
+
+    const admin = createAdminClient();
+
+    const { data: maxRow } = await admin
+      .from('kb_versions')
+      .select('version')
+      .order('version', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const nextVersion = (maxRow?.version ?? 0) + 1;
+
+    const { data: inserted, error: insertError } = await admin
+      .from('kb_versions')
+      .insert({
+        version: nextVersion,
+        status: 'draft',
+        origin: 'import',
+        rules: rules.data as never,
+        // Regenerated here, never taken from the payload: it is a deterministic
+        // rendering of the rules, so accepting an uploaded one would let the
+        // human-readable version disagree with the machine-readable one.
+        rendered_markdown: renderBibleMarkdown(rules.data),
+        // The offline run's own provenance, stated by the generator. `model` is
+        // displayed verbatim on the version row, so a fabricated value here
+        // would be a lie told to whoever reads it later.
+        provider: manifest.generated.provider,
+        model: manifest.generated.model,
+        prompt_version: manifest.generated.prompt_version,
+        source_documents: manifest.source_documents as never,
+        // Token columns stay NULL. Nothing was spent on this platform, and a 0
+        // would read as "ran and used nothing" rather than "not applicable".
+        created_by: profile.id,
+      })
+      .select('id')
+      .single();
+
+    if (insertError || !inserted) {
+      // The version column is UNIQUE and computed by a read-then-insert, so a
+      // second concurrent import collides here rather than corrupting anything.
+      console.error('[kb] import insert failed:', insertError?.message);
+      return {
+        success: false,
+        error: insertError?.code === '23505'
+          ? 'Another rulebook version was created while this one was importing. Try again.'
+          : 'Could not save the imported rulebook.',
+      };
+    }
+
+    await admin.from('activity_log').insert({
+      user_id: profile.id,
+      action: 'kb_version_imported',
+      entity_type: 'kb_versions',
+      entity_id: (inserted as { id: string }).id,
+      details: {
+        version: nextVersion,
+        model: manifest.generated.model,
+        prompt_version: manifest.generated.prompt_version,
+        generated_at: manifest.generated.generated_at ?? null,
+        documents: manifest.source_documents.map((d) => d.filename),
+        rulesets: rules.data.rulesets.length,
+        open_questions: rules.data.open_questions.length,
+      },
+    });
+
+    return { success: true, data: { version: nextVersion } };
+  } catch (err) {
+    return toActionError(err);
+  }
+}
+
+/** `path.to.field: message`, one per line — long enough to need a modal, not a toast. */
+function flattenIssues(issues: { path: PropertyKey[]; message: string }[]): string {
+  return issues
+    .slice(0, 25)
+    .map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`)
+    .join('\n');
 }
 
 /** Promote a draft/archived version to active (atomic; archives the current). */

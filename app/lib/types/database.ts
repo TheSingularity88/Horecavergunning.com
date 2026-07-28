@@ -389,10 +389,14 @@ export interface KbDocument {
   updated_at: string;
 }
 
+/** Where a version came from. Imports carry no token counts — see migration 028. */
+export type KbVersionOrigin = 'analysis' | 'import';
+
 export interface KbVersion {
   id: string;
   version: number;
   status: KbVersionStatus;
+  origin: KbVersionOrigin;
   rules: import('./supabase').Json;
   rendered_markdown: string;
   provider: string;

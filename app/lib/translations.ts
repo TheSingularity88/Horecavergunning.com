@@ -653,7 +653,17 @@ export const translations = {
         vsPrevious: "Compared to previous version",
         rulesAdded: "new rules",
         rulesRemoved: "rules removed",
-        noPreviousVersion: "This is the first version."
+        noPreviousVersion: "This is the first version.",
+        importTitle: "Generate the rulebook offline",
+        importIntro:
+          "The analysis above runs for roughly eighteen minutes, which is longer than a request on this host may take — so it finishes only when run locally. Generating the rulebook on your own machine has no time limit, and the confidential documents never leave it. Download the brief, hand it to Claude Code together with your document folder, then import the JSON it produces.",
+        downloadKitButton: "Download rulebook brief",
+        importButton: "Import rulebook (JSON)",
+        importNotJson: "That file is not valid JSON. Open it and check it was saved complete.",
+        importErrorsTitle: "This rulebook was not accepted",
+        importErrorsIntro:
+          "Nothing was saved. Each line names the field that failed — fix them in the JSON and import again. The most common causes are a field left out instead of set to null, and an extra key that is not in the schema.",
+        importedBadge: "imported"
       },
       aiReview: {
         title: "AI proposals",
@@ -1806,7 +1816,17 @@ export const translations = {
         vsPrevious: "Vergeleken met vorige versie",
         rulesAdded: "nieuwe regels",
         rulesRemoved: "regels vervallen",
-        noPreviousVersion: "Dit is de eerste versie."
+        noPreviousVersion: "Dit is de eerste versie.",
+        importTitle: "Regelboek offline genereren",
+        importIntro:
+          "De analyse hierboven duurt ongeveer achttien minuten en dat is langer dan een verzoek op deze host mag duren — hij komt dus alleen lokaal tot een einde. Het regelboek op uw eigen machine genereren kent geen tijdslimiet, en de vertrouwelijke documenten verlaten die machine niet. Download de instructie, geef die samen met uw documentenmap aan Claude Code en importeer daarna de JSON die eruit komt.",
+        downloadKitButton: "Instructie downloaden",
+        importButton: "Regelboek importeren (JSON)",
+        importNotJson: "Dit bestand is geen geldige JSON. Open het en controleer of het volledig is opgeslagen.",
+        importErrorsTitle: "Dit regelboek is niet geaccepteerd",
+        importErrorsIntro:
+          "Er is niets opgeslagen. Elke regel noemt het veld dat is afgekeurd — pas ze aan in de JSON en importeer opnieuw. De meest voorkomende oorzaken zijn een veld dat is weggelaten in plaats van op null gezet, en een extra sleutel die niet in het schema staat.",
+        importedBadge: "geïmporteerd"
       },
       aiReview: {
         title: "AI-voorstellen",
