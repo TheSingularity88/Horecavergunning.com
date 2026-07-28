@@ -7,6 +7,7 @@ import {
   BookLock,
   Download,
   FileText,
+  FileJson,
   Settings2,
   ShieldAlert,
   Trash2,
@@ -23,9 +24,11 @@ import {
   runKbAnalysis,
   activateKbVersion,
   archiveKbVersion,
+  importKbVersion,
   type KbExtractionPreview,
 } from '@/app/lib/actions/kb';
 import { bibleSchema } from '@/app/lib/ai/bible-schema';
+import { buildKbImportKit } from '@/app/lib/ai/kb-import-kit';
 import {
   validateKbFile,
   KB_FILE_INPUT_ACCEPT,
@@ -108,7 +111,13 @@ export default function KnowledgeBasePage() {
   const [pendingActivate, setPendingActivate] = useState<KbVersion | null>(null);
   const [pendingArchive, setPendingArchive] = useState<KbVersion | null>(null);
   const [isActing, setIsActing] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  // Validation detail from a rejected import. A string, but a long multi-line
+  // one — it goes in a modal rather than the usual toast, because the whole
+  // point is that the admin can read every failing path and fix their file.
+  const [importErrors, setImportErrors] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
@@ -179,6 +188,51 @@ export default function KnowledgeBasePage() {
       await fetchVersions();
     }
     setIsAnalyzing(false);
+  };
+
+  /**
+   * Hand the operator the contract. Built in the browser from the same zod
+   * schema the import validates against, so the brief cannot drift from what
+   * the server will accept.
+   */
+  const handleDownloadKit = () => {
+    const activeRules = versions.find((v) => v.status === 'active')?.rules;
+    const parsed = bibleSchema.safeParse(activeRules);
+    const ids = parsed.success ? parsed.data.rulesets.map((r) => r.id) : [];
+
+    const blob = new Blob([buildKbImportKit(ids)], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rulebook-brief.md';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportFile = async (file: File) => {
+    setIsImporting(true);
+    setImportErrors(null);
+    try {
+      const text = await file.text();
+      let payload: unknown;
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        setImportErrors(kb?.importNotJson || 'That file is not valid JSON.');
+        return;
+      }
+      const result = await importKbVersion(payload);
+      if (!result.success) {
+        setImportErrors(result.error);
+        return;
+      }
+      await fetchVersions();
+    } catch {
+      showError(t.clientPortal?.errors?.network || 'Something went wrong.');
+    } finally {
+      setIsImporting(false);
+      if (importInputRef.current) importInputRef.current.value = '';
+    }
   };
 
   const performActivate = async () => {
@@ -461,6 +515,40 @@ export default function KnowledgeBasePage() {
               {kb?.analyzeButton || 'Analyze & generate rulebook'}
             </Button>
           </div>
+
+          {/* Generating offline is the path that works in production: the
+              analysis above runs for ~18 minutes, far past the serverless
+              limit, and the confidential documents never have to be uploaded
+              at all. */}
+          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-medium text-slate-900">{kb?.importTitle}</p>
+            <p className="mt-1 text-sm text-slate-600">{kb?.importIntro}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <Button variant="outline" onClick={handleDownloadKit} className="gap-2">
+                <FileText className="h-4 w-4" />
+                {kb?.downloadKitButton || 'Download rulebook brief'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => importInputRef.current?.click()}
+                disabled={isImporting}
+                className="gap-2"
+              >
+                {isImporting ? <Spinner size="sm" /> : <FileJson className="h-4 w-4" />}
+                {kb?.importButton || 'Import rulebook (JSON)'}
+              </Button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleImportFile(file);
+                }}
+              />
+            </div>
+          </div>
           {isAnalyzing && (
             <div className="mt-3 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
               <Spinner size="sm" />
@@ -511,7 +599,9 @@ export default function KnowledgeBasePage() {
                         </div>
                         <p className="mt-0.5 text-sm text-slate-500">
                           {formatDate(version.created_at)} · {version.model} ·{' '}
-                          {(version.input_tokens ?? 0) + (version.output_tokens ?? 0)} tokens
+                          {version.origin === 'import'
+                            ? kb?.importedBadge || 'imported'
+                            : `${(version.input_tokens ?? 0) + (version.output_tokens ?? 0)} tokens`}
                           {diff &&
                             ` · ${kb?.vsPrevious || 'vs previous'}: +${diff.added} ${kb?.rulesAdded || 'new'}, −${diff.removed} ${kb?.rulesRemoved || 'removed'}`}
                         </p>
@@ -604,6 +694,25 @@ export default function KnowledgeBasePage() {
         cancelText={t.dashboard?.common?.cancel || 'Cancel'}
         loadingText={t.dashboard?.common?.loading || 'Loading...'}
       />
+
+      <Modal
+        isOpen={importErrors !== null}
+        onClose={() => setImportErrors(null)}
+        title={kb?.importErrorsTitle || 'This rulebook was not accepted'}
+        size="lg"
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-slate-600">{kb?.importErrorsIntro}</p>
+          <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-sm text-slate-800">
+            {importErrors}
+          </pre>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setImportErrors(null)}>
+              {t.dashboard?.common?.cancel || 'Close'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <ConfirmModal
         isOpen={pendingArchive !== null}

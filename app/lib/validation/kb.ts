@@ -67,3 +67,49 @@ export type UpdateKbDocumentFlagsInput = z.infer<typeof updateKbDocumentFlagsSch
 export const kbDocumentIdSchema = z.object({ id: z.string().uuid() });
 
 export const kbVersionIdSchema = z.object({ id: z.string().uuid() });
+
+/**
+ * The wrapper an OFFLINE-generated rulebook arrives in.
+ *
+ * Only the envelope is validated here — `rules` is left as `unknown` and handed
+ * to bibleSchema, which is the single authority on the rulebook's shape and
+ * produces the per-field errors the admin needs to fix their file.
+ *
+ * The envelope exists because kb_versions has three NOT NULL provenance columns
+ * — provider, model, prompt_version — that an import cannot honestly invent,
+ * and `model` is displayed verbatim on the version row. The generator states
+ * what actually produced the file instead of the server making something up.
+ */
+export const importKbVersionSchema = z.object({
+  manifest_version: z.literal('1', {
+    message: 'manifest_version must be the string "1".',
+  }),
+  generated: z.object({
+    provider: z.string().trim().min(1, 'generated.provider is required.').max(60),
+    model: z.string().trim().min(1, 'generated.model is required.').max(120),
+    prompt_version: z.string().trim().min(1, 'generated.prompt_version is required.').max(60),
+    /** Informational: recorded in the activity log, not stored on the version. */
+    generated_at: z.string().trim().max(40).optional(),
+  }),
+  /**
+   * Provenance without the document. The generator hashes each source file
+   * locally, so "which document version produced this rulebook" stays
+   * answerable even though the corpus never leaves the admin's machine.
+   * `id` is absent by design — an offline run has no kb_documents row.
+   */
+  source_documents: z
+    .array(
+      z.object({
+        filename: z.string().trim().min(1).max(255),
+        sha256: z
+          .string()
+          .trim()
+          .regex(/^[a-f0-9]{64}$/i, 'source_documents[].sha256 must be a 64-character hex digest.'),
+      }),
+    )
+    .min(1, 'List at least one source document, so the rulebook can be traced back to it.')
+    .max(100),
+  /** Validated by bibleSchema, not here. */
+  rules: z.unknown(),
+});
+export type ImportKbVersionInput = z.infer<typeof importKbVersionSchema>;

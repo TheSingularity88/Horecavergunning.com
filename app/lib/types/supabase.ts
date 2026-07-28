@@ -964,6 +964,7 @@ export type Database = {
       kb_versions: {
         Row: {
           activated_at: string | null
+          origin: string
           activated_by: string | null
           created_at: string
           created_by: string | null
@@ -983,6 +984,7 @@ export type Database = {
         }
         Insert: {
           activated_at?: string | null
+          origin?: string
           activated_by?: string | null
           created_at?: string
           created_by?: string | null
@@ -1002,6 +1004,7 @@ export type Database = {
         }
         Update: {
           activated_at?: string | null
+          origin?: string
           activated_by?: string | null
           created_at?: string
           created_by?: string | null
