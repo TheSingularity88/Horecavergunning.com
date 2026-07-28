@@ -168,6 +168,32 @@ export async function approveProposal(input: unknown): Promise<ActionResult> {
           break;
         }
 
+        case 'task_create': {
+          // The task does not exist until a human approves. Created here, not
+          // when the AI proposed it, so nothing reaches the customer's case
+          // page in the meantime — that is the whole point of this type.
+          const fields = parsedPayload.data;
+          const { data: created, error } = await admin
+            .from('tasks')
+            .insert({
+              title: fields.title,
+              description: fields.description ?? null,
+              case_id: fields.case_id,
+              priority: fields.priority ?? 'normal',
+              due_date: fields.due_date ?? null,
+              status: 'pending',
+              // Unassigned, and never to an AI — migration 016's trigger
+              // refuses that outright.
+              assigned_to: null,
+              created_by: proposal.ai_profile_id,
+            })
+            .select('id')
+            .single();
+          if (error || !created) throw new Error('task creation failed');
+          executionResult = { kind: 'task_created', task_id: (created as { id: string }).id };
+          break;
+        }
+
         case 'checklist_update': {
           if (!proposal.case_id) throw new Error('no case on proposal');
           // Bound every update to THIS case — a payload cannot touch another

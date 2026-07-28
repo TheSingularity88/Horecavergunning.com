@@ -540,6 +540,33 @@ function ProposalDetail({
         </dl>
       )}
 
+      {/* The task does not exist yet. Show exactly what the customer will read
+          once this is approved, because that is what is being vouched for. */}
+      {parsed.type === 'task_create' && (
+        <dl className="space-y-2 text-sm">
+          <div className="rounded-lg bg-slate-50 p-3">
+            <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              {r?.taskFieldTitle}
+            </dt>
+            <dd className="mt-1 font-medium text-slate-800">{parsed.data.title}</dd>
+          </div>
+          {parsed.data.description && (
+            <div className="rounded-lg bg-slate-50 p-3">
+              <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                {r?.taskFieldDescription}
+              </dt>
+              <dd className="mt-1 text-slate-800">{parsed.data.description}</dd>
+            </div>
+          )}
+          {(parsed.data.priority || parsed.data.due_date) && (
+            <p className="text-sm text-slate-600">
+              {[parsed.data.priority, parsed.data.due_date].filter(Boolean).join(' · ')}
+            </p>
+          )}
+          <p className="text-xs text-slate-500">{r?.taskCreateVisibleToClient}</p>
+        </dl>
+      )}
+
       {parsed.type === 'checklist_update' && (
         <ul className="space-y-1 text-sm">
           {parsed.data.updates.map((u) => (

@@ -711,6 +711,9 @@ export const translations = {
         taskFieldTitle: "New task title",
         taskFieldStatus: "New status",
         taskVisibleToClient: "The customer sees this task on their own case page.",
+        taskFieldDescription: "Description",
+        taskCreateVisibleToClient:
+          "This task does not exist yet. Approving creates it, and the customer then sees it on their own case page.",
         fromExternalAgent: "external agent"
       },
       aiChat: {
@@ -1861,6 +1864,9 @@ export const translations = {
         taskFieldTitle: "Nieuwe taaktitel",
         taskFieldStatus: "Nieuwe status",
         taskVisibleToClient: "De klant ziet deze taak op zijn eigen dossierpagina.",
+        taskFieldDescription: "Omschrijving",
+        taskCreateVisibleToClient:
+          "Deze taak bestaat nog niet. Bij goedkeuring wordt hij aangemaakt en ziet de klant hem op zijn eigen dossierpagina.",
         fromExternalAgent: "externe agent"
       },
       aiChat: {

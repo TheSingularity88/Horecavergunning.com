@@ -11,9 +11,21 @@ import type { AiTool } from '@/app/lib/ai/tools/registry';
  * had created, and could not mark the very lead its own prompt told it to
  * handle. These close that gap.
  *
- * Tiering follows the same rule: check where a field is RENDERED before calling
- * it internal — by grepping app/client/** and the RLS policies, not by
- * intuition. Each of these was traced:
+ * Tiering rule, corrected twice by adversarial review:
+ *
+ *   Check what the customer's portal QUERY RETURNS — not what its markup
+ *   paints. A `select('*')` ships every column into the customer's browser
+ *   whether or not the JSX prints it, so "nothing renders this field" is not a
+ *   safety property; it is one JSX edit away from being false, and devtools
+ *   makes it false today. Grep app/client/** for the SELECT, and read the RLS
+ *   policy that lets it through.
+ *
+ * That is how `tasks.description` was mis-tiered: the markup paints only title
+ * and status, but the portal fetched every column. The query is now narrowed to
+ * the three the page actually uses, which makes the classification below true
+ * at the data layer rather than only in the template.
+ *
+ * Each of these was traced:
  *   - A client record carries no login (user_id stays null) and appears in no
  *     portal, so creating one is internal work → write.
  *   - A lead is pre-customer CRM state, read nowhere under app/client/ and with
@@ -54,7 +66,7 @@ const oneOf = <T extends string>(v: unknown, allowed: readonly T[], field: strin
  * and resolves ambiguous forms by server locale, so "08/09/2026" could store a
  * different day than the human read and approved.
  */
-const isoDate = (v: unknown, field: string): string => {
+export const isoDate = (v: unknown, field: string): string => {
   const s = str(v);
   if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) throw new Error(`${field} must be YYYY-MM-DD`);
   const parsed = new Date(`${s}T00:00:00Z`);

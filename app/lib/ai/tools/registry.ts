@@ -2,7 +2,7 @@ import 'server-only';
 
 import { createAdminClient } from '@/app/lib/supabase/admin';
 import type { AiToolDefinition } from '@/app/lib/ai/provider';
-import { DASHBOARD_TOOLS } from '@/app/lib/ai/tools/dashboard-tools';
+import { DASHBOARD_TOOLS, isoDate } from '@/app/lib/ai/tools/dashboard-tools';
 
 /**
  * What an AI employee can do at the dashboard.
@@ -264,13 +264,12 @@ const createTask: AiTool = {
   name: 'create_task',
   access: 'write',
   description:
-    'Create an internal task for the team. Call this when the colleague asks for follow-up work to be recorded, or when handling something produces obvious next steps. The task is visible to everyone and can be edited or deleted by hand. It is never assigned to an AI.',
+    "Create a purely INTERNAL task, not linked to any case. Use this for team admin — something no customer should see. To put a task on a case, use propose_task_create instead: the customer sees their own case's task list, so that needs a human to approve it. Never assigned to an AI.",
   inputSchema: {
     type: 'object',
     properties: {
       title: { type: 'string', description: 'Short imperative title, in Dutch.' },
       description: { type: 'string', description: 'What needs doing and why.' },
-      case_id: { type: 'string', description: 'Link to this case when relevant.' },
       priority: { type: 'string', enum: ['low', 'normal', 'high', 'urgent'] },
       due_date: { type: 'string', description: 'YYYY-MM-DD, when there is a deadline.' },
     },
@@ -280,12 +279,22 @@ const createTask: AiTool = {
     const title = str(input.title);
     if (!title) throw new Error('title is required');
 
+    // A task ON a case is customer-visible: tasks_select_client keys on exactly
+    // this column, and the portal prints the title. Creating one was the way
+    // round the approval gate update_task already enforces — say so rather than
+    // silently dropping the case link.
+    if ('case_id' in input && str(input.case_id)) {
+      throw new Error(
+        'A task on a case is visible to the customer — use propose_task_create for that. This tool only creates internal tasks with no case.',
+      );
+    }
+
     const { data, error } = await ctx.admin
       .from('tasks')
       .insert({
         title,
         description: str(input.description),
-        case_id: str(input.case_id),
+        case_id: null,
         priority: str(input.priority) ?? 'normal',
         due_date: str(input.due_date),
         status: 'pending',
@@ -513,6 +522,85 @@ const proposeCaseAction: AiTool = {
   },
 };
 
+/**
+ * Putting a task ON a case — which the customer reads on their own case page.
+ *
+ * Owner decision, 2026-07-28: AI-authored task text may reach a customer, but
+ * only after a human has approved it. So this mirrors propose_task_update — the
+ * task does not exist until approval, and nothing appears on the case page in
+ * the meantime.
+ */
+const proposeTaskCreate: AiTool = {
+  name: 'propose_task_create',
+  access: 'propose',
+  description:
+    "Propose a new task ON a case. This creates nothing: the customer sees their own case's task list, so a human approves first and the task appears only then. For internal team tasks with no case, use create_task.",
+  inputSchema: {
+    type: 'object',
+    properties: {
+      case_id: { type: 'string', description: 'Case id from list_cases.' },
+      title: { type: 'string', description: 'Short imperative title, in Dutch. The customer reads this.' },
+      title_summary: { type: 'string', description: 'Short Dutch summary for the review queue.' },
+      rationale: { type: 'string', description: 'Why this task is needed.' },
+      description: { type: 'string', description: 'What needs doing and why.' },
+      priority: { type: 'string', enum: ['low', 'normal', 'high', 'urgent'] },
+      due_date: { type: 'string', description: 'YYYY-MM-DD.' },
+    },
+    required: ['case_id', 'title', 'title_summary', 'rationale'],
+  },
+  async run(input, ctx) {
+    const caseId = str(input.case_id);
+    const title = str(input.title);
+    const summary = str(input.title_summary);
+    const rationale = str(input.rationale);
+    if (!caseId || !title || !summary || !rationale) {
+      throw new Error('case_id, title, title_summary and rationale are required');
+    }
+
+    // Validated here as well as at approval: a reviewer reads the rendered
+    // proposal and clicks approve, so anything that would be rejected later
+    // must be refused before a human is asked to vouch for it.
+    //
+    // isoDate, not a bare shape regex: the regex matches "2026-02-31", which is
+    // not a date. Postgres rejects it at INSERT, so the proposal would pass
+    // review and then die on approval — stuck pending forever, with no way to
+    // edit the payload.
+    const dueDate = 'due_date' in input && str(input.due_date)
+      ? isoDate(input.due_date, 'due_date')
+      : null;
+    const priority = str(input.priority);
+    if (priority && !['low', 'normal', 'high', 'urgent'].includes(priority)) {
+      throw new Error('priority must be one of: low, normal, high, urgent');
+    }
+
+    const payload: Record<string, string> = { case_id: caseId, title };
+    const description = str(input.description);
+    if (description) payload.description = description;
+    if (priority) payload.priority = priority;
+    if (dueDate) payload.due_date = dueDate;
+
+    const { data, error } = await ctx.admin
+      .from('ai_proposals')
+      .insert({
+        ai_profile_id: ctx.aiProfileId,
+        case_id: caseId,
+        proposal_type: 'task_create',
+        title: summary,
+        payload: payload as never,
+        rationale,
+        status: 'pending',
+      })
+      .select('id')
+      .single();
+
+    if (error) throw new Error(`could not file the proposal: ${error.message}`);
+    return {
+      proposed: data,
+      note: 'Filed as a PENDING proposal. The task does not exist and the customer sees nothing until a human approves it.',
+    };
+  },
+};
+
 export const AI_TOOLS: AiTool[] = [
   listLeads,
   listCases,
@@ -520,6 +608,7 @@ export const AI_TOOLS: AiTool[] = [
   listTasks,
   listRequests,
   createTask,
+  proposeTaskCreate,
   proposeChecklistUpdate,
   proposeCaseAction,
   askHuman,

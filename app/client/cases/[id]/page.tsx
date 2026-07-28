@@ -126,10 +126,18 @@ export default function ClientCaseDetailPage() {
 
         setChecklist((checklistResult as unknown as ChecklistItem[]) || []);
 
-        // Fetch related tasks (read-only view)
+        // Fetch related tasks (read-only view).
+        //
+        // Three columns, NOT select('*'). RLS lets this customer read every
+        // column of their own case's tasks, so a wildcard shipped description,
+        // priority, due_date, assigned_to and created_by into their browser —
+        // visible in devtools even though the markup paints none of them. That
+        // also quietly broke the rule the AI tiering depends on: "a task's
+        // planning fields are internal because nothing renders them" is only
+        // true if nothing SENDS them either.
         const { data: tasksResult } = await supabase
           .from('tasks')
-          .select('*')
+          .select('id, title, status')
           .eq('case_id', caseId)
           .order('created_at', { ascending: false });
 

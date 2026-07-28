@@ -27,19 +27,14 @@ const REQUIRED_SCOPE: Record<ToolAccess, 'read' | 'write' | 'propose'> = {
 /**
  * Tools the INTERNAL chat may use but the external surface may not.
  *
- * `create_task` is tier `write`, and at that tier `update_task` explicitly
- * REFUSES to set a task's title because the customer's own case page prints it
- * (tasks_select_client + app/client/cases/[id]/page.tsx). Creating a task sets
- * the same column with no such refusal — so the human-approval gate on task
- * titles is bypassed by creating one instead of renaming one.
- *
- * That gap predates this file: internally the caller is a model we prompt, with
- * a colleague reading the conversation. Exposing it over HTTP hands it to an
- * unattended third-party agent, which would settle an open product question —
- * should AI-authored task titles reach customers at all? — by default and in
- * the unsafe direction. Withheld until that is decided deliberately.
+ * Empty, and that is the point: `create_task` was withheld here because it
+ * could put AI-authored text on a customer's case page with no approval. That
+ * hole is now closed at the source — it refuses a case_id, and
+ * `propose_task_create` files a proposal instead — so the external surface can
+ * offer the full registry again. Withholding a tool here is a stopgap for a
+ * tiering problem, never a substitute for fixing one.
  */
-const WITHHELD_FROM_EXTERNAL = new Set(['create_task']);
+const WITHHELD_FROM_EXTERNAL = new Set<string>();
 
 export type AgentToolFailure =
   | 'unknown_tool'
