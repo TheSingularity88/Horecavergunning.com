@@ -98,6 +98,19 @@ export const taskUpdatePayload = z.strictObject({
   status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']).optional(),
 });
 
+// ---- task_create: put a NEW task on a case, on approval. ----------------------
+//      Owner decision: AI-authored task text may reach a customer, but only
+//      after a human has approved it. A task WITHOUT a case is invisible to any
+//      customer (tasks_select_client keys on case_id) and stays a direct write.
+export const taskCreatePayload = z.strictObject({
+  case_id: z.string().uuid(),
+  title: z.string().min(1),
+  description: z.string().nullable().optional(),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
+  /** YYYY-MM-DD. */
+  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+});
+
 // ---- question: the AI asks a human; the human answers in review_note. ----------
 export const questionPayload = z.strictObject({
   question_nl: z.string(),
@@ -111,6 +124,7 @@ export type ChecklistUpdatePayload = z.infer<typeof checklistUpdatePayload>;
 export type QuestionPayload = z.infer<typeof questionPayload>;
 export type CaseUpdatePayload = z.infer<typeof caseUpdatePayload>;
 export type TaskUpdatePayload = z.infer<typeof taskUpdatePayload>;
+export type TaskCreatePayload = z.infer<typeof taskCreatePayload>;
 
 /** Validate a stored payload against its type. Returns typed data or an error. */
 export function parseProposalPayload(
@@ -124,6 +138,7 @@ export function parseProposalPayload(
   | { ok: true; type: 'question'; data: QuestionPayload }
   | { ok: true; type: 'case_update'; data: CaseUpdatePayload }
   | { ok: true; type: 'task_update'; data: TaskUpdatePayload }
+  | { ok: true; type: 'task_create'; data: TaskCreatePayload }
   | { ok: false; error: string } {
   switch (type) {
     case 'case_assessment': {
@@ -158,6 +173,12 @@ export function parseProposalPayload(
     }
     case 'task_update': {
       const r = taskUpdatePayload.safeParse(payload);
+      return r.success
+        ? { ok: true, type, data: r.data }
+        : { ok: false, error: r.error.issues[0]?.message ?? 'Invalid payload' };
+    }
+    case 'task_create': {
+      const r = taskCreatePayload.safeParse(payload);
       return r.success
         ? { ok: true, type, data: r.data }
         : { ok: false, error: r.error.issues[0]?.message ?? 'Invalid payload' };
