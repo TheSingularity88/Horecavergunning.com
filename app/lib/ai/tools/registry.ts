@@ -2,7 +2,7 @@ import 'server-only';
 
 import { createAdminClient } from '@/app/lib/supabase/admin';
 import type { AiToolDefinition } from '@/app/lib/ai/provider';
-import { DASHBOARD_TOOLS } from '@/app/lib/ai/tools/dashboard-tools';
+import { DASHBOARD_TOOLS, isoDate } from '@/app/lib/ai/tools/dashboard-tools';
 
 /**
  * What an AI employee can do at the dashboard.
@@ -560,10 +560,14 @@ const proposeTaskCreate: AiTool = {
     // Validated here as well as at approval: a reviewer reads the rendered
     // proposal and clicks approve, so anything that would be rejected later
     // must be refused before a human is asked to vouch for it.
-    const dueDate = str(input.due_date);
-    if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
-      throw new Error('due_date must be YYYY-MM-DD');
-    }
+    //
+    // isoDate, not a bare shape regex: the regex matches "2026-02-31", which is
+    // not a date. Postgres rejects it at INSERT, so the proposal would pass
+    // review and then die on approval — stuck pending forever, with no way to
+    // edit the payload.
+    const dueDate = 'due_date' in input && str(input.due_date)
+      ? isoDate(input.due_date, 'due_date')
+      : null;
     const priority = str(input.priority);
     if (priority && !['low', 'normal', 'high', 'urgent'].includes(priority)) {
       throw new Error('priority must be one of: low, normal, high, urgent');

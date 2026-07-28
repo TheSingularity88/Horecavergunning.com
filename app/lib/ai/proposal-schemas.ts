@@ -107,8 +107,27 @@ export const taskCreatePayload = z.strictObject({
   title: z.string().min(1),
   description: z.string().nullable().optional(),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
-  /** YYYY-MM-DD. */
-  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  /**
+   * YYYY-MM-DD, and a date that actually exists. The shape regex alone matches
+   * "2026-02-31", which Postgres refuses at INSERT — so re-validation would
+   * pass and the approval would fail, leaving the proposal stuck pending.
+   */
+  due_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .refine(
+      (d) => {
+        // getTime() first: "2026-13-05" yields an Invalid Date, and calling
+        // toISOString() on that THROWS rather than returning a mismatch — which
+        // inside a refine would escape safeParse as an exception instead of a
+        // validation error.
+        const parsed = new Date(`${d}T00:00:00Z`);
+        return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === d;
+      },
+      { message: 'due_date is not a real date' },
+    )
+    .nullable()
+    .optional(),
 });
 
 // ---- question: the AI asks a human; the human answers in review_note. ----------
