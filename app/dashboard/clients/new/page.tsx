@@ -4,9 +4,8 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
-import { createClient } from '@/app/lib/supabase/client';
+import { createClientRecord } from '@/app/lib/actions/clients';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -19,11 +18,9 @@ import Link from 'next/link';
 
 export default function NewClientPage() {
   const router = useRouter();
-  const { profile, isAdmin } = useAuth();
   const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = useMemo(() => createClient(), []);
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -38,11 +35,15 @@ export default function NewClientPage() {
     status: 'active',
   });
 
-  // Redirect non-admins
-  if (!isAdmin) {
-    router.push('/dashboard/clients');
-    return null;
-  }
+  // No admin gate. The database has always allowed any staff member to create
+  // a client (clients_insert WITH CHECK (is_staff())) and to edit one, so
+  // gating creation in browser JavaScript denied employees a capability they
+  // already had — while enforcing nothing, since this page sits outside
+  // /dashboard/admin/** and the middleware never saw it.
+  //
+  // The redirect that used to live here also ran during RENDER, which React 19
+  // flags: it fired on every render for as long as the flag was false, so a
+  // transient profile-fetch failure bounced a real admin in a loop.
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -59,18 +60,18 @@ export default function NewClientPage() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from('clients')
-        .insert({
-          ...formData,
-          assigned_employee_id: profile?.id,
-        } as unknown as never)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      router.push(`/dashboard/clients/${(data as { id: string }).id}`);
+      // Through the server action, not straight to the table: that is where the
+      // guard, the schema and the activity_log entry live.
+      const result = await createClientRecord(formData);
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      if (!result.data) {
+        setError('Failed to create client. Please try again.');
+        return;
+      }
+      router.push(`/dashboard/clients/${result.data.id}`);
     } catch (err) {
       console.error('Error creating client:', err);
       setError('Failed to create client. Please try again.');

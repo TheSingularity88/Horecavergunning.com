@@ -69,9 +69,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchClientData = useCallback(async (userId: string): Promise<FetchResult<Client>> => {
     try {
+      // Named columns, NOT a wildcard. This runs in the CUSTOMER's browser and
+      // its result sits in React state on every portal page, so a wildcard
+      // shipped them `notes` — the office's private remarks about that customer,
+      // which the new client form and the AI's create_client tool both write.
+      // RLS cannot help: a policy is row-scoped, so `clients_select` correctly
+      // returns the row and every column with it. Nothing in the portal renders
+      // notes or assigned_employee_id.
       const { data, error } = await supabase
         .from('clients')
-        .select('*')
+        .select(
+          'id, user_id, company_name, contact_name, email, phone, address, city, postal_code, kvk_number, status, created_at, updated_at',
+        )
         .eq('user_id', userId)
         .maybeSingle();
 

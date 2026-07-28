@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Plus, Search, Building2, Mail, Phone } from 'lucide-react';
-import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import { createClient } from '@/app/lib/supabase/client';
 import { DashboardPage } from '@/app/components/dashboard/DashboardPage';
@@ -20,7 +19,6 @@ const ITEMS_PER_PAGE = 10;
 
 export default function ClientsPage() {
   const router = useRouter();
-  const { isAdmin } = useAuth();
   const { t } = useLanguage();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -139,7 +137,8 @@ export default function ClientsPage() {
               icon={<Search className="w-4 h-4" />}
             />
           </div>
-          {isAdmin && (
+          {/* Any staff member may create a client: clients_insert allows
+              is_staff(), and employees can already edit one. */}
             <Button
               onClick={() => router.push('/dashboard/clients/new')}
               className="gap-2"
@@ -147,7 +146,6 @@ export default function ClientsPage() {
               <Plus className="w-4 h-4" />
               {t.dashboard?.clients?.addClient || 'Add Client'}
             </Button>
-          )}
         </div>
 
         {/* Clients Table */}
