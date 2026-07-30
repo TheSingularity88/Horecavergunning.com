@@ -18,16 +18,21 @@ import { SITE_URL } from '@/app/lib/site';
  * it nothing to plan with.
  */
 
+/** A JSON response body of the named component. Keeps the `content` boilerplate out of each response. */
+const json = (schema: string) => ({
+  content: { 'application/json': { schema: { $ref: `#/components/schemas/${schema}` } } },
+});
+
 /**
  * Every way authentication itself can fail, attached to operations that take no
  * body. Declaring only 200 would tell a GPT that a 401 is an unexpected fault
  * and invite it to retry a key that will never work.
  */
 const AUTH_FAILURES = {
-  '401': { description: 'Missing, unknown, revoked or expired key. Not retryable.' },
-  '403': { description: 'The AI employee this key belongs to is paused or deactivated.' },
-  '429': { description: 'Rate limited. Slow down and retry.' },
-  '503': { description: 'Temporarily unavailable. Retry shortly.' },
+  '401': { description: 'Missing, unknown, revoked or expired key. Not retryable.', ...json('AgentError') },
+  '403': { description: 'The AI employee this key belongs to is paused or deactivated.', ...json('AgentError') },
+  '429': { description: 'Rate limited. Slow down and retry.', ...json('AgentError') },
+  '503': { description: 'Temporarily unavailable. Retry shortly.', ...json('AgentError') },
 } as const;
 
 /**
@@ -142,6 +147,12 @@ export function agentOpenApiDocument(): Record<string, unknown> {
         operationId: toCamel(tool.name),
         summary: firstSentence(tool.brief ?? tool.description),
         description: `${body}\n\n${tier}`,
+        // ChatGPT asks the user to confirm every call unless told otherwise,
+        // which would make a read-only agent unusable. Set from `access` for
+        // all three tiers rather than only for read: pinning write and propose
+        // to `true` keeps the confirmation prompt on the operations that change
+        // something, instead of leaving it to a ChatGPT default we do not own.
+        'x-openai-isConsequential': tool.access !== 'read',
         requestBody: {
           required: true,
           content: {
@@ -153,14 +164,18 @@ export function agentOpenApiDocument(): Record<string, unknown> {
           },
         },
         responses: {
-          '200': { description: 'The tool ran. `result` holds its output.' },
-          '400': { description: 'Bad arguments, or the tool refused them. `message` says why.' },
-          '401': { description: 'Missing, unknown, revoked or expired key.' },
+          '200': { description: 'The tool ran.', ...json('ToolResult') },
+          '400': {
+            description: 'Bad arguments, or the tool refused them. `message` says why.',
+            ...json('AgentError'),
+          },
+          '401': { description: 'Missing, unknown, revoked or expired key.', ...json('AgentError') },
           '403': {
             description:
               'Refused: either this key lacks the permission the operation needs, or the AI employee it belongs to is paused or deactivated. Not retryable — a human must change something.',
+            ...json('AgentError'),
           },
-          '429': { description: 'Rate limited. Slow down.' },
+          '429': { description: 'Rate limited. Slow down.', ...json('AgentError') },
         },
       },
     };
@@ -191,9 +206,34 @@ export function agentOpenApiDocument(): Record<string, unknown> {
     components: {
       // ChatGPT's importer requires `schemas` to be an object and fails the
       // whole document with "schemas subsection is not an object" when it is
-      // absent. Every request schema is declared inline on its operation, so
-      // there is genuinely nothing to name here — but the key must exist.
-      schemas: {},
+      // absent. An empty object satisfies the letter of that check, but there
+      // are reports of the importer wanting at least one definition, and the
+      // responses were untyped anyway — so these describe what the routes
+      // actually return, and the responses below reference them.
+      schemas: {
+        AgentError: {
+          type: 'object',
+          properties: {
+            error: { type: 'string', description: 'Machine-readable reason, e.g. scope_denied.' },
+            message: { type: 'string', description: 'What went wrong, in plain language.' },
+          },
+          required: ['error'],
+        },
+        ToolResult: {
+          type: 'object',
+          properties: {
+            tool: { type: 'string' },
+            access: { type: 'string', enum: ['read', 'write', 'propose'] },
+            result: { description: "The tool's own output. Its shape depends on the tool." },
+            note: {
+              type: 'string',
+              description:
+                'Present on propose-tier calls: the change is PENDING a human decision. Do not report it as done.',
+            },
+          },
+          required: ['tool', 'access'],
+        },
+      },
       securitySchemes: {
         bearerAuth: { type: 'http', scheme: 'bearer', description: 'The key minted for this AI employee.' },
       },
