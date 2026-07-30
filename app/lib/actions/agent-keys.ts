@@ -4,6 +4,7 @@ import { createAdminClient } from '@/app/lib/supabase/admin';
 import { requireAdmin, toActionError, type ActionResult } from '@/app/lib/auth/guards';
 import { mintAgentKeySchema, revokeAgentKeySchema } from '@/app/lib/validation/agent-keys';
 import { mintKey } from '@/app/lib/agent/keys';
+import { buildAgentInstructions } from '@/app/lib/agent/gpt-instructions';
 
 /**
  * Admin management of the INBOUND keys an external AI employee uses to reach
@@ -247,6 +248,24 @@ export async function revokeAgentKey(input: unknown): Promise<ActionResult> {
     });
 
     return { success: true };
+  } catch (err) {
+    return toActionError(err);
+  }
+}
+
+/**
+ * The system prompt an admin pastes into their Custom GPT.
+ *
+ * A server action rather than a constant the page imports, because the text is
+ * generated from the tool registry and registry.ts is 'server-only' — the same
+ * reason the OpenAPI document is built server-side. Admin-guarded like the rest
+ * of this file: the prompt is not a secret, but it names the entire external
+ * surface, so it belongs behind the same door as the keys it is used with.
+ */
+export async function getAgentInstructions(): Promise<ActionResult<{ instructions: string }>> {
+  try {
+    await requireAdmin();
+    return { success: true, data: { instructions: buildAgentInstructions() } };
   } catch (err) {
     return toActionError(err);
   }

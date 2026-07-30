@@ -13,6 +13,7 @@ import {
   getAgentKeys,
   mintAgentKey,
   revokeAgentKey,
+  getAgentInstructions,
   type AgentKeyView,
 } from '@/app/lib/actions/agent-keys';
 import { getAiAdminData, type AiEmployeeView } from '@/app/lib/actions/ai-admin';
@@ -54,6 +55,9 @@ export default function AgentKeysPage() {
   /** The plaintext, held only until the admin dismisses the panel. */
   const [freshKey, setFreshKey] = useState<{ token: string; label: string } | null>(null);
 
+  /** The system prompt, generated server-side from the tool registry. */
+  const [instructions, setInstructions] = useState('');
+
   const [form, setForm] = useState({
     aiProfileId: '',
     label: '',
@@ -66,10 +70,18 @@ export default function AgentKeysPage() {
   }, [authLoading, isAdmin, router]);
 
   const fetchData = useCallback(async () => {
-    const [keysResult, adminResult] = await Promise.all([getAgentKeys(), getAiAdminData()]);
+    const [keysResult, adminResult, promptResult] = await Promise.all([
+      getAgentKeys(),
+      getAiAdminData(),
+      getAgentInstructions(),
+    ]);
     if (keysResult.success && keysResult.data) setKeys(keysResult.data.keys);
     else if (!keysResult.success) showError(keysResult.error);
     if (adminResult.success && adminResult.data) setEmployees(adminResult.data.employees);
+    // Generated from the tool registry, so it names the operations this agent
+    // actually has. A failure here is not worth a toast — the copy button says
+    // it is not ready — but it must not read as an empty prompt.
+    if (promptResult.success && promptResult.data) setInstructions(promptResult.data.instructions);
     setIsLoading(false);
   }, [showError]);
 
@@ -126,7 +138,24 @@ export default function AgentKeysPage() {
   };
 
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
   const schemaUrl = `${SITE_URL}/api/agent/v1/openapi.json`;
+
+  const copyInstructions = async () => {
+    // The prompt is what makes the agent behave — a copy that silently failed
+    // would leave an admin pasting nothing into the field that carries the
+    // three rules. Say so rather than flashing "Copied".
+    if (!instructions) return showError(k?.setupPromptFailed || 'The instructions are not loaded yet.');
+    try {
+      await navigator.clipboard.writeText(instructions);
+      setCopiedPrompt(true);
+      setTimeout(() => setCopiedPrompt(false), 2000);
+    } catch {
+      setShowPrompt(true);
+      showError(k?.setupPromptFailed || 'Could not copy. The text is shown below — select and copy it.');
+    }
+  };
 
   const copySchemaUrl = async () => {
     try {
@@ -192,6 +221,30 @@ export default function AgentKeysPage() {
             </div>
           </li>
           <li>{k?.setupChatgptStep3}</li>
+          <li>
+            {k?.setupChatgptStep4}
+            <div className="mt-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" onClick={copyInstructions} className="gap-1">
+                  {copiedPrompt ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copiedPrompt ? k?.copied || 'Copied' : k?.setupCopyInstructions}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setShowPrompt((v) => !v)}
+                  className="text-xs font-medium text-blue-700 underline underline-offset-2"
+                >
+                  {showPrompt ? k?.setupHidePrompt : k?.setupShowPrompt}
+                </button>
+              </div>
+              {showPrompt && (
+                <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap rounded bg-white p-3 font-mono text-xs leading-relaxed text-slate-800 ring-1 ring-slate-200">
+                  {instructions || k?.setupPromptLoading}
+                </pre>
+              )}
+            </div>
+          </li>
+          <li>{k?.setupChatgptStep5}</li>
         </ol>
         {/* The imported schema is public and identical for every key — it
             cannot reflect the scopes ticked above. Saying so here is the only
@@ -205,6 +258,15 @@ export default function AgentKeysPage() {
       <div>
         <p className="font-medium text-slate-900">{k?.setupClaudeTitle}</p>
         <p className="mt-1">{k?.setupClaudeBody}</p>
+      </div>
+
+      <div>
+        <p className="font-medium text-slate-900">{k?.setupSettingsTitle}</p>
+        <ul className="mt-1 list-disc space-y-1 pl-5">
+          <li>{k?.setupSettingsCapabilities}</li>
+          <li>{k?.setupSettingsTraining}</li>
+          <li>{k?.setupSettingsPrivate}</li>
+        </ul>
       </div>
 
       <p className="text-slate-500">{k?.setupNote}</p>
