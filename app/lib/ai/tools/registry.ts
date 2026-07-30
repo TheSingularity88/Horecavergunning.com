@@ -59,6 +59,18 @@ export interface AiTool {
   name: string;
   access: ToolAccess;
   description: string;
+  /**
+   * A shorter description for surfaces that cap it. ChatGPT's Action importer
+   * rejects any operation whose description exceeds 300 characters, and the
+   * OpenAPI document has to spend part of that budget restating the permission
+   * tier — so the longest descriptions here do not fit.
+   *
+   * Written by hand rather than truncated, because the clause that would be
+   * cut is the one that matters: "this files a proposal and changes nothing".
+   * Only the tools that overflow carry one; everything else uses `description`
+   * unchanged. Internal callers always get the full `description`.
+   */
+  brief?: string;
   inputSchema: Record<string, unknown>;
   run(input: Record<string, unknown>, ctx: ToolContext): Promise<unknown>;
 }
@@ -265,6 +277,8 @@ const createTask: AiTool = {
   access: 'write',
   description:
     "Create a purely INTERNAL task, not linked to any case. Use this for team admin — something no customer should see. To put a task on a case, use propose_task_create instead: the customer sees their own case's task list, so that needs a human to approve it. Never assigned to an AI.",
+  brief:
+    'Create a purely INTERNAL task, not linked to any case — team admin no customer sees. To put a task on a case use propose_task_create instead, which needs a human to approve it. Never assigned to an AI.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -333,6 +347,8 @@ const proposeChecklistUpdate: AiTool = {
   access: 'propose',
   description:
     "Propose marking one or more of a case's document-checklist items as in_review, approved or rejected, each with a short Dutch note. This does NOT change anything — it files a proposal for a human to approve, because the note is shown to the customer in their portal. Use get_case first to get the item ids.",
+  brief:
+    "Propose marking a case's document-checklist items as in_review, approved or rejected, each with a short Dutch note. The note is shown to the customer, so a human approves first. Call get_case for the item ids.",
   inputSchema: {
     type: 'object',
     properties: {
@@ -409,6 +425,8 @@ const askHuman: AiTool = {
   access: 'propose',
   description:
     "Ask a human colleague a question and wait for an answer. Call this instead of guessing whenever the rulebook is silent or ambiguous, a case is missing information you need, or you are about to do something you are not confident is right. The question appears in the review queue; a colleague answers it there and you will see the answer on a later turn. Asking is always better than inventing an answer about permit policy.",
+  brief:
+    'Ask a human colleague a question and wait for an answer. Use this instead of guessing when the rulebook is silent, a case lacks information you need, or you are unsure. The answer reaches you on a later turn.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -456,6 +474,8 @@ const proposeCaseAction: AiTool = {
   access: 'propose',
   description:
     'Propose something that reaches the customer or changes the case itself: a status change, or a draft reply. This does NOT perform the action — it files a proposal in the review queue for a human to approve or reject. Call this instead of claiming you changed a case or contacted anyone. You cannot email or message customers under any circumstances.',
+  brief:
+    'Propose a status change or a draft reply — anything that reaches the customer. Call this instead of claiming you changed a case or contacted anyone. You cannot email or message customers under any circumstances.',
   inputSchema: {
     type: 'object',
     properties: {
