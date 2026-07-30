@@ -787,7 +787,9 @@ export const translations = {
           "In ChatGPT, create a Custom GPT and open Configure → Actions → Create new action.",
         setupChatgptStep2: "Choose \"Import from URL\" and paste this address:",
         setupChatgptStep3:
-          "In the same panel, set Authentication to API Key, Auth Type to Bearer, and paste the key. ChatGPT then lists every operation it may perform.",
+          "In the same panel, set Authentication to API Key, Auth Type to Bearer, and paste the key.",
+        setupChatgptScopeWarning:
+          "ChatGPT will list every operation this platform offers — not only the ones this key is allowed to use. The schema is public and is the same for every key, so it cannot know what you ticked. A key without a permission is refused when it tries, not when it imports. Tell your Custom GPT to call listTools first: that answer marks each operation \"allowed\" or not for this specific key.",
         setupClaudeTitle: "Claude Code, a CLI, or your own script",
         setupClaudeBody:
           "No schema needed — tell it the address and the key. Start with GET /api/agent/v1/me to confirm the key works, then GET /api/agent/v1/tools to see what this key may do. Send the key as the header: Authorization: Bearer <key>.",
@@ -1964,7 +1966,9 @@ export const translations = {
           "Maak in ChatGPT een Custom GPT en ga naar Configure → Actions → Create new action.",
         setupChatgptStep2: "Kies \"Import from URL\" en plak dit adres:",
         setupChatgptStep3:
-          "Zet in hetzelfde scherm Authentication op API Key, Auth Type op Bearer, en plak de sleutel. ChatGPT toont daarna alle handelingen die hij mag uitvoeren.",
+          "Zet in hetzelfde scherm Authentication op API Key, Auth Type op Bearer, en plak de sleutel.",
+        setupChatgptScopeWarning:
+          "ChatGPT toont alle handelingen die dit platform aanbiedt — niet alleen die deze sleutel mag gebruiken. Het schema is openbaar en voor elke sleutel gelijk, dus het kan niet weten wat u heeft aangevinkt. Een sleutel zonder een recht wordt geweigerd op het moment dat hij het probeert, niet bij het importeren. Laat uw Custom GPT eerst listTools aanroepen: dat antwoord markeert per handeling of deze sleutel hem \"allowed\" is.",
         setupClaudeTitle: "Claude Code, een CLI of uw eigen script",
         setupClaudeBody:
           "Geen schema nodig — geef het adres en de sleutel door. Begin met GET /api/agent/v1/me om te bevestigen dat de sleutel werkt, en daarna GET /api/agent/v1/tools om te zien wat deze sleutel mag. Stuur de sleutel mee als header: Authorization: Bearer <sleutel>.",

@@ -193,6 +193,13 @@ export default function AgentKeysPage() {
           </li>
           <li>{k?.setupChatgptStep3}</li>
         </ol>
+        {/* The imported schema is public and identical for every key — it
+            cannot reflect the scopes ticked above. Saying so here is the only
+            warning an admin gets before their agent plans against operations
+            it will be refused mid-task. */}
+        <p className="mt-2 rounded-md bg-amber-50 p-2.5 text-slate-700 ring-1 ring-amber-200">
+          {k?.setupChatgptScopeWarning}
+        </p>
       </div>
 
       <div>
