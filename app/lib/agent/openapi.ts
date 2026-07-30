@@ -30,14 +30,76 @@ const AUTH_FAILURES = {
   '503': { description: 'Temporarily unavailable. Retry shortly.' },
 } as const;
 
-/** What each tier means, restated per operation so the GPT reads it in place. */
+/**
+ * ChatGPT's Action importer rejects the WHOLE document if any operation's
+ * summary or description exceeds this. Not a style preference — an import
+ * error, and the reason the first version of this document could not be
+ * imported at all.
+ */
+const CHATGPT_TEXT_LIMIT = 300;
+
+/**
+ * What each tier means, restated per operation so the GPT reads it in place.
+ *
+ * Kept short deliberately: it is spent out of the same 300-character budget as
+ * the tool's own description, and it is the half that must never be the part
+ * that gets dropped. A GPT that loses "nothing changes until a human approves"
+ * will report proposals as completed work.
+ */
 const TIER_NOTE: Record<ToolAccess, string> = {
-  read: 'Read-only. Requires the "read" permission on your key.',
-  write:
-    'Changes internal work only — nothing a customer can see. Requires the "write" permission.',
+  read: 'Read-only. Needs the "read" permission.',
+  write: 'Changes internal work only, never anything a customer sees. Needs "write".',
   propose:
-    'Files a PENDING PROPOSAL and changes nothing. A human approves it in the review queue before it takes effect. Do NOT report the change as done. Requires the "propose" permission.',
+    'Files a PENDING PROPOSAL — nothing changes until a human approves it. Do NOT report it as done. Needs "propose".',
 };
+
+/**
+ * Cut to `limit` on a word boundary. A last resort: every tool long enough to
+ * hit this should carry a hand-written `brief` instead, so that what survives
+ * is chosen rather than whatever happened to fall inside the budget. Present
+ * so that adding a long-descriptioned tool can never again produce a document
+ * ChatGPT refuses — it degrades the text instead of breaking the import.
+ */
+function clamp(text: string, limit: number): string {
+  if (text.length <= limit) return text;
+  const cut = text.slice(0, limit - 1);
+  const space = cut.lastIndexOf(' ');
+  return `${(space > limit * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`;
+}
+
+/** The first sentence, for the one-line summary ChatGPT shows when it asks to run an action. */
+function firstSentence(text: string): string {
+  const end = text.search(/[.!?](\s|$)/);
+  return clamp(end === -1 ? text : text.slice(0, end + 1), CHATGPT_TEXT_LIMIT);
+}
+
+/**
+ * Last line of defence: nothing leaves this function over the limit.
+ *
+ * The per-tool path below already budgets its text, but the hand-written
+ * operations above it do not, and neither will the next one somebody adds.
+ * One over-long string rejects the ENTIRE document — every operation becomes
+ * unimportable, not just the offending one — so this is enforced structurally
+ * rather than left to whoever edits the file next. That is exactly how the
+ * first version shipped unusable.
+ */
+function enforceTextLimits(paths: Record<string, unknown>): void {
+  for (const [path, methods] of Object.entries(paths)) {
+    for (const operation of Object.values(methods as Record<string, Record<string, unknown>>)) {
+      for (const field of ['summary', 'description'] as const) {
+        const value = operation[field];
+        if (typeof value !== 'string' || value.length <= CHATGPT_TEXT_LIMIT) continue;
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn(
+            `[openapi] ${path} ${field} is ${value.length} chars and was cut to ` +
+              `${CHATGPT_TEXT_LIMIT}. Give the tool a shorter \`brief\` so the wording is chosen, not truncated.`,
+          );
+        }
+        operation[field] = clamp(value, CHATGPT_TEXT_LIMIT);
+      }
+    }
+  }
+}
 
 export function agentOpenApiDocument(): Record<string, unknown> {
   const paths: Record<string, unknown> = {
@@ -67,13 +129,19 @@ export function agentOpenApiDocument(): Record<string, unknown> {
   // and a schema that advertised a withheld tool would send a Custom GPT to a
   // guaranteed 403 with no way to know why.
   for (const tool of AI_TOOLS.filter((t) => availableExternally(t.name))) {
+    const tier = TIER_NOTE[tool.access];
+    // The tier note is reserved out of the budget FIRST and appended whole, so
+    // the part that can be shortened is the description of what the tool does —
+    // never the part saying a proposal is not a completed change.
+    const body = clamp(tool.brief ?? tool.description, CHATGPT_TEXT_LIMIT - tier.length - 2);
+
     paths[`/api/agent/v1/tools/${tool.name}`] = {
       post: {
         // ChatGPT surfaces this to the user when asking to run an action, so it
         // has to read as a sentence, not an identifier.
         operationId: toCamel(tool.name),
-        summary: tool.description,
-        description: `${tool.description}\n\n${TIER_NOTE[tool.access]}`,
+        summary: firstSentence(tool.brief ?? tool.description),
+        description: `${body}\n\n${tier}`,
         requestBody: {
           required: true,
           content: {
@@ -98,6 +166,8 @@ export function agentOpenApiDocument(): Record<string, unknown> {
     };
   }
 
+  enforceTextLimits(paths);
+
   return {
     openapi: '3.1.0',
     info: {
@@ -119,6 +189,11 @@ export function agentOpenApiDocument(): Record<string, unknown> {
     // Authentication → API Key → Bearer. This just declares the scheme.
     security: [{ bearerAuth: [] }],
     components: {
+      // ChatGPT's importer requires `schemas` to be an object and fails the
+      // whole document with "schemas subsection is not an object" when it is
+      // absent. Every request schema is declared inline on its operation, so
+      // there is genuinely nothing to name here — but the key must exist.
+      schemas: {},
       securitySchemes: {
         bearerAuth: { type: 'http', scheme: 'bearer', description: 'The key minted for this AI employee.' },
       },

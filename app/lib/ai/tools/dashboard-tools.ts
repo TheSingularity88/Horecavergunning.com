@@ -347,6 +347,8 @@ export const updateTask: AiTool = {
   access: 'write',
   description:
     'Update the internal planning of an existing task: its priority, due date, description, or which human colleague owns it. Only fields you name are changed. To change a task TITLE or mark it done, use propose_task_update instead — the customer can see those.',
+  brief:
+    "Update an existing task's internal planning: priority, due date, description, or which colleague owns it. Only fields you name change. For the TITLE or whether it is done, use propose_task_update — customers see those.",
   inputSchema: {
     type: 'object',
     properties: {
@@ -496,6 +498,8 @@ export const proposeCaseUpdate: AiTool = {
   access: 'propose',
   description:
     "Propose changing a case's own fields — title, description, municipality, reference number, priority or deadline. This does NOT change anything: the customer sees all of these on their own case page, so a human approves first. Name only the fields that should change.",
+  brief:
+    "Propose changing a case's own fields: title, description, municipality, reference number, priority or deadline. The customer sees all of these on their case page. Name only the fields that should change.",
   inputSchema: {
     type: 'object',
     properties: {
@@ -570,6 +574,8 @@ export const proposeTaskUpdate: AiTool = {
   access: 'propose',
   description:
     "Propose renaming a task or changing whether it is done. This does NOT change anything: the customer sees their case's task list, including each task's title and whether it is completed, so a human approves first. Use update_task for priority, dates and internal detail.",
+  brief:
+    "Propose renaming a task or changing whether it is done. The customer sees their case's task list, including each title and whether it is completed. Use update_task for priority, dates and internal detail.",
   inputSchema: {
     type: 'object',
     properties: {
