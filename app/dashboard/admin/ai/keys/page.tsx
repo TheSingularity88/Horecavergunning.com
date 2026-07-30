@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { AlertTriangle, ArrowLeft, Check, Copy, KeyRound, Plus, Trash2 } from 'lucide-react';
 import { dashboardRoutes } from '@/app/lib/routes/dashboard';
+import { SITE_URL } from '@/app/lib/site';
 import { useAuth } from '@/app/context/AuthContext';
 import { useLanguage } from '@/app/context/LanguageContext';
 import {
@@ -124,6 +125,21 @@ export default function AgentKeysPage() {
     setPendingRevoke(null);
   };
 
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const schemaUrl = `${SITE_URL}/api/agent/v1/openapi.json`;
+
+  const copySchemaUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(schemaUrl);
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2000);
+    } catch {
+      // Same reasoning as the key: a silent failure on a copy button is worse
+      // than none, but this one is recoverable — the URL is on screen to select.
+      setCopiedUrl(false);
+    }
+  };
+
   const copyKey = async () => {
     if (!freshKey) return;
     try {
@@ -154,6 +170,46 @@ export default function AgentKeysPage() {
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  const setupGuide = (
+    <div className="max-w-3xl space-y-4 text-sm text-slate-700">
+      <p>{k?.setupIntro}</p>
+
+      <div>
+        <p className="font-medium text-slate-900">{k?.setupChatgptTitle}</p>
+        <ol className="mt-1 list-decimal space-y-1 pl-5">
+          <li>{k?.setupChatgptStep1}</li>
+          <li>
+            {k?.setupChatgptStep2}
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <code className="break-all rounded bg-white px-2 py-1 font-mono text-xs text-slate-800 ring-1 ring-slate-200">
+                {schemaUrl}
+              </code>
+              <Button variant="outline" size="sm" onClick={copySchemaUrl} className="gap-1">
+                {copiedUrl ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                {copiedUrl ? k?.copied || 'Copied' : k?.copy || 'Copy'}
+              </Button>
+            </div>
+          </li>
+          <li>{k?.setupChatgptStep3}</li>
+        </ol>
+        {/* The imported schema is public and identical for every key — it
+            cannot reflect the scopes ticked above. Saying so here is the only
+            warning an admin gets before their agent plans against operations
+            it will be refused mid-task. */}
+        <p className="mt-2 rounded-md bg-amber-50 p-2.5 text-slate-700 ring-1 ring-amber-200">
+          {k?.setupChatgptScopeWarning}
+        </p>
+      </div>
+
+      <div>
+        <p className="font-medium text-slate-900">{k?.setupClaudeTitle}</p>
+        <p className="mt-1">{k?.setupClaudeBody}</p>
+      </div>
+
+      <p className="text-slate-500">{k?.setupNote}</p>
+    </div>
+  );
 
   if (!isAdmin) return null;
 
@@ -205,9 +261,25 @@ export default function AgentKeysPage() {
                     {k?.savedIt || 'I have saved it'}
                   </Button>
                 </div>
+                {/* Shown at the moment the key is in hand: this is when someone
+                    needs to know what to do with it, and the only moment they
+                    will still have it. */}
+                <div className="mt-4 border-t border-amber-200 pt-4">{setupGuide}</div>
               </div>
             </div>
           </Card>
+        )}
+
+        {/* The same guide, standing: findable before anyone mints anything.
+            Hidden while the show-once panel is up, which already carries it —
+            otherwise an admin who had this open reads it twice on one screen. */}
+        {!freshKey && (
+          <details className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <summary className="cursor-pointer text-sm font-medium text-slate-900">
+              {k?.setupTitle || 'How to connect an agent to this key'}
+            </summary>
+            <div className="mt-3">{setupGuide}</div>
+          </details>
         )}
 
         <div className="mb-4 flex items-center justify-between gap-4">

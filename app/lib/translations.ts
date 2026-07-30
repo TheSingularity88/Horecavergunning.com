@@ -778,7 +778,23 @@ export const translations = {
         revoke: "Revoke",
         revoked: "Key revoked.",
         revokeTitle: "Revoke this key?",
-        revokeMessage: "The agent holding \"{label}\" stops working immediately. This cannot be undone — create a new key instead."
+        revokeMessage: "The agent holding \"{label}\" stops working immediately. This cannot be undone — create a new key instead.",
+        setupTitle: "How to connect an agent to a key",
+        setupIntro:
+          "A key on its own is not enough for ChatGPT. A Custom GPT cannot call an address you simply tell it about — it needs a schema listing the operations and their arguments. We publish that schema, so there is nothing to write: you paste one link and one key.",
+        setupChatgptTitle: "ChatGPT — Custom GPT",
+        setupChatgptStep1:
+          "In ChatGPT, create a Custom GPT and open Configure → Actions → Create new action.",
+        setupChatgptStep2: "Choose \"Import from URL\" and paste this address:",
+        setupChatgptStep3:
+          "In the same panel, set Authentication to API Key, Auth Type to Bearer, and paste the key.",
+        setupChatgptScopeWarning:
+          "ChatGPT will list every operation this platform offers — not only the ones this key is allowed to use. The schema is public and is the same for every key, so it cannot know what you ticked. A key without a permission is refused when it tries, not when it imports. Tell your Custom GPT to call listTools first: that answer marks each operation \"allowed\" or not for this specific key.",
+        setupClaudeTitle: "Claude Code, a CLI, or your own script",
+        setupClaudeBody:
+          "No schema needed — tell it the address and the key. Start with GET /api/agent/v1/me to confirm the key works, then GET /api/agent/v1/tools to see what this key may do. Send the key as the header: Authorization: Bearer <key>.",
+        setupNote:
+          "The permissions you tick when creating the key are enforced on every request, so a read-only key genuinely cannot change anything. Whatever the agent does, everything a customer could see still waits for a human in the review queue."
       },
       aiActivity: {
         title: "AI activity",
@@ -1941,7 +1957,23 @@ export const translations = {
         revoke: "Intrekken",
         revoked: "Sleutel ingetrokken.",
         revokeTitle: "Deze sleutel intrekken?",
-        revokeMessage: "De agent die \"{label}\" gebruikt, stopt onmiddellijk met werken. Dit kan niet ongedaan worden gemaakt — maak in plaats daarvan een nieuwe sleutel aan."
+        revokeMessage: "De agent die \"{label}\" gebruikt, stopt onmiddellijk met werken. Dit kan niet ongedaan worden gemaakt — maak in plaats daarvan een nieuwe sleutel aan.",
+        setupTitle: "Een agent op een sleutel aansluiten",
+        setupIntro:
+          "Een sleutel alleen is voor ChatGPT niet genoeg. Een Custom GPT kan geen adres aanroepen waarover u hem alleen vertelt — hij heeft een schema nodig met de handelingen en hun velden. Dat schema publiceren wij, dus u hoeft niets te schrijven: u plakt één link en één sleutel.",
+        setupChatgptTitle: "ChatGPT — Custom GPT",
+        setupChatgptStep1:
+          "Maak in ChatGPT een Custom GPT en ga naar Configure → Actions → Create new action.",
+        setupChatgptStep2: "Kies \"Import from URL\" en plak dit adres:",
+        setupChatgptStep3:
+          "Zet in hetzelfde scherm Authentication op API Key, Auth Type op Bearer, en plak de sleutel.",
+        setupChatgptScopeWarning:
+          "ChatGPT toont alle handelingen die dit platform aanbiedt — niet alleen die deze sleutel mag gebruiken. Het schema is openbaar en voor elke sleutel gelijk, dus het kan niet weten wat u heeft aangevinkt. Een sleutel zonder een recht wordt geweigerd op het moment dat hij het probeert, niet bij het importeren. Laat uw Custom GPT eerst listTools aanroepen: dat antwoord markeert per handeling of deze sleutel hem \"allowed\" is.",
+        setupClaudeTitle: "Claude Code, een CLI of uw eigen script",
+        setupClaudeBody:
+          "Geen schema nodig — geef het adres en de sleutel door. Begin met GET /api/agent/v1/me om te bevestigen dat de sleutel werkt, en daarna GET /api/agent/v1/tools om te zien wat deze sleutel mag. Stuur de sleutel mee als header: Authorization: Bearer <sleutel>.",
+        setupNote:
+          "De rechten die u bij het aanmaken aanvinkt, worden bij elk verzoek afgedwongen: een alleen-lezen sleutel kan echt niets wijzigen. Wat de agent ook doet, alles wat een klant kan zien wacht nog steeds op een mens in de beoordelingswachtrij."
       },
       aiActivity: {
         title: "AI-activiteit",
