@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { toOperationId } from '@/app/lib/agent/operation-id';
 import { createAdminClient } from '@/app/lib/supabase/admin';
 import { toolByName, AI_TOOLS, type ToolAccess } from '@/app/lib/ai/tools/registry';
 import { hasScope, type AgentPrincipal } from '@/app/lib/agent/auth';
@@ -54,6 +55,11 @@ export const availableExternally = (name: string) => !WITHHELD_FROM_EXTERNAL.has
 export function agentToolCatalogue(principal: AgentPrincipal) {
   return AI_TOOLS.filter((tool) => availableExternally(tool.name)).map((tool) => ({
     name: tool.name,
+    // The name the agent CALLS it by. The registry name is snake_case and the
+    // OpenAPI operationId is camelCase, so a catalogue that published only
+    // `name` left an agent unable to connect `list_leads` here to the
+    // `listLeads` operation it can actually invoke.
+    operation_id: toOperationId(tool.name),
     description: tool.description,
     access: tool.access,
     input_schema: tool.inputSchema,

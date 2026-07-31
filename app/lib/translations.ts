@@ -793,6 +793,26 @@ export const translations = {
         setupClaudeTitle: "Claude Code, a CLI, or your own script",
         setupClaudeBody:
           "No schema needed — tell it the address and the key. Start with GET /api/agent/v1/me to confirm the key works, then GET /api/agent/v1/tools to see what this key may do. Send the key as the header: Authorization: Bearer <key>.",
+        setupChatgptStep4:
+          "Paste the instructions below into the GPT's Instructions field. Without them the agent has the actions but not the rules — it will happily tell a colleague a proposal is finished work.",
+        setupCopyInstructions: "Copy the instructions",
+        setupShowPrompt: "Show the text",
+        setupHidePrompt: "Hide the text",
+        setupPromptLoading: "Loading…",
+        setupPromptUnavailable:
+          "The instructions could not be loaded. Reload the page and try again.",
+        loadFailed: "Could not load this page. Reload to try again.",
+        setupPromptFailed:
+          "Could not copy the instructions. Use \"Show the text\" and copy them by hand.",
+        setupChatgptStep5:
+          "Save, then test: ask what is urgent today. The agent should look things up without asking your permission each time, and anything a customer would see should come back as \"filed for approval\" — and appear in the review queue.",
+        setupSettingsTitle: "Before you use it, check these three things",
+        setupSettingsCapabilities:
+          "Turn off Web Search, Image Generation and Code Interpreter. Web search invites the agent to answer a permit question from some random page and present it as fact, when the rulebook and asking a colleague are the only sources it should use. Code Interpreter can write client data into downloadable files.",
+        setupSettingsTraining:
+          "Switch off training on conversation data — both the checkbox under the GPT's Additional Settings and, for your own chats with it, the equivalent control in your account's data settings. Real client names and case details pass through these conversations.",
+        setupSettingsPrivate:
+          "Keep the GPT private. The key is stored inside its configuration, so anyone you share it with can act as this AI employee. If a key ever leaks, revoke it here — that takes effect immediately.",
         setupNote:
           "The permissions you tick when creating the key are enforced on every request, so a read-only key genuinely cannot change anything. Whatever the agent does, everything a customer could see still waits for a human in the review queue."
       },
@@ -1972,6 +1992,26 @@ export const translations = {
         setupClaudeTitle: "Claude Code, een CLI of uw eigen script",
         setupClaudeBody:
           "Geen schema nodig — geef het adres en de sleutel door. Begin met GET /api/agent/v1/me om te bevestigen dat de sleutel werkt, en daarna GET /api/agent/v1/tools om te zien wat deze sleutel mag. Stuur de sleutel mee als header: Authorization: Bearer <sleutel>.",
+        setupChatgptStep4:
+          "Plak de onderstaande instructies in het veld Instructions van de GPT. Zonder die instructies heeft de agent wel de handelingen maar niet de regels — en meldt hij een voorstel doodleuk als afgerond werk.",
+        setupCopyInstructions: "Instructies kopiëren",
+        setupShowPrompt: "Tekst tonen",
+        setupHidePrompt: "Tekst verbergen",
+        setupPromptLoading: "Laden…",
+        setupPromptUnavailable:
+          "De instructies konden niet worden geladen. Herlaad de pagina en probeer opnieuw.",
+        loadFailed: "Kon deze pagina niet laden. Herlaad om het opnieuw te proberen.",
+        setupPromptFailed:
+          "Kon de instructies niet kopiëren. Gebruik \"Tekst tonen\" en kopieer ze handmatig.",
+        setupChatgptStep5:
+          "Opslaan en testen: vraag wat er vandaag urgent is. De agent hoort dingen op te zoeken zonder telkens toestemming te vragen, en alles wat een klant kan zien hoort terug te komen als \"ingediend ter goedkeuring\" — en in de beoordelingswachtrij te staan.",
+        setupSettingsTitle: "Controleer deze drie dingen voordat u hem gebruikt",
+        setupSettingsCapabilities:
+          "Zet Web Search, Image Generation en Code Interpreter uit. Met websearch beantwoordt de agent een vergunningsvraag zo vanaf een willekeurige pagina en presenteert dat als feit, terwijl het regelboek en het vragen aan een collega de enige bronnen zijn die hij hoort te gebruiken. Code Interpreter kan klantgegevens naar downloadbare bestanden schrijven.",
+        setupSettingsTraining:
+          "Zet trainen op gespreksdata uit — zowel het vinkje bij Additional Settings van de GPT als, voor uw eigen gesprekken ermee, de vergelijkbare instelling in de datainstellingen van uw account. Er gaan echte klantnamen en dossiergegevens door deze gesprekken.",
+        setupSettingsPrivate:
+          "Houd de GPT privé. De sleutel zit in de configuratie, dus iedereen met wie u hem deelt kan handelen als deze AI-medewerker. Lekt een sleutel, trek hem hier in — dat werkt direct.",
         setupNote:
           "De rechten die u bij het aanmaken aanvinkt, worden bij elk verzoek afgedwongen: een alleen-lezen sleutel kan echt niets wijzigen. Wat de agent ook doet, alles wat een klant kan zien wacht nog steeds op een mens in de beoordelingswachtrij."
       },
