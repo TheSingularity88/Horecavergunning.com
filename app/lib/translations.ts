@@ -799,15 +799,18 @@ export const translations = {
         setupShowPrompt: "Show the text",
         setupHidePrompt: "Hide the text",
         setupPromptLoading: "Loading…",
+        setupPromptUnavailable:
+          "The instructions could not be loaded. Reload the page and try again.",
+        loadFailed: "Could not load this page. Reload to try again.",
         setupPromptFailed:
           "Could not copy the instructions. Use \"Show the text\" and copy them by hand.",
         setupChatgptStep5:
           "Save, then test: ask what is urgent today. The agent should look things up without asking your permission each time, and anything a customer would see should come back as \"filed for approval\" — and appear in the review queue.",
-        setupSettingsTitle: "Two settings to check before you use it",
+        setupSettingsTitle: "Before you use it, check these three things",
         setupSettingsCapabilities:
-          "Turn off Web Search and Image Generation. Web search invites the agent to answer a permit question from some random page and present it as fact, when the rulebook and asking a colleague are the only sources it should use.",
+          "Turn off Web Search, Image Generation and Code Interpreter. Web search invites the agent to answer a permit question from some random page and present it as fact, when the rulebook and asking a colleague are the only sources it should use. Code Interpreter can write client data into downloadable files.",
         setupSettingsTraining:
-          "In Additional Settings, switch off using conversation data to improve the provider's models. Real client names and case details pass through these conversations.",
+          "Switch off training on conversation data — both the checkbox under the GPT's Additional Settings and, for your own chats with it, the equivalent control in your account's data settings. Real client names and case details pass through these conversations.",
         setupSettingsPrivate:
           "Keep the GPT private. The key is stored inside its configuration, so anyone you share it with can act as this AI employee. If a key ever leaks, revoke it here — that takes effect immediately.",
         setupNote:
@@ -1995,15 +1998,18 @@ export const translations = {
         setupShowPrompt: "Tekst tonen",
         setupHidePrompt: "Tekst verbergen",
         setupPromptLoading: "Laden…",
+        setupPromptUnavailable:
+          "De instructies konden niet worden geladen. Herlaad de pagina en probeer opnieuw.",
+        loadFailed: "Kon deze pagina niet laden. Herlaad om het opnieuw te proberen.",
         setupPromptFailed:
           "Kon de instructies niet kopiëren. Gebruik \"Tekst tonen\" en kopieer ze handmatig.",
         setupChatgptStep5:
           "Opslaan en testen: vraag wat er vandaag urgent is. De agent hoort dingen op te zoeken zonder telkens toestemming te vragen, en alles wat een klant kan zien hoort terug te komen als \"ingediend ter goedkeuring\" — en in de beoordelingswachtrij te staan.",
-        setupSettingsTitle: "Twee instellingen om te controleren voor gebruik",
+        setupSettingsTitle: "Controleer deze drie dingen voordat u hem gebruikt",
         setupSettingsCapabilities:
-          "Zet Web Search en Image Generation uit. Met websearch beantwoordt de agent een vergunningsvraag zo vanaf een willekeurige pagina en presenteert dat als feit, terwijl het regelboek en het vragen aan een collega de enige bronnen zijn die hij hoort te gebruiken.",
+          "Zet Web Search, Image Generation en Code Interpreter uit. Met websearch beantwoordt de agent een vergunningsvraag zo vanaf een willekeurige pagina en presenteert dat als feit, terwijl het regelboek en het vragen aan een collega de enige bronnen zijn die hij hoort te gebruiken. Code Interpreter kan klantgegevens naar downloadbare bestanden schrijven.",
         setupSettingsTraining:
-          "Zet bij Additional Settings uit dat gespreksdata wordt gebruikt om de modellen van de aanbieder te verbeteren. Er gaan echte klantnamen en dossiergegevens door deze gesprekken.",
+          "Zet trainen op gespreksdata uit — zowel het vinkje bij Additional Settings van de GPT als, voor uw eigen gesprekken ermee, de vergelijkbare instelling in de datainstellingen van uw account. Er gaan echte klantnamen en dossiergegevens door deze gesprekken.",
         setupSettingsPrivate:
           "Houd de GPT privé. De sleutel zit in de configuratie, dus iedereen met wie u hem deelt kan handelen als deze AI-medewerker. Lekt een sleutel, trek hem hier in — dat werkt direct.",
         setupNote:

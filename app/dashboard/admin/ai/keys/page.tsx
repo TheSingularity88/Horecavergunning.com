@@ -70,20 +70,27 @@ export default function AgentKeysPage() {
   }, [authLoading, isAdmin, router]);
 
   const fetchData = useCallback(async () => {
-    const [keysResult, adminResult, promptResult] = await Promise.all([
-      getAgentKeys(),
-      getAiAdminData(),
-      getAgentInstructions(),
-    ]);
-    if (keysResult.success && keysResult.data) setKeys(keysResult.data.keys);
-    else if (!keysResult.success) showError(keysResult.error);
-    if (adminResult.success && adminResult.data) setEmployees(adminResult.data.employees);
-    // Generated from the tool registry, so it names the operations this agent
-    // actually has. A failure here is not worth a toast — the copy button says
-    // it is not ready — but it must not read as an empty prompt.
-    if (promptResult.success && promptResult.data) setInstructions(promptResult.data.instructions);
-    setIsLoading(false);
-  }, [showError]);
+    // finally, not a trailing statement: Promise.all rejects as soon as any one
+    // of these does, and a throw here would leave the page on its spinner with
+    // nothing on screen to explain why.
+    try {
+      const [keysResult, adminResult, promptResult] = await Promise.all([
+        getAgentKeys(),
+        getAiAdminData(),
+        getAgentInstructions(),
+      ]);
+      if (keysResult.success && keysResult.data) setKeys(keysResult.data.keys);
+      else if (!keysResult.success) showError(keysResult.error);
+      if (adminResult.success && adminResult.data) setEmployees(adminResult.data.employees);
+      // Generated from the tool registry, so it names the operations this agent
+      // actually has. Left empty on failure, which the copy button reports.
+      if (promptResult.success && promptResult.data) setInstructions(promptResult.data.instructions);
+    } catch {
+      showError(k?.loadFailed || 'Could not load this page. Reload to try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [showError, k?.loadFailed]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -146,7 +153,10 @@ export default function AgentKeysPage() {
     // The prompt is what makes the agent behave — a copy that silently failed
     // would leave an admin pasting nothing into the field that carries the
     // three rules. Say so rather than flashing "Copied".
-    if (!instructions) return showError(k?.setupPromptFailed || 'The instructions are not loaded yet.');
+    // Distinct from the copy-failure message below: there is nothing to reveal,
+    // so telling the admin to show the text and copy it by hand would send them
+    // to an empty box.
+    if (!instructions) return showError(k?.setupPromptUnavailable || 'The instructions could not be loaded. Reload the page.');
     try {
       await navigator.clipboard.writeText(instructions);
       setCopiedPrompt(true);

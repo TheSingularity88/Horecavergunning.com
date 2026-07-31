@@ -2,6 +2,7 @@ import 'server-only';
 
 import { AI_TOOLS, type ToolAccess } from '@/app/lib/ai/tools/registry';
 import { availableExternally } from '@/app/lib/agent/run-tool';
+import { toOperationId } from '@/app/lib/agent/operation-id';
 
 /**
  * The system prompt an admin pastes into a ChatGPT Custom GPT (or any external
@@ -33,18 +34,43 @@ const TIER_HEADING: Record<ToolAccess, string> = {
   propose: 'Nothing changes until a human handles it — files a proposal or a question in the review queue',
 };
 
-const TIER_ORDER: ToolAccess[] = ['read', 'write', 'propose'];
+/**
+ * Derived from TIER_HEADING rather than written out again. TIER_HEADING is a
+ * Record<ToolAccess, …>, so adding a tier to ToolAccess fails the build until
+ * it has a heading — and this list then picks it up automatically. Written as
+ * its own literal, a new tier would compile fine and silently drop its tools
+ * out of the prompt while the OpenAPI document still exposed them.
+ */
+const TIER_ORDER = Object.keys(TIER_HEADING) as ToolAccess[];
 
-/** list_leads -> listLeads. Must match openapi.ts, or the prompt names operations the GPT does not have. */
-const toCamel = (name: string): string => name.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+/**
+ * Operations named in the prose below rather than in a generated list.
+ *
+ * The lists cannot go stale; these sentences can. Renaming get_overview would
+ * update every list and leave the prose telling the agent to call something
+ * that no longer exists — a silent failure, since the prompt is only read by a
+ * model. Checked in development so it surfaces to whoever did the rename.
+ */
+const NAMED_IN_PROSE = ['get_overview', 'get_case', 'list_cases', 'ask_human'];
 
 export function buildAgentInstructions(): string {
   const external = AI_TOOLS.filter((t) => availableExternally(t.name));
 
+  if (process.env.NODE_ENV !== 'production') {
+    const missing = NAMED_IN_PROSE.filter((n) => !external.some((t) => t.name === n));
+    if (missing.length) {
+      console.warn(
+        `[gpt-instructions] the prompt names ${missing.join(', ')} in prose, but ` +
+          'no such tool is on the external surface. Update the prose, or the agent ' +
+          'will be told to call an operation it does not have.',
+      );
+    }
+  }
+
   const byTier = TIER_ORDER.map((tier) => {
     const names = external
       .filter((t) => t.access === tier)
-      .map((t) => toCamel(t.name))
+      .map((t) => toOperationId(t.name))
       .sort();
     return names.length ? `- ${TIER_HEADING[tier]}: ${names.join(', ')}.` : null;
   })
@@ -58,11 +84,12 @@ You work the employee dashboard through the horecavergunning.com actions. You ar
 ## Start of every conversation
 1. Call whoAmI. It tells you which AI employee you are and which permissions your key carries.
 2. Call listTools. Every entry has an "allowed" flag for your key. Never plan around an operation whose allowed is false — say you lack that permission instead of trying and failing.
+   That catalogue lists each tool twice over: "name" is the internal name (list_leads) and "operation_id" is what you actually call it (listLeads). Match on operation_id.
 Do this before anything else, once per conversation.
 
 ## Three rules you cannot break
 1. You never contact a customer. No action here sends email or messages. Do not draft something and imply it was sent.
-2. Anything a customer can see is a PROPOSAL, not a change. Every propose* action files a pending item for a human to approve in the review queue. After calling one, report it as "ingediend ter goedkeuring" / "filed for approval" — never as done, updated, changed or sent.
+2. Anything a customer can see is a PROPOSAL, not a change. Every action in the third group below — including askHuman, which does not start with "propose" — files a pending item for a human in the review queue and changes nothing by itself. After calling one, report it as "ingediend ter goedkeuring" / "filed for approval" — never as done, updated, changed or sent.
 3. You have no administrator access, and you act as your AI employee — never as a person. Do not claim to be a human colleague.
 
 ## Choosing an action

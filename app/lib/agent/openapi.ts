@@ -3,6 +3,7 @@ import 'server-only';
 import { AI_TOOLS, type ToolAccess } from '@/app/lib/ai/tools/registry';
 import { availableExternally } from '@/app/lib/agent/run-tool';
 import { SITE_URL } from '@/app/lib/site';
+import { toOperationId } from '@/app/lib/agent/operation-id';
 
 /**
  * The OpenAPI document a ChatGPT Custom GPT imports as an Action.
@@ -144,7 +145,7 @@ export function agentOpenApiDocument(): Record<string, unknown> {
       post: {
         // ChatGPT surfaces this to the user when asking to run an action, so it
         // has to read as a sentence, not an identifier.
-        operationId: toCamel(tool.name),
+        operationId: toOperationId(tool.name),
         summary: firstSentence(tool.brief ?? tool.description),
         description: `${body}\n\n${tier}`,
         // ChatGPT asks the user to confirm every call unless told otherwise,
@@ -242,7 +243,3 @@ export function agentOpenApiDocument(): Record<string, unknown> {
   };
 }
 
-/** list_leads -> listLeads. ChatGPT requires operationIds to be unique and identifier-safe. */
-function toCamel(name: string): string {
-  return name.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
-}
